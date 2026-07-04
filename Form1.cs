@@ -1,5 +1,6 @@
 ﻿using LascheApp.Materials;
 using LascheApp.Shackles;
+using LascheApp.Padeye;
 using System.Linq;
 using System.IO;
 
@@ -14,7 +15,10 @@ namespace LascheApp
             InitializeComponent();
 
         }
-
+        private MaterialGrade? GetSelectedMaterial()
+        {
+            return cmbMaterials.SelectedItem as MaterialGrade;
+        }
         private void Form1_Load(object sender, EventArgs e)
         {
             string dataDirectory = Path.Combine(
@@ -31,7 +35,10 @@ namespace LascheApp
             _shackleDatabase.Load();
 
             LoadShackleComboBox();
+            LoadMaterialComboBox();
+
             UpdateSelectedShackleInfo();
+            UpdateSelectedMaterialInfo();
         }
         private void LoadShackleComboBox()
         {
@@ -52,6 +59,10 @@ namespace LascheApp
         {
             UpdateSelectedShackleInfo();
         }
+        private ShackleData? GetSelectedShackle()
+        {
+            return cmbShackles.SelectedItem as ShackleData;
+        }
 
         private void UpdateSelectedShackleInfo()
         {
@@ -68,6 +79,269 @@ namespace LascheApp
                 $"d1: {shackle.D1_mm:0.0} mm | " +
                 $"d3: {shackle.D3_mm:0.0} mm | " +
                 $"d4: {shackle.D4_inch}";
+        }
+        private bool TryGetSelectedShackleGeometry(
+            out double dpin_mm,
+            out double b1_mm,
+            out double hDnv_mm,
+            out double wll_kN)
+        {
+            dpin_mm = 0.0;
+            b1_mm = 0.0;
+            hDnv_mm = 0.0;
+            wll_kN = 0.0;
+
+            ShackleData? shackle = GetSelectedShackle();
+
+            if (shackle == null)
+                return false;
+
+            dpin_mm = shackle.Dpin_mm;
+            b1_mm = shackle.B1_mm;
+            hDnv_mm = shackle.H_DNV_mm;
+            wll_kN = shackle.WLL_kN;
+
+            return true;
+        }
+
+        private void btnTestSelectedShackle_Click(object sender, EventArgs e)
+        {
+            bool ok = TryGetSelectedShackleGeometry(
+                out double dpin_mm,
+                out double b1_mm,
+                out double hDnv_mm,
+                out double wll_kN);
+
+            if (!ok)
+            {
+                MessageBox.Show("No shackle selected.");
+                return;
+            }
+
+            MessageBox.Show(
+                $"Selected shackle geometry:\n\n" +
+                $"Dpin = {dpin_mm:0.0} mm\n" +
+                $"B1 = {b1_mm:0.0} mm\n" +
+                $"H_DNV = {hDnv_mm:0.0} mm\n" +
+                $"WLL = {wll_kN:0.00} kN");
+        }
+        private bool TryReadDouble(string text, out double value)
+        {
+            text = text.Trim().Replace(',', '.');
+
+            return double.TryParse(
+                text,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out value);
+        }
+
+        private void btnCheckBasicPadeye_Click(object sender, EventArgs e)
+        {
+            txtBasicCheckResult.Clear();
+
+            if (!TryReadDouble(txtLoad_kN.Text, out double fEd_kN))
+            {
+                txtBasicCheckResult.Text = "Invalid input: F_Ed [kN]";
+                return;
+            }
+
+            if (!TryReadDouble(txtPlateThickness_mm.Text, out double t_mm))
+            {
+                txtBasicCheckResult.Text = "Invalid input: t [mm]";
+                return;
+            }
+
+            if (!TryReadDouble(txtHoleDiameter_mm.Text, out double holeDiameter_mm))
+            {
+                txtBasicCheckResult.Text = "Invalid input: d0 [mm]";
+                return;
+            }
+
+            if (!TryReadDouble(txtPlateWidth_mm.Text, out double plateWidth_mm))
+            {
+                txtBasicCheckResult.Text = "Invalid input: b [mm]";
+                return;
+            }
+            MaterialGrade? material = GetSelectedMaterial();
+
+            if (material == null)
+            {
+                txtBasicCheckResult.Text = "No material selected.";
+                return;
+            }
+            MaterialPropertiesAtThickness materialProps;
+
+            try
+            {
+                materialProps = _materialDatabase!.GetProperties(material.Id, t_mm);
+            }
+            catch
+            {
+                txtBasicCheckResult.Text = "Material properties not available for this thickness.";
+                return;
+            }
+
+            bool hasShackle = TryGetSelectedShackleGeometry(
+                out double dpin_mm,
+                out double b1_mm,
+                out double hDnv_mm,
+                out double wll_kN);
+
+            if (!hasShackle)
+            {
+                txtBasicCheckResult.Text = "No shackle selected.";
+                return;
+            }
+
+            PadeyeBasicCheckInput input = new PadeyeBasicCheckInput
+            {
+                F_Ed_kN = fEd_kN,
+                PlateThickness_mm = t_mm,
+                HoleDiameter_mm = holeDiameter_mm,
+
+                ShackleWLL_kN = wll_kN,
+                ShackleDpin_mm = dpin_mm,
+                ShackleB1_mm = b1_mm,
+                ShackleH_DNV_mm = hDnv_mm,
+
+                PinClearance_mm = 2.0,
+                PlateWidth_mm = plateWidth_mm,
+
+                MaterialFy_Nmm2 = materialProps.Fy_Nmm2,
+                GammaM0 = 1.0,
+            };
+
+            PadeyeBasicCheckResult result = PadeyeBasicChecker.Check(input);
+
+            txtBasicCheckResult.Text = FormatPadeyeBasicCheckResult(result);
+        }
+        private string FormatPadeyeBasicCheckResult(PadeyeBasicCheckResult result)
+        {
+            PadeyeBasicCheckInput input = result.Input;
+
+            return
+                $"Basic padeye check\n" +
+                $"------------------\n" +
+                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n\n" +
+
+                $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
+                $"WLL = {input.ShackleWLL_kN:0.00} kN\n" +
+                $"Check F_Ed <= WLL: {(result.WllOk ? "OK" : "NOT OK")}\n\n" +
+
+                $"Dpin = {input.ShackleDpin_mm:0.0} mm\n" +
+                $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
+                $"Required d0 = Dpin + {input.PinClearance_mm:0.0} mm = {result.RequiredHoleDiameter_mm:0.0} mm\n" +
+                $"Check d0 >= Dpin + clearance: {(result.HoleDiameterOk ? "OK" : "NOT OK")}\n\n" +
+
+                $"B1 = {input.ShackleB1_mm:0.0} mm\n" +
+                $"t = {input.PlateThickness_mm:0.0} mm\n" +
+                $"Required t = 0.75 * B1 = {result.RequiredThickness_mm:0.0} mm\n" +
+                $"Check t >= 0.75 * B1: {(result.ThicknessOk ? "OK" : "NOT OK")}\n\n" +
+
+                $"H_DNV = {input.ShackleH_DNV_mm:0.0} mm"+
+                $"\n\nGross section tension check\n" +
+                
+               $"---------------------------\n" +
+                $"b = {input.PlateWidth_mm:0.0} mm\n" +
+                $"t = {input.PlateThickness_mm:0.0} mm\n" +
+                $"A_gross = b * t = {result.GrossArea_mm2:0.0} mm²\n" +
+                $"Sigma_gross,Ed = F_Ed / A_gross = {result.SigmaGrossEd_Nmm2:0.0} N/mm²\n" +
+                $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
+                $"Check Sigma_gross,Ed <= Sigma_Rd: {(result.GrossSectionTensionOk ? "OK" : "NOT OK")}" +
+            $"\n\nNet section tension check\n" +
+            $"-------------------------\n" +
+            $"b = {input.PlateWidth_mm:0.0} mm\n" +
+            $"A_net = (b - d0) * t = {result.NetArea_mm2:0.0} mm²\n" +
+            $"Sigma_Ed = F_Ed / A_net = {result.SigmaEd_Nmm2:0.0} N/mm²\n" +
+            $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
+            $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}";
+        }
+        private void btnSelectShackleByLoad_Click(object sender, EventArgs e)
+        {
+            if (_shackleDatabase == null)
+                return;
+
+            if (!TryReadDouble(txtLoad_kN.Text, out double fEd_kN))
+            {
+                MessageBox.Show("Invalid input: F_Ed [kN]");
+                return;
+            }
+
+            ShackleData? suitableShackle =
+                _shackleDatabase.GetSmallestSuitableByWll(fEd_kN);
+
+            if (suitableShackle == null)
+            {
+                MessageBox.Show("No suitable shackle found for this load.");
+                return;
+            }
+
+            cmbShackles.SelectedValue = suitableShackle.Id;
+
+            UpdateSelectedShackleInfo();
+            btnCheckBasicPadeye_Click(sender, e);
+        }
+        private void LoadMaterialComboBox()
+        {
+            if (_materialDatabase == null)
+                return;
+
+            cmbMaterials.DataSource = null;
+
+            cmbMaterials.DataSource = _materialDatabase.Materials
+                .OrderBy(m => m.Name)
+                .ToList();
+
+            cmbMaterials.DisplayMember = "Name";
+            cmbMaterials.ValueMember = "Id";
+        }
+        private void UpdateSelectedMaterialInfo()
+        {
+            if (_materialDatabase == null)
+                return;
+
+            MaterialGrade? material = GetSelectedMaterial();
+
+            if (material == null)
+                return;
+
+            if (!TryReadDouble(txtPlateThickness_mm.Text, out double thickness_mm))
+            {
+                lblMaterialFy.Text = "fy: -";
+                lblMaterialFu.Text = "fu: -";
+                lblMaterialE.Text = $"E: {material.E_Nmm2:0} N/mm²";
+                lblMaterialBetaW.Text = $"BetaW: {material.BetaW:0.00}";
+                return;
+            }
+
+            try
+            {
+                MaterialPropertiesAtThickness props =
+                    _materialDatabase.GetProperties(material.Id, thickness_mm);
+
+                lblMaterialFy.Text = $"fy: {props.Fy_Nmm2:0} N/mm²";
+                lblMaterialFu.Text = $"fu: {props.Fu_Nmm2:0} N/mm²";
+                lblMaterialE.Text = $"E: {props.E_Nmm2:0} N/mm²";
+                lblMaterialBetaW.Text = $"BetaW: {props.BetaW:0.00}";
+            }
+            catch
+            {
+                lblMaterialFy.Text = "fy: not available";
+                lblMaterialFu.Text = "fu: not available";
+                lblMaterialE.Text = $"E: {material.E_Nmm2:0} N/mm²";
+                lblMaterialBetaW.Text = $"BetaW: {material.BetaW:0.00}";
+            }
+        }
+
+        private void cmbMaterials_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateSelectedMaterialInfo();
+        }
+
+        private void txtPlateThickness_mm_TextChanged(object sender, EventArgs e)
+        {
+            UpdateSelectedMaterialInfo();
         }
     }
 }
