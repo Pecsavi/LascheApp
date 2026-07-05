@@ -3,6 +3,7 @@ using LascheApp.Shackles;
 using LascheApp.Padeye;
 using System.Linq;
 using System.IO;
+using System;
 
 namespace LascheApp
 {
@@ -163,6 +164,19 @@ namespace LascheApp
                 txtBasicCheckResult.Text = "Invalid input: b [mm]";
                 return;
             }
+
+            if (!TryReadDouble(txtEdgeDistanceA_mm.Text, out double edgeDistanceA_mm))
+            {
+                txtBasicCheckResult.Text = "Invalid input: a [mm]";
+                return;
+            }
+
+            if (!TryReadDouble(txtSideDistanceC_mm.Text, out double sideDistanceC_mm))
+            {
+                txtBasicCheckResult.Text = "Invalid input: c [mm]";
+                return;
+            }
+
             MaterialGrade? material = GetSelectedMaterial();
 
             if (material == null)
@@ -214,12 +228,91 @@ namespace LascheApp
 
             PadeyeBasicCheckResult result = PadeyeBasicChecker.Check(input);
 
-            txtBasicCheckResult.Text = FormatPadeyeBasicCheckResult(result);
+            PadeyeEcGeometryInput ecGeometryInput = new PadeyeEcGeometryInput
+            {
+                F_Ed_kN = fEd_kN,
+                GammaM0 = 1.0,
+                Fy_Nmm2 = materialProps.Fy_Nmm2,
+
+                PlateThickness_mm = t_mm,
+                HoleDiameter_mm = holeDiameter_mm,
+
+                EdgeDistanceA_mm = edgeDistanceA_mm,
+                SideDistanceC_mm = sideDistanceC_mm
+            };
+
+            PadeyeEcGeometryResult ecGeometryResult =
+                PadeyeEcGeometryChecker.Check(ecGeometryInput);
+
+            bool padeyeOverallOk =
+                result.IsOk &&
+                ecGeometryResult.IsOk;
+
+            txtBasicCheckResult.Text =
+                FormatPadeyeOverallResult(padeyeOverallOk) +
+                Environment.NewLine +
+                Environment.NewLine +
+                FormatPadeyeBasicCheckResult(result) +
+                Environment.NewLine +
+                Environment.NewLine +
+                FormatPadeyeEcGeometryResult(ecGeometryResult);
+
+        }
+        private string FormatPadeyeOverallResult(bool isOk)
+        {
+            return
+                $"Padeye overall result\n" +
+                $"=====================\n" +
+                $"Overall result: {(isOk ? "OK" : "NOT OK")}";
+        }
+        private string FormatPadeyeEcGeometryResult(PadeyeEcGeometryResult result)
+        {
+            PadeyeEcGeometryInput input = result.Input;
+
+            return
+                $"EC geometry check\n" +
+                $"-----------------\n" +
+                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n\n" +
+
+                $"Möglichkeit A\n" +
+                $"-------------\n" +
+                $"Result Möglichkeit A: {(result.MoglichkeitA_Ok ? "OK" : "NOT OK")}\n\n" +
+                $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
+                $"fy = {input.Fy_Nmm2:0.0} N/mm²\n" +
+                $"gammaM0 = {input.GammaM0:0.00}\n" +
+                $"t = {input.PlateThickness_mm:0.0} mm\n" +
+                $"d0 = {input.HoleDiameter_mm:0.0} mm\n\n" +
+
+                $"a = {input.EdgeDistanceA_mm:0.0} mm\n" +
+                $"Required a = F_Ed * gammaM0 / (2 * t * fy) + 2*d0/3 = {result.RequiredEdgeDistanceA_mm:0.0} mm\n" +
+                $"Check a >= required a: {(result.EdgeDistanceA_Ok ? "OK" : "NOT OK")}\n\n" +
+
+                $"c = {input.SideDistanceC_mm:0.0} mm\n" +
+                $"Required c = F_Ed * gammaM0 / (2 * t * fy) + d0/3 = {result.RequiredSideDistanceC_mm:0.0} mm\n" +
+                $"Check c >= required c: {(result.SideDistanceC_Ok ? "OK" : "NOT OK")}\n\n" +
+
+                $"Möglichkeit B\n" +
+                $"-------------\n" +
+                $"Result Möglichkeit B: {(result.MoglichkeitB_Ok ? "OK" : "NOT OK")}\n\n" +
+                $"t = {input.PlateThickness_mm:0.0} mm\n" +
+                $"Required t = 0.7 * sqrt(F_Ed * gammaM0 / fy) = {result.RequiredThickness_MoglichkeitB_mm:0.0} mm\n" +
+                $"Check t >= required t: {(result.ThicknessMoglichkeitB_Ok ? "OK" : "NOT OK")}\n\n" +
+
+                $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
+                $"Max d0 = 2.5 * t = {result.MaxHoleDiameter_MoglichkeitB_mm:0.0} mm\n" +
+                $"Check d0 <= 2.5 * t: {(result.HoleDiameterMoglichkeitB_Ok ? "OK" : "NOT OK")}";
         }
         private string FormatPadeyeBasicCheckResult(PadeyeBasicCheckResult result)
         {
             PadeyeBasicCheckInput input = result.Input;
-
+            if (result.HasErrors)
+            {
+                return
+                    "Basic padeye check\n" +
+                    "------------------\n" +
+                    "Input error\n\n" +
+                    string.Join(Environment.NewLine, result.Errors);
+            }
             return
                 $"Basic padeye check\n" +
                 $"------------------\n" +
@@ -249,13 +342,22 @@ namespace LascheApp
                 $"Sigma_gross,Ed = F_Ed / A_gross = {result.SigmaGrossEd_Nmm2:0.0} N/mm²\n" +
                 $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
                 $"Check Sigma_gross,Ed <= Sigma_Rd: {(result.GrossSectionTensionOk ? "OK" : "NOT OK")}" +
-            $"\n\nNet section tension check\n" +
-            $"-------------------------\n" +
-            $"b = {input.PlateWidth_mm:0.0} mm\n" +
-            $"A_net = (b - d0) * t = {result.NetArea_mm2:0.0} mm²\n" +
-            $"Sigma_Ed = F_Ed / A_net = {result.SigmaEd_Nmm2:0.0} N/mm²\n" +
-            $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
-            $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}";
+                $"\n\nNet section tension check\n" +
+                $"-------------------------\n" +
+                $"b = {input.PlateWidth_mm:0.0} mm\n" +
+                $"A_net = (b - d0) * t = {result.NetArea_mm2:0.0} mm²\n" +
+                $"Sigma_Ed = F_Ed / A_net = {result.SigmaEd_Nmm2:0.0} N/mm²\n" +
+                $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
+                $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}" +
+
+                $"\n\nPin bearing check\n" +
+                $"-----------------\n" +
+                $"Dpin = {input.ShackleDpin_mm:0.0} mm\n" +
+                $"t = {input.PlateThickness_mm:0.0} mm\n" +
+                $"A_bearing = Dpin * t = {result.BearingArea_mm2:0.0} mm²\n" +
+                $"Sigma_bearing,Ed = F_Ed / A_bearing = {result.SigmaBearingEd_Nmm2:0.0} N/mm²\n" +
+                $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
+                $"Check Sigma_bearing,Ed <= Sigma_Rd: {(result.BearingOk ? "OK" : "NOT OK")}";
         }
         private void btnSelectShackleByLoad_Click(object sender, EventArgs e)
         {

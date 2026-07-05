@@ -51,6 +51,10 @@
             lblMaterialFy = new Label();
             txtPlateWidth_mm = new TextBox();
             label4 = new Label();
+            label5 = new Label();
+            label6 = new Label();
+            txtEdgeDistanceA_mm = new TextBox();
+            txtSideDistanceC_mm = new TextBox();
             SuspendLayout();
             // 
             // cmbShackles
@@ -259,11 +263,47 @@
             label4.TabIndex = 15;
             label4.Text = "b [mm]";
             // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(57, 606);
+            label5.Name = "label5";
+            label5.Size = new Size(46, 15);
+            label5.TabIndex = 16;
+            label5.Text = "a [mm]";
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(58, 639);
+            label6.Name = "label6";
+            label6.Size = new Size(46, 15);
+            label6.TabIndex = 17;
+            label6.Text = "c [mm]";
+            // 
+            // txtEdgeDistanceA_mm
+            // 
+            txtEdgeDistanceA_mm.Location = new Point(160, 603);
+            txtEdgeDistanceA_mm.Name = "txtEdgeDistanceA_mm";
+            txtEdgeDistanceA_mm.Size = new Size(100, 23);
+            txtEdgeDistanceA_mm.TabIndex = 18;
+            // 
+            // txtSideDistanceC_mm
+            // 
+            txtSideDistanceC_mm.Location = new Point(160, 639);
+            txtSideDistanceC_mm.Name = "txtSideDistanceC_mm";
+            txtSideDistanceC_mm.Size = new Size(100, 23);
+            txtSideDistanceC_mm.TabIndex = 19;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 682);
+            ClientSize = new Size(800, 889);
+            Controls.Add(txtSideDistanceC_mm);
+            Controls.Add(txtEdgeDistanceA_mm);
+            Controls.Add(label6);
+            Controls.Add(label5);
             Controls.Add(label4);
             Controls.Add(txtPlateWidth_mm);
             Controls.Add(lblMaterialBetaW);
@@ -319,5 +359,9 @@
         private Label lblMaterialFy;
         private TextBox txtPlateWidth_mm;
         private Label label4;
+        private Label label5;
+        private Label label6;
+        private TextBox txtEdgeDistanceA_mm;
+        private TextBox txtSideDistanceC_mm;
     }
 }

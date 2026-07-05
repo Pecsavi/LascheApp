@@ -1,4 +1,7 @@
-﻿namespace LascheApp.Padeye
+﻿using System.Collections.Generic;
+
+
+namespace LascheApp.Padeye
 {
     public class PadeyeBasicCheckInput
     {
@@ -35,12 +38,22 @@
         public double SigmaEd_Nmm2 { get; set; }
         public double SigmaRd_Nmm2 { get; set; }
         public bool NetSectionTensionOk { get; set; }
+        public double BearingArea_mm2 { get; set; }
+        public double SigmaBearingEd_Nmm2 { get; set; }
+
+        public bool BearingOk { get; set; }
+
+        public List<string> Errors { get; set; } = new();
+
+        public bool HasErrors => Errors.Count > 0;
 
         public bool IsOk =>
+            !HasErrors &&
             WllOk &&
             HoleDiameterOk &&
             ThicknessOk &&
             GrossSectionTensionOk &&
-            NetSectionTensionOk;
+            NetSectionTensionOk &&
+            BearingOk;
     }
 }
