@@ -73,21 +73,26 @@
             result.RequiredThickness_mm = requiredThickness_mm;
 
             result.WllOk = input.F_Ed_kN <= input.ShackleWLL_kN;
+            result.WllUtilization = input.F_Ed_kN / input.ShackleWLL_kN;
             result.HoleDiameterOk = input.HoleDiameter_mm >= requiredHoleDiameter_mm;
+            result.HoleDiameterUtilization = requiredHoleDiameter_mm / input.HoleDiameter_mm;
             result.ThicknessOk = input.PlateThickness_mm >= requiredThickness_mm;
 
             result.GrossArea_mm2 = grossArea_mm2;
             result.SigmaGrossEd_Nmm2 = sigmaGrossEd_Nmm2;
             result.GrossSectionTensionOk = sigmaGrossEd_Nmm2 <= sigmaRd_Nmm2;
+            result.GrossSectionTensionUtilization = sigmaGrossEd_Nmm2 / sigmaRd_Nmm2;
 
             result.NetArea_mm2 = netArea_mm2;
             result.SigmaEd_Nmm2 = sigmaEd_Nmm2;
             result.SigmaRd_Nmm2 = sigmaRd_Nmm2;
             result.NetSectionTensionOk = sigmaEd_Nmm2 <= sigmaRd_Nmm2;
+            result.NetSectionTensionUtilization = sigmaEd_Nmm2 / sigmaRd_Nmm2;
 
             result.BearingArea_mm2 = bearingArea_mm2;
             result.SigmaBearingEd_Nmm2 = sigmaBearingEd_Nmm2;
             result.BearingOk = sigmaBearingEd_Nmm2 <= sigmaRd_Nmm2;
+            result.BearingUtilization = sigmaBearingEd_Nmm2 / sigmaRd_Nmm2;
 
             return result;
         }

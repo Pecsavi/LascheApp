@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-
+using System;
+using System.Linq;
 
 namespace LascheApp.Padeye
 {
@@ -46,6 +47,16 @@ namespace LascheApp.Padeye
         public List<string> Errors { get; set; } = new();
 
         public bool HasErrors => Errors.Count > 0;
+        public double WllUtilization { get; set; }
+        public double HoleDiameterUtilization { get; set; }
+        public double ThicknessUtilization { get; set; }
+
+        public double GrossSectionTensionUtilization { get; set; }
+        public double NetSectionTensionUtilization { get; set; }
+        public double BearingUtilization { get; set; }
+
+        public double MaxUtilization =>
+            CheckItems.Count == 0 ? 0.0 : CheckItems.Max(i => i.Utilization);
 
         public bool IsOk =>
             !HasErrors &&
@@ -55,5 +66,56 @@ namespace LascheApp.Padeye
             GrossSectionTensionOk &&
             NetSectionTensionOk &&
             BearingOk;
+
+        public string GoverningCheckName =>
+         CheckItems
+             .OrderByDescending(i => i.Utilization)
+             .FirstOrDefault()?.Name ?? "";
+
+        public List<CheckItem> CheckItems
+        {
+            get
+            {
+                return new List<CheckItem>
+                {
+                    new CheckItem
+                    {
+                        Name = "Shackle WLL",
+                        Utilization = WllUtilization,
+                        IsOk = WllOk
+                    },
+                    new CheckItem
+                    {
+                        Name = "Hole diameter clearance",
+                        Utilization = HoleDiameterUtilization,
+                        IsOk = HoleDiameterOk
+                    },
+                    new CheckItem
+                    {
+                        Name = "Shackle B1 thickness recommendation",
+                        Utilization = ThicknessUtilization,
+                        IsOk = ThicknessOk
+                    },
+                    new CheckItem
+                    {
+                        Name = "Gross section tension",
+                        Utilization = GrossSectionTensionUtilization,
+                        IsOk = GrossSectionTensionOk
+                    },
+                    new CheckItem
+                    {
+                        Name = "Net section tension",
+                        Utilization = NetSectionTensionUtilization,
+                        IsOk = NetSectionTensionOk
+                    },
+                    new CheckItem
+                    {
+                        Name = "Pin bearing",
+                        Utilization = BearingUtilization,
+                        IsOk = BearingOk
+                    }
+                };
+            }
+        }
     }
 }

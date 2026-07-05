@@ -173,7 +173,7 @@
             // 
             // btnCheckBasicPadeye
             // 
-            btnCheckBasicPadeye.Location = new Point(433, 193);
+            btnCheckBasicPadeye.Location = new Point(53, 546);
             btnCheckBasicPadeye.Name = "btnCheckBasicPadeye";
             btnCheckBasicPadeye.Size = new Size(177, 23);
             btnCheckBasicPadeye.TabIndex = 4;
@@ -183,12 +183,12 @@
             // 
             // txtBasicCheckResult
             // 
-            txtBasicCheckResult.Location = new Point(433, 220);
+            txtBasicCheckResult.Location = new Point(55, 575);
             txtBasicCheckResult.Multiline = true;
             txtBasicCheckResult.Name = "txtBasicCheckResult";
             txtBasicCheckResult.ReadOnly = true;
             txtBasicCheckResult.ScrollBars = ScrollBars.Vertical;
-            txtBasicCheckResult.Size = new Size(355, 114);
+            txtBasicCheckResult.Size = new Size(704, 218);
             txtBasicCheckResult.TabIndex = 8;
             txtBasicCheckResult.Click += btnCheckBasicPadeye_Click;
             // 
@@ -205,7 +205,7 @@
             // cmbMaterials
             // 
             cmbMaterials.FormattingEnabled = true;
-            cmbMaterials.Location = new Point(230, 472);
+            cmbMaterials.Location = new Point(42, 361);
             cmbMaterials.Name = "cmbMaterials";
             cmbMaterials.Size = new Size(121, 23);
             cmbMaterials.TabIndex = 9;
@@ -214,7 +214,7 @@
             // lblMaterialBetaW
             // 
             lblMaterialBetaW.AutoSize = true;
-            lblMaterialBetaW.Location = new Point(48, 475);
+            lblMaterialBetaW.Location = new Point(611, 364);
             lblMaterialBetaW.Name = "lblMaterialBetaW";
             lblMaterialBetaW.Size = new Size(97, 15);
             lblMaterialBetaW.TabIndex = 12;
@@ -223,7 +223,7 @@
             // lblMaterialE
             // 
             lblMaterialE.AutoSize = true;
-            lblMaterialE.Location = new Point(48, 445);
+            lblMaterialE.Location = new Point(477, 364);
             lblMaterialE.Name = "lblMaterialE";
             lblMaterialE.Size = new Size(69, 15);
             lblMaterialE.TabIndex = 13;
@@ -232,7 +232,7 @@
             // lblMaterialFu
             // 
             lblMaterialFu.AutoSize = true;
-            lblMaterialFu.Location = new Point(48, 411);
+            lblMaterialFu.Location = new Point(348, 364);
             lblMaterialFu.Name = "lblMaterialFu";
             lblMaterialFu.Size = new Size(76, 15);
             lblMaterialFu.TabIndex = 11;
@@ -241,7 +241,7 @@
             // lblMaterialFy
             // 
             lblMaterialFy.AutoSize = true;
-            lblMaterialFy.Location = new Point(48, 378);
+            lblMaterialFy.Location = new Point(230, 364);
             lblMaterialFy.Name = "lblMaterialFy";
             lblMaterialFy.Size = new Size(75, 15);
             lblMaterialFy.TabIndex = 10;
@@ -249,7 +249,7 @@
             // 
             // txtPlateWidth_mm
             // 
-            txtPlateWidth_mm.Location = new Point(162, 533);
+            txtPlateWidth_mm.Location = new Point(137, 404);
             txtPlateWidth_mm.Name = "txtPlateWidth_mm";
             txtPlateWidth_mm.Size = new Size(100, 23);
             txtPlateWidth_mm.TabIndex = 14;
@@ -257,7 +257,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(57, 541);
+            label4.Location = new Point(55, 407);
             label4.Name = "label4";
             label4.Size = new Size(47, 15);
             label4.TabIndex = 15;
@@ -266,7 +266,7 @@
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(57, 606);
+            label5.Location = new Point(53, 449);
             label5.Name = "label5";
             label5.Size = new Size(46, 15);
             label5.TabIndex = 16;
@@ -275,7 +275,7 @@
             // label6
             // 
             label6.AutoSize = true;
-            label6.Location = new Point(58, 639);
+            label6.Location = new Point(53, 497);
             label6.Name = "label6";
             label6.Size = new Size(46, 15);
             label6.TabIndex = 17;
@@ -283,14 +283,14 @@
             // 
             // txtEdgeDistanceA_mm
             // 
-            txtEdgeDistanceA_mm.Location = new Point(160, 603);
+            txtEdgeDistanceA_mm.Location = new Point(137, 446);
             txtEdgeDistanceA_mm.Name = "txtEdgeDistanceA_mm";
             txtEdgeDistanceA_mm.Size = new Size(100, 23);
             txtEdgeDistanceA_mm.TabIndex = 18;
             // 
             // txtSideDistanceC_mm
             // 
-            txtSideDistanceC_mm.Location = new Point(160, 639);
+            txtSideDistanceC_mm.Location = new Point(137, 497);
             txtSideDistanceC_mm.Name = "txtSideDistanceC_mm";
             txtSideDistanceC_mm.Size = new Size(100, 23);
             txtSideDistanceC_mm.TabIndex = 19;

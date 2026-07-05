@@ -225,9 +225,7 @@ namespace LascheApp
                 MaterialFy_Nmm2 = materialProps.Fy_Nmm2,
                 GammaM0 = 1.0,
             };
-
-            PadeyeBasicCheckResult result = PadeyeBasicChecker.Check(input);
-
+            
             PadeyeEcGeometryInput ecGeometryInput = new PadeyeEcGeometryInput
             {
                 F_Ed_kN = fEd_kN,
@@ -241,42 +239,75 @@ namespace LascheApp
                 SideDistanceC_mm = sideDistanceC_mm
             };
 
-            PadeyeEcGeometryResult ecGeometryResult =
-                PadeyeEcGeometryChecker.Check(ecGeometryInput);
-
-            bool padeyeOverallOk =
-                result.IsOk &&
-                ecGeometryResult.IsOk;
+            PadeyeCheckResult padeyeResult =
+                PadeyeChecker.Check(input, ecGeometryInput);
 
             txtBasicCheckResult.Text =
-                FormatPadeyeOverallResult(padeyeOverallOk) +
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatPadeyeBasicCheckResult(result) +
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatPadeyeEcGeometryResult(ecGeometryResult);
-
+                FormatPadeyeCheckResult(padeyeResult);
         }
-        private string FormatPadeyeOverallResult(bool isOk)
+        private string FormatPadeyeCheckResult(PadeyeCheckResult result)
+        {
+            return
+                FormatPadeyeOverallResult(result) +
+                Environment.NewLine +
+                Environment.NewLine +
+                FormatCheckSummary(result) +
+                Environment.NewLine +
+                Environment.NewLine +
+                FormatPadeyeBasicCheckResult(result.BasicResult) +
+                Environment.NewLine +
+                Environment.NewLine +
+                FormatPadeyeEcGeometryResult(result.EcGeometryResult);
+        }
+        private string FormatCheckSummary(PadeyeCheckResult result)
+        {
+            string text =
+                "Check summary\n" +
+                "-------------\n";
+
+            foreach (CheckItem item in result.GoverningCheckItems
+                         .OrderByDescending(i => i.Utilization))
+            {
+                string status = item.IsOk ? "OK" : "NOT OK";
+
+                text +=
+                    $"{status,-6}  η = {item.Utilization:0.000}  {item.Name}\n";
+            }
+
+            return text.TrimEnd();
+        }
+        private string FormatPadeyeOverallResult(PadeyeCheckResult result)
         {
             return
                 $"Padeye overall result\n" +
                 $"=====================\n" +
-                $"Overall result: {(isOk ? "OK" : "NOT OK")}";
+                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
+                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
+                $"Governing check: {result.GoverningCheckName}";
         }
+
         private string FormatPadeyeEcGeometryResult(PadeyeEcGeometryResult result)
         {
             PadeyeEcGeometryInput input = result.Input;
-
+            if (result.HasErrors)
+            {
+                return
+                    "EC geometry check\n" +
+                    "-----------------\n" +
+                    "Input error\n\n" +
+                    string.Join(Environment.NewLine, result.Errors);
+            }
             return
                 $"EC geometry check\n" +
                 $"-----------------\n" +
-                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n\n" +
+                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
+                $"Max utilization: η = {result.MaxUtilization:0.000}\n\n" +
+                $"Governing check: {result.GoverningCheckName}\n\n" +
 
                 $"Möglichkeit A\n" +
                 $"-------------\n" +
-                $"Result Möglichkeit A: {(result.MoglichkeitA_Ok ? "OK" : "NOT OK")}\n\n" +
+                $"Result Möglichkeit A: {(result.MoglichkeitA_Ok ? "OK" : "NOT OK")}\n" +
+                $"Max utilization A: η = {result.MoglichkeitA_MaxUtilization:0.000}\n\n" +
                 $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
                 $"fy = {input.Fy_Nmm2:0.0} N/mm²\n" +
                 $"gammaM0 = {input.GammaM0:0.00}\n" +
@@ -285,22 +316,23 @@ namespace LascheApp
 
                 $"a = {input.EdgeDistanceA_mm:0.0} mm\n" +
                 $"Required a = F_Ed * gammaM0 / (2 * t * fy) + 2*d0/3 = {result.RequiredEdgeDistanceA_mm:0.0} mm\n" +
-                $"Check a >= required a: {(result.EdgeDistanceA_Ok ? "OK" : "NOT OK")}\n\n" +
+                $"Check a >= required a: {(result.EdgeDistanceA_Ok ? "OK" : "NOT OK")}  η = {result.EdgeDistanceA_Utilization:0.000}\n\n" +
 
                 $"c = {input.SideDistanceC_mm:0.0} mm\n" +
                 $"Required c = F_Ed * gammaM0 / (2 * t * fy) + d0/3 = {result.RequiredSideDistanceC_mm:0.0} mm\n" +
-                $"Check c >= required c: {(result.SideDistanceC_Ok ? "OK" : "NOT OK")}\n\n" +
+                $"Check c >= required c: {(result.SideDistanceC_Ok ? "OK" : "NOT OK")}  η = {result.SideDistanceC_Utilization:0.000}\n\n" +
 
                 $"Möglichkeit B\n" +
                 $"-------------\n" +
-                $"Result Möglichkeit B: {(result.MoglichkeitB_Ok ? "OK" : "NOT OK")}\n\n" +
+                $"Result Möglichkeit B: {(result.MoglichkeitB_Ok ? "OK" : "NOT OK")}\n" +
+                $"Max utilization B: η = {result.MoglichkeitB_MaxUtilization:0.000}\n\n" +
                 $"t = {input.PlateThickness_mm:0.0} mm\n" +
                 $"Required t = 0.7 * sqrt(F_Ed * gammaM0 / fy) = {result.RequiredThickness_MoglichkeitB_mm:0.0} mm\n" +
-                $"Check t >= required t: {(result.ThicknessMoglichkeitB_Ok ? "OK" : "NOT OK")}\n\n" +
+                $"Check t >= required t: {(result.ThicknessMoglichkeitB_Ok ? "OK" : "NOT OK")}  η = {result.ThicknessMoglichkeitB_Utilization:0.000}\n\n" +
 
                 $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
                 $"Max d0 = 2.5 * t = {result.MaxHoleDiameter_MoglichkeitB_mm:0.0} mm\n" +
-                $"Check d0 <= 2.5 * t: {(result.HoleDiameterMoglichkeitB_Ok ? "OK" : "NOT OK")}";
+                $"Check d0 <= 2.5 * t: {(result.HoleDiameterMoglichkeitB_Ok ? "OK" : "NOT OK")}  η = {result.HoleDiameterMoglichkeitB_Utilization:0.000}";
         }
         private string FormatPadeyeBasicCheckResult(PadeyeBasicCheckResult result)
         {
@@ -316,21 +348,23 @@ namespace LascheApp
             return
                 $"Basic padeye check\n" +
                 $"------------------\n" +
-                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n\n" +
+                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
+                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
+                $"Governing check: {result.GoverningCheckName}\n\n" +
 
                 $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
                 $"WLL = {input.ShackleWLL_kN:0.00} kN\n" +
-                $"Check F_Ed <= WLL: {(result.WllOk ? "OK" : "NOT OK")}\n\n" +
+                $"Check F_Ed <= WLL: {(result.WllOk ? "OK" : "NOT OK")}  η = {result.WllUtilization:0.000}\n\n" +
 
                 $"Dpin = {input.ShackleDpin_mm:0.0} mm\n" +
                 $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
                 $"Required d0 = Dpin + {input.PinClearance_mm:0.0} mm = {result.RequiredHoleDiameter_mm:0.0} mm\n" +
-                $"Check d0 >= Dpin + clearance: {(result.HoleDiameterOk ? "OK" : "NOT OK")}\n\n" +
+                $"Check d0 >= Dpin + clearance: {(result.HoleDiameterOk ? "OK" : "NOT OK")}  η = {result.HoleDiameterUtilization:0.000}\n\n" +
 
                 $"B1 = {input.ShackleB1_mm:0.0} mm\n" +
                 $"t = {input.PlateThickness_mm:0.0} mm\n" +
                 $"Required t = 0.75 * B1 = {result.RequiredThickness_mm:0.0} mm\n" +
-                $"Check t >= 0.75 * B1: {(result.ThicknessOk ? "OK" : "NOT OK")}\n\n" +
+                $"Check t >= 0.75 * B1: {(result.ThicknessOk ? "OK" : "NOT OK")}  η = {result.ThicknessUtilization:0.000}\n\n" +
 
                 $"H_DNV = {input.ShackleH_DNV_mm:0.0} mm"+
                 $"\n\nGross section tension check\n" +
@@ -341,14 +375,14 @@ namespace LascheApp
                 $"A_gross = b * t = {result.GrossArea_mm2:0.0} mm²\n" +
                 $"Sigma_gross,Ed = F_Ed / A_gross = {result.SigmaGrossEd_Nmm2:0.0} N/mm²\n" +
                 $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
-                $"Check Sigma_gross,Ed <= Sigma_Rd: {(result.GrossSectionTensionOk ? "OK" : "NOT OK")}" +
+                $"Check Sigma_gross,Ed <= Sigma_Rd: {(result.GrossSectionTensionOk ? "OK" : "NOT OK")}  η = {result.GrossSectionTensionUtilization:0.000}" +
                 $"\n\nNet section tension check\n" +
                 $"-------------------------\n" +
                 $"b = {input.PlateWidth_mm:0.0} mm\n" +
                 $"A_net = (b - d0) * t = {result.NetArea_mm2:0.0} mm²\n" +
                 $"Sigma_Ed = F_Ed / A_net = {result.SigmaEd_Nmm2:0.0} N/mm²\n" +
                 $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
-                $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}" +
+                $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}  η = {result.NetSectionTensionUtilization:0.000}" +
 
                 $"\n\nPin bearing check\n" +
                 $"-----------------\n" +
@@ -357,7 +391,7 @@ namespace LascheApp
                 $"A_bearing = Dpin * t = {result.BearingArea_mm2:0.0} mm²\n" +
                 $"Sigma_bearing,Ed = F_Ed / A_bearing = {result.SigmaBearingEd_Nmm2:0.0} N/mm²\n" +
                 $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
-                $"Check Sigma_bearing,Ed <= Sigma_Rd: {(result.BearingOk ? "OK" : "NOT OK")}";
+                $"Check Sigma_bearing,Ed <= Sigma_Rd: {(result.BearingOk ? "OK" : "NOT OK")}  η = {result.BearingUtilization:0.000}";
         }
         private void btnSelectShackleByLoad_Click(object sender, EventArgs e)
         {
