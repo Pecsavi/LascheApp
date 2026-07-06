@@ -63,12 +63,6 @@
             double sigmaRd_Nmm2 =
                 input.MaterialFy_Nmm2 / input.GammaM0;
 
-            double bearingArea_mm2 =
-                input.ShackleDpin_mm * input.PlateThickness_mm;
-
-            double sigmaBearingEd_Nmm2 =
-                input.F_Ed_kN * 1000.0 / bearingArea_mm2;
-
             result.RequiredHoleDiameter_mm = requiredHoleDiameter_mm;
             result.RequiredThickness_mm = requiredThickness_mm;
 
@@ -88,11 +82,6 @@
             result.SigmaRd_Nmm2 = sigmaRd_Nmm2;
             result.NetSectionTensionOk = sigmaEd_Nmm2 <= sigmaRd_Nmm2;
             result.NetSectionTensionUtilization = sigmaEd_Nmm2 / sigmaRd_Nmm2;
-
-            result.BearingArea_mm2 = bearingArea_mm2;
-            result.SigmaBearingEd_Nmm2 = sigmaBearingEd_Nmm2;
-            result.BearingOk = sigmaBearingEd_Nmm2 <= sigmaRd_Nmm2;
-            result.BearingUtilization = sigmaBearingEd_Nmm2 / sigmaRd_Nmm2;
 
             return result;
         }

@@ -7,6 +7,10 @@ namespace LascheApp.Padeye
     public class PadeyeCheckInput
     {
         public double F_Ed_kN { get; set; }
+        public double F_Ed_ser_kN { get; set; }
+
+        public double E_Nmm2 { get; set; } = 210000.0;
+        public double GammaM6_ser { get; set; } = 1.0;
 
         public double PlateThickness_mm { get; set; }
         public double PlateWidth_mm { get; set; }
@@ -24,6 +28,10 @@ namespace LascheApp.Padeye
         public double ShackleH_DNV_mm { get; set; }
 
         public double PinClearance_mm { get; set; } = 2.0;
+
+        public bool IsReplaceablePin { get; set; } = true;
+
+
     }
     public class PadeyeCheckResult
     {
@@ -32,10 +40,13 @@ namespace LascheApp.Padeye
 
         public PadeyeOutOfPlaneResult OutOfPlaneResult { get; set; } = new();
 
+        public PadeyeBearingResult BearingResult { get; set; } = new();
+
         public bool IsOk =>
              BasicResult.IsOk &&
              EcGeometryResult.IsOk &&
-             OutOfPlaneResult.IsOk;
+             OutOfPlaneResult.IsOk &&
+             BearingResult.IsOk;
 
         public List<CheckItem> GoverningCheckItems
         {
@@ -63,6 +74,9 @@ namespace LascheApp.Padeye
                         IsOk = OutOfPlaneResult.IsOk
                     });
                 }
+
+                if (!BearingResult.HasErrors)
+                    items.AddRange(BearingResult.CheckItems);
 
                 return items;
             }

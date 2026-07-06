@@ -147,6 +147,12 @@ namespace LascheApp
                 return;
             }
 
+            if (!TryReadDouble(txtLoadSer_kN.Text, out double fEdSer_kN))
+            {
+                txtBasicCheckResult.Text = "Invalid input: F_Ed,ser [kN]";
+                return;
+            }
+
             if (!TryReadDouble(txtPlateThickness_mm.Text, out double t_mm))
             {
                 txtBasicCheckResult.Text = "Invalid input: t [mm]";
@@ -210,6 +216,7 @@ namespace LascheApp
             PadeyeCheckInput padeyeInput = new PadeyeCheckInput
             {
                 F_Ed_kN = fEd_kN,
+                F_Ed_ser_kN = fEdSer_kN,
 
                 PlateThickness_mm = t_mm,
                 PlateWidth_mm = plateWidth_mm,
@@ -219,14 +226,18 @@ namespace LascheApp
                 SideDistanceC_mm = sideDistanceC_mm,
 
                 Fy_Nmm2 = materialProps.Fy_Nmm2,
+                E_Nmm2 = materialProps.E_Nmm2,
                 GammaM0 = 1.0,
+                GammaM6_ser = 1.0,
 
                 ShackleWLL_kN = wll_kN,
                 ShackleDpin_mm = dpin_mm,
                 ShackleB1_mm = b1_mm,
                 ShackleH_DNV_mm = hDnv_mm,
 
-                PinClearance_mm = 2.0
+                PinClearance_mm = 2.0,
+
+                IsReplaceablePin = chkReplaceablePin.Checked
             };
 
             PadeyeCheckResult padeyeResult =
@@ -251,7 +262,58 @@ namespace LascheApp
                 FormatPadeyeEcGeometryResult(result.EcGeometryResult) +
                 Environment.NewLine +
                 Environment.NewLine +
-                FormatPadeyeOutOfPlaneResult(result.OutOfPlaneResult);
+                FormatPadeyeOutOfPlaneResult(result.OutOfPlaneResult) +
+                Environment.NewLine +
+                Environment.NewLine +
+                FormatPadeyeBearingResult(result.BearingResult);
+        }
+        private string FormatPadeyeBearingResult(PadeyeBearingResult result)
+        {
+            PadeyeBearingInput input = result.Input;
+
+            if (result.HasErrors)
+            {
+                return
+                    "Pin-hole bearing check\n" +
+                    "----------------------\n" +
+                    "Input error\n\n" +
+                    string.Join(Environment.NewLine, result.Errors);
+            }
+
+            string text =
+                $"Pin-hole bearing check\n" +
+                $"----------------------\n" +
+                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
+                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
+                $"Governing check: {result.GoverningCheckName}\n" +
+                $"Replaceable pin checks: {(input.IsReplaceablePin ? "active" : "not active")}\n\n" +
+
+                $"Pin-hole bearing design\n" +
+                $"-----------------------\n" +
+                $"Fb,Ed = {input.F_Ed_kN:0.00} kN\n" +
+                $"Fb,Rd = 1.5 * t * d * fy / gammaM0 = {result.FbRd_kN:0.00} kN\n" +
+                $"Check Fb,Ed <= Fb,Rd: {(result.BearingDesignOk ? "OK" : "NOT OK")}  η = {result.BearingDesignUtilization:0.000}";
+
+            if (input.IsReplaceablePin)
+            {
+                text +=
+                    $"\n\nReplaceable pin service bearing\n" +
+                    $"-------------------------------\n" +
+                    $"Fb,Ed,ser = {input.F_Ed_ser_kN:0.00} kN\n" +
+                    $"Fb,Rd,ser = 0.6 * t * d * fy / gammaM6,ser = {result.FbRdSer_kN:0.00} kN\n" +
+                    $"Check Fb,Ed,ser <= Fb,Rd,ser: {(result.BearingServiceOk ? "OK" : "NOT OK")}  η = {result.BearingServiceUtilization:0.000}\n\n" +
+
+                    $"Replaceable pin contact stress\n" +
+                    $"------------------------------\n" +
+                    $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
+                    $"d = {input.PinDiameter_mm:0.0} mm\n" +
+                    $"E = {input.E_Nmm2:0.0} N/mm²\n" +
+                    $"sigma_h,Ed = 0.591 * sqrt(E * Fb,Ed,ser * (d0 - d) / (d² * t)) = {result.SigmaHEd_Nmm2:0.0} N/mm²\n" +
+                    $"fh,Rd = 2.5 * fy / gammaM6,ser = {result.FhRd_Nmm2:0.0} N/mm²\n" +
+                    $"Check sigma_h,Ed <= fh,Rd: {(result.HolePinStressOk ? "OK" : "NOT OK")}  η = {result.HolePinStressUtilization:0.000}";
+            }
+
+            return text;
         }
 
         private string FormatPadeyeOutOfPlaneResult(PadeyeOutOfPlaneResult result)
@@ -392,9 +454,9 @@ namespace LascheApp
                 $"Required t = 0.75 * B1 = {result.RequiredThickness_mm:0.0} mm\n" +
                 $"Check t >= 0.75 * B1: {(result.ThicknessOk ? "OK" : "NOT OK")}  η = {result.ThicknessUtilization:0.000}\n\n" +
 
-                $"H_DNV = {input.ShackleH_DNV_mm:0.0} mm"+
+                $"H_DNV = {input.ShackleH_DNV_mm:0.0} mm" +
                 $"\n\nGross section tension check\n" +
-                
+
                $"---------------------------\n" +
                 $"b = {input.PlateWidth_mm:0.0} mm\n" +
                 $"t = {input.PlateThickness_mm:0.0} mm\n" +
@@ -408,16 +470,8 @@ namespace LascheApp
                 $"A_net = (b - d0) * t = {result.NetArea_mm2:0.0} mm²\n" +
                 $"Sigma_Ed = F_Ed / A_net = {result.SigmaEd_Nmm2:0.0} N/mm²\n" +
                 $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
-                $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}  η = {result.NetSectionTensionUtilization:0.000}" +
+                $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}  η = {result.NetSectionTensionUtilization:0.000}";
 
-                $"\n\nPin bearing check\n" +
-                $"-----------------\n" +
-                $"Dpin = {input.ShackleDpin_mm:0.0} mm\n" +
-                $"t = {input.PlateThickness_mm:0.0} mm\n" +
-                $"A_bearing = Dpin * t = {result.BearingArea_mm2:0.0} mm²\n" +
-                $"Sigma_bearing,Ed = F_Ed / A_bearing = {result.SigmaBearingEd_Nmm2:0.0} N/mm²\n" +
-                $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
-                $"Check Sigma_bearing,Ed <= Sigma_Rd: {(result.BearingOk ? "OK" : "NOT OK")}  η = {result.BearingUtilization:0.000}";
         }
         private void btnSelectShackleByLoad_Click(object sender, EventArgs e)
         {

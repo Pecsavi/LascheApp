@@ -47,6 +47,24 @@
                 GammaM0 = input.GammaM0
             };
 
+            PadeyeBearingInput bearingInput = new PadeyeBearingInput
+            {
+                F_Ed_kN = input.F_Ed_kN,
+                F_Ed_ser_kN = input.F_Ed_ser_kN,
+
+                PlateThickness_mm = input.PlateThickness_mm,
+                HoleDiameter_mm = input.HoleDiameter_mm,
+                PinDiameter_mm = input.ShackleDpin_mm,
+
+                Fy_Nmm2 = input.Fy_Nmm2,
+                E_Nmm2 = input.E_Nmm2,
+
+                GammaM0 = input.GammaM0,
+                GammaM6_ser = input.GammaM6_ser,
+
+                IsReplaceablePin = input.IsReplaceablePin
+            };
+
             PadeyeBasicCheckResult basicResult =
                 PadeyeBasicChecker.Check(basicInput);
 
@@ -56,11 +74,15 @@
             PadeyeOutOfPlaneResult outOfPlaneResult =
                 PadeyeOutOfPlaneChecker.Check(outOfPlaneInput);
 
+            PadeyeBearingResult bearingResult =
+                PadeyeBearingChecker.Check(bearingInput);
+
             return new PadeyeCheckResult
             {
                 BasicResult = basicResult,
                 EcGeometryResult = ecGeometryResult,
-                OutOfPlaneResult = outOfPlaneResult
+                OutOfPlaneResult = outOfPlaneResult,
+                BearingResult = bearingResult
             };
         }
     }

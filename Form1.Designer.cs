@@ -55,12 +55,15 @@
             label6 = new Label();
             txtEdgeDistanceA_mm = new TextBox();
             txtSideDistanceC_mm = new TextBox();
+            txtLoadSer_kN = new TextBox();
+            label7 = new Label();
+            chkReplaceablePin = new CheckBox();
             SuspendLayout();
             // 
             // cmbShackles
             // 
             cmbShackles.FormattingEnabled = true;
-            cmbShackles.Location = new Point(162, 33);
+            cmbShackles.Location = new Point(157, 235);
             cmbShackles.Name = "cmbShackles";
             cmbShackles.Size = new Size(121, 23);
             cmbShackles.TabIndex = 0;
@@ -69,7 +72,7 @@
             // lblShackleWll
             // 
             lblShackleWll.AutoSize = true;
-            lblShackleWll.Location = new Point(42, 36);
+            lblShackleWll.Location = new Point(37, 238);
             lblShackleWll.Name = "lblShackleWll";
             lblShackleWll.Size = new Size(77, 15);
             lblShackleWll.TabIndex = 1;
@@ -78,7 +81,7 @@
             // lblShackleDpin
             // 
             lblShackleDpin.AutoSize = true;
-            lblShackleDpin.Location = new Point(42, 69);
+            lblShackleDpin.Location = new Point(37, 271);
             lblShackleDpin.Name = "lblShackleDpin";
             lblShackleDpin.Size = new Size(85, 15);
             lblShackleDpin.TabIndex = 2;
@@ -87,7 +90,7 @@
             // lblShackleB1
             // 
             lblShackleB1.AutoSize = true;
-            lblShackleB1.Location = new Point(42, 103);
+            lblShackleB1.Location = new Point(37, 305);
             lblShackleB1.Name = "lblShackleB1";
             lblShackleB1.Size = new Size(73, 15);
             lblShackleB1.TabIndex = 3;
@@ -96,7 +99,7 @@
             // lblShackleHDnv
             // 
             lblShackleHDnv.AutoSize = true;
-            lblShackleHDnv.Location = new Point(42, 133);
+            lblShackleHDnv.Location = new Point(37, 335);
             lblShackleHDnv.Name = "lblShackleHDnv";
             lblShackleHDnv.Size = new Size(90, 15);
             lblShackleHDnv.TabIndex = 3;
@@ -105,7 +108,7 @@
             // lblShackleInfo
             // 
             lblShackleInfo.AutoSize = true;
-            lblShackleInfo.Location = new Point(42, 167);
+            lblShackleInfo.Location = new Point(37, 369);
             lblShackleInfo.Name = "lblShackleInfo";
             lblShackleInfo.Size = new Size(81, 15);
             lblShackleInfo.TabIndex = 3;
@@ -113,7 +116,7 @@
             // 
             // button1
             // 
-            button1.Location = new Point(433, 32);
+            button1.Location = new Point(428, 234);
             button1.Name = "button1";
             button1.Size = new Size(177, 23);
             button1.TabIndex = 4;
@@ -123,31 +126,34 @@
             // 
             // txtLoad_kN
             // 
-            txtLoad_kN.Location = new Point(106, 212);
+            txtLoad_kN.Location = new Point(122, 17);
             txtLoad_kN.Name = "txtLoad_kN";
             txtLoad_kN.Size = new Size(100, 23);
             txtLoad_kN.TabIndex = 5;
+            txtLoad_kN.Text = "51";
             // 
             // txtPlateThickness_mm
             // 
-            txtPlateThickness_mm.Location = new Point(106, 263);
+            txtPlateThickness_mm.Location = new Point(122, 96);
             txtPlateThickness_mm.Name = "txtPlateThickness_mm";
             txtPlateThickness_mm.Size = new Size(100, 23);
             txtPlateThickness_mm.TabIndex = 6;
+            txtPlateThickness_mm.Text = "30";
             txtPlateThickness_mm.TextChanged += txtPlateThickness_mm_TextChanged;
             // 
             // txtHoleDiameter_mm
             // 
             txtHoleDiameter_mm.AcceptsReturn = true;
-            txtHoleDiameter_mm.Location = new Point(106, 311);
+            txtHoleDiameter_mm.Location = new Point(122, 144);
             txtHoleDiameter_mm.Name = "txtHoleDiameter_mm";
             txtHoleDiameter_mm.Size = new Size(100, 23);
             txtHoleDiameter_mm.TabIndex = 7;
+            txtHoleDiameter_mm.Text = "27";
             // 
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(42, 220);
+            label1.Location = new Point(37, 25);
             label1.Name = "label1";
             label1.Size = new Size(57, 15);
             label1.TabIndex = 3;
@@ -156,7 +162,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(42, 266);
+            label2.Location = new Point(37, 99);
             label2.Name = "label2";
             label2.Size = new Size(44, 15);
             label2.TabIndex = 3;
@@ -165,7 +171,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(42, 311);
+            label3.Location = new Point(37, 144);
             label3.Name = "label3";
             label3.Size = new Size(53, 15);
             label3.TabIndex = 3;
@@ -173,7 +179,7 @@
             // 
             // btnCheckBasicPadeye
             // 
-            btnCheckBasicPadeye.Location = new Point(53, 546);
+            btnCheckBasicPadeye.Location = new Point(48, 602);
             btnCheckBasicPadeye.Name = "btnCheckBasicPadeye";
             btnCheckBasicPadeye.Size = new Size(177, 23);
             btnCheckBasicPadeye.TabIndex = 4;
@@ -183,7 +189,7 @@
             // 
             // txtBasicCheckResult
             // 
-            txtBasicCheckResult.Location = new Point(55, 575);
+            txtBasicCheckResult.Location = new Point(50, 631);
             txtBasicCheckResult.Multiline = true;
             txtBasicCheckResult.Name = "txtBasicCheckResult";
             txtBasicCheckResult.ReadOnly = true;
@@ -194,7 +200,7 @@
             // 
             // btnSelectShackleByLoad
             // 
-            btnSelectShackleByLoad.Location = new Point(230, 311);
+            btnSelectShackleByLoad.Location = new Point(246, 144);
             btnSelectShackleByLoad.Name = "btnSelectShackleByLoad";
             btnSelectShackleByLoad.Size = new Size(177, 23);
             btnSelectShackleByLoad.TabIndex = 4;
@@ -205,7 +211,7 @@
             // cmbMaterials
             // 
             cmbMaterials.FormattingEnabled = true;
-            cmbMaterials.Location = new Point(42, 361);
+            cmbMaterials.Location = new Point(37, 417);
             cmbMaterials.Name = "cmbMaterials";
             cmbMaterials.Size = new Size(121, 23);
             cmbMaterials.TabIndex = 9;
@@ -214,7 +220,7 @@
             // lblMaterialBetaW
             // 
             lblMaterialBetaW.AutoSize = true;
-            lblMaterialBetaW.Location = new Point(611, 364);
+            lblMaterialBetaW.Location = new Point(606, 420);
             lblMaterialBetaW.Name = "lblMaterialBetaW";
             lblMaterialBetaW.Size = new Size(97, 15);
             lblMaterialBetaW.TabIndex = 12;
@@ -223,7 +229,7 @@
             // lblMaterialE
             // 
             lblMaterialE.AutoSize = true;
-            lblMaterialE.Location = new Point(477, 364);
+            lblMaterialE.Location = new Point(472, 420);
             lblMaterialE.Name = "lblMaterialE";
             lblMaterialE.Size = new Size(69, 15);
             lblMaterialE.TabIndex = 13;
@@ -232,7 +238,7 @@
             // lblMaterialFu
             // 
             lblMaterialFu.AutoSize = true;
-            lblMaterialFu.Location = new Point(348, 364);
+            lblMaterialFu.Location = new Point(343, 420);
             lblMaterialFu.Name = "lblMaterialFu";
             lblMaterialFu.Size = new Size(76, 15);
             lblMaterialFu.TabIndex = 11;
@@ -241,7 +247,7 @@
             // lblMaterialFy
             // 
             lblMaterialFy.AutoSize = true;
-            lblMaterialFy.Location = new Point(230, 364);
+            lblMaterialFy.Location = new Point(225, 420);
             lblMaterialFy.Name = "lblMaterialFy";
             lblMaterialFy.Size = new Size(75, 15);
             lblMaterialFy.TabIndex = 10;
@@ -249,15 +255,16 @@
             // 
             // txtPlateWidth_mm
             // 
-            txtPlateWidth_mm.Location = new Point(137, 404);
+            txtPlateWidth_mm.Location = new Point(132, 460);
             txtPlateWidth_mm.Name = "txtPlateWidth_mm";
             txtPlateWidth_mm.Size = new Size(100, 23);
             txtPlateWidth_mm.TabIndex = 14;
+            txtPlateWidth_mm.Text = "100";
             // 
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(55, 407);
+            label4.Location = new Point(50, 463);
             label4.Name = "label4";
             label4.Size = new Size(47, 15);
             label4.TabIndex = 15;
@@ -266,7 +273,7 @@
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(53, 449);
+            label5.Location = new Point(48, 505);
             label5.Name = "label5";
             label5.Size = new Size(46, 15);
             label5.TabIndex = 16;
@@ -275,7 +282,7 @@
             // label6
             // 
             label6.AutoSize = true;
-            label6.Location = new Point(53, 497);
+            label6.Location = new Point(48, 553);
             label6.Name = "label6";
             label6.Size = new Size(46, 15);
             label6.TabIndex = 17;
@@ -283,23 +290,57 @@
             // 
             // txtEdgeDistanceA_mm
             // 
-            txtEdgeDistanceA_mm.Location = new Point(137, 446);
+            txtEdgeDistanceA_mm.Location = new Point(132, 502);
             txtEdgeDistanceA_mm.Name = "txtEdgeDistanceA_mm";
             txtEdgeDistanceA_mm.Size = new Size(100, 23);
             txtEdgeDistanceA_mm.TabIndex = 18;
+            txtEdgeDistanceA_mm.Text = "60";
             // 
             // txtSideDistanceC_mm
             // 
-            txtSideDistanceC_mm.Location = new Point(137, 497);
+            txtSideDistanceC_mm.Location = new Point(132, 553);
             txtSideDistanceC_mm.Name = "txtSideDistanceC_mm";
             txtSideDistanceC_mm.Size = new Size(100, 23);
             txtSideDistanceC_mm.TabIndex = 19;
+            txtSideDistanceC_mm.Text = "40";
+            // 
+            // txtLoadSer_kN
+            // 
+            txtLoadSer_kN.Location = new Point(122, 53);
+            txtLoadSer_kN.Name = "txtLoadSer_kN";
+            txtLoadSer_kN.Size = new Size(100, 23);
+            txtLoadSer_kN.TabIndex = 21;
+            txtLoadSer_kN.Text = "50";
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(37, 61);
+            label7.Name = "label7";
+            label7.Size = new Size(75, 15);
+            label7.TabIndex = 20;
+            label7.Text = "F_Ed,ser [kN]";
+            // 
+            // chkReplaceablePin
+            // 
+            chkReplaceablePin.AutoSize = true;
+            chkReplaceablePin.Checked = true;
+            chkReplaceablePin.CheckState = CheckState.Checked;
+            chkReplaceablePin.Location = new Point(496, 33);
+            chkReplaceablePin.Name = "chkReplaceablePin";
+            chkReplaceablePin.Size = new Size(148, 19);
+            chkReplaceablePin.TabIndex = 22;
+            chkReplaceablePin.Text = "Replaceable pin checks";
+            chkReplaceablePin.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 889);
+            Controls.Add(chkReplaceablePin);
+            Controls.Add(txtLoadSer_kN);
+            Controls.Add(label7);
             Controls.Add(txtSideDistanceC_mm);
             Controls.Add(txtEdgeDistanceA_mm);
             Controls.Add(label6);
@@ -363,5 +404,8 @@
         private Label label6;
         private TextBox txtEdgeDistanceA_mm;
         private TextBox txtSideDistanceC_mm;
+        private TextBox txtLoadSer_kN;
+        private Label label7;
+        private CheckBox chkReplaceablePin;
     }
 }

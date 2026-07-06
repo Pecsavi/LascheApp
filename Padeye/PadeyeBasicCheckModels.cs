@@ -39,10 +39,7 @@ namespace LascheApp.Padeye
         public double SigmaEd_Nmm2 { get; set; }
         public double SigmaRd_Nmm2 { get; set; }
         public bool NetSectionTensionOk { get; set; }
-        public double BearingArea_mm2 { get; set; }
-        public double SigmaBearingEd_Nmm2 { get; set; }
-
-        public bool BearingOk { get; set; }
+     
 
         public List<string> Errors { get; set; } = new();
 
@@ -53,7 +50,7 @@ namespace LascheApp.Padeye
 
         public double GrossSectionTensionUtilization { get; set; }
         public double NetSectionTensionUtilization { get; set; }
-        public double BearingUtilization { get; set; }
+       
 
         public double MaxUtilization =>
             CheckItems.Count == 0 ? 0.0 : CheckItems.Max(i => i.Utilization);
@@ -64,8 +61,7 @@ namespace LascheApp.Padeye
             HoleDiameterOk &&
             ThicknessOk &&
             GrossSectionTensionOk &&
-            NetSectionTensionOk &&
-            BearingOk;
+            NetSectionTensionOk;
 
         public string GoverningCheckName =>
          CheckItems
@@ -108,12 +104,7 @@ namespace LascheApp.Padeye
                         Utilization = NetSectionTensionUtilization,
                         IsOk = NetSectionTensionOk
                     },
-                    new CheckItem
-                    {
-                        Name = "Pin bearing",
-                        Utilization = BearingUtilization,
-                        IsOk = BearingOk
-                    }
+                   
                 };
             }
         }
