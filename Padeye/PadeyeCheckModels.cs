@@ -6,6 +6,7 @@ namespace LascheApp.Padeye
 {
     public class PadeyeCheckInput
     {
+        public LugType LugType { get; set; } = LugType.TransportLug;
         public double F_Ed_kN { get; set; }
         public double F_Ed_ser_kN { get; set; }
 

@@ -1,6 +1,7 @@
 ﻿using LascheApp.Materials;
 using LascheApp.Shackles;
 using LascheApp.Padeye;
+using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System;
@@ -20,6 +21,7 @@ namespace LascheApp
         {
             return cmbMaterials.SelectedItem as MaterialGrade;
         }
+        
         private void Form1_Load(object sender, EventArgs e)
         {
             string dataDirectory = Path.Combine(
@@ -37,10 +39,12 @@ namespace LascheApp
 
             LoadShackleComboBox();
             LoadMaterialComboBox();
+            LoadLugTypeComboBox();
 
             UpdateSelectedShackleInfo();
             UpdateSelectedMaterialInfo();
         }
+       
         private void LoadShackleComboBox()
         {
             if (_shackleDatabase == null)
@@ -201,6 +205,18 @@ namespace LascheApp
                 txtBasicCheckResult.Text = "Material properties not available for this thickness.";
                 return;
             }
+            LugType lugType = GetSelectedLugType();
+
+            if (lugType == LugType.TensionLug)
+            {
+                txtBasicCheckResult.Text =
+                    "Tension Lug verification\n" +
+                    "========================\n" +
+                    "Not implemented yet.\n\n" +
+                    "The Tension Lug workflow will use a separate user-defined pin, pin material selection and EC3 pin verification.";
+
+                return;
+            }
 
             bool hasShackle = TryGetSelectedShackleGeometry(
                 out double dpin_mm,
@@ -213,8 +229,12 @@ namespace LascheApp
                 txtBasicCheckResult.Text = "No shackle selected.";
                 return;
             }
+
+
             PadeyeCheckInput padeyeInput = new PadeyeCheckInput
             {
+                LugType = lugType,
+
                 F_Ed_kN = fEd_kN,
                 F_Ed_ser_kN = fEdSer_kN,
 
@@ -246,6 +266,36 @@ namespace LascheApp
             txtBasicCheckResult.Text =
                 FormatPadeyeCheckResult(padeyeResult);
 
+        }
+        private LugType GetSelectedLugType()
+        {
+            if (cmbLugType.SelectedValue is LugType lugType)
+                return lugType;
+
+            return LugType.TransportLug;
+        }
+        private void LoadLugTypeComboBox()
+        {
+            cmbLugType.DataSource = null;
+
+            cmbLugType.DataSource = new List<KeyValuePair<LugType, string>>
+            {
+                new KeyValuePair<LugType, string>(LugType.TransportLug, "Transport Lug"),
+                new KeyValuePair<LugType, string>(LugType.TensionLug, "Tension Lug")
+            };
+
+            cmbLugType.DisplayMember = "Value";
+            cmbLugType.ValueMember = "Key";
+            cmbLugType.SelectedValue = LugType.TransportLug;
+        }
+        private string FormatLugType(LugType lugType)
+        {
+            return lugType switch
+            {
+                LugType.TransportLug => "Transport Lug",
+                LugType.TensionLug => "Tension Lug",
+                _ => lugType.ToString()
+            };
         }
         private string FormatPadeyeCheckResult(PadeyeCheckResult result)
         {
