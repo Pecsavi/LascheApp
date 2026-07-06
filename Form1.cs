@@ -271,11 +271,41 @@ namespace LascheApp
 
             if (lugType == LugType.TensionLug)
             {
+                if (!TryReadDouble(txtTensionPinDiameter_mm.Text, out double tensionPinDiameter_mm))
+                {
+                    txtBasicCheckResult.Text = "Invalid input: pin diameter d [mm]";
+                    return;
+                }
+
+                MaterialGrade? pinMaterial = GetSelectedPinMaterial();
+
+                if (pinMaterial == null)
+                {
+                    txtBasicCheckResult.Text = "No pin material selected.";
+                    return;
+                }
+
+                MaterialPropertiesAtThickness pinMaterialProps;
+
+                try
+                {
+                    pinMaterialProps = _materialDatabase!.GetProperties(pinMaterial.Id, tensionPinDiameter_mm);
+                }
+                catch
+                {
+                    txtBasicCheckResult.Text = "Pin material properties not available for this diameter.";
+                    return;
+                }
+
                 txtBasicCheckResult.Text =
                     "Tension Lug verification\n" +
                     "========================\n" +
                     "Not implemented yet.\n\n" +
-                    "The Tension Lug workflow will use a separate user-defined pin, pin material selection and EC3 pin verification.";
+                    $"Pin diameter d = {tensionPinDiameter_mm:0.0} mm\n" +
+                    $"Pin material = {pinMaterial.Name}\n" +
+                    $"fy,p = {pinMaterialProps.Fy_Nmm2:0.0} N/mm²\n" +
+                    $"fu,p = {pinMaterialProps.Fu_Nmm2:0.0} N/mm²\n\n" +
+                    "Next step: EC3 pin verification.";
 
                 return;
             }
@@ -670,6 +700,16 @@ namespace LascheApp
         private void txtPlateThickness_mm_TextChanged(object sender, EventArgs e)
         {
             UpdateSelectedMaterialInfo();
+        }
+
+        private void cmbPinMaterials_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateSelectedPinMaterialInfo();
+        }
+
+        private void txtTensionPinDiameter_mm_TextChanged(object sender, EventArgs e)
+        {
+            UpdateSelectedPinMaterialInfo();
         }
     }
 }

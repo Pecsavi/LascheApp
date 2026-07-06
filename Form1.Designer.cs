@@ -365,6 +365,7 @@
             txtTensionPinDiameter_mm.Size = new Size(100, 23);
             txtTensionPinDiameter_mm.TabIndex = 25;
             txtTensionPinDiameter_mm.Text = "25";
+            txtTensionPinDiameter_mm.TextChanged += txtTensionPinDiameter_mm_TextChanged;
             // 
             // label9
             // 
@@ -382,6 +383,7 @@
             cmbPinMaterials.Name = "cmbPinMaterials";
             cmbPinMaterials.Size = new Size(121, 23);
             cmbPinMaterials.TabIndex = 27;
+            cmbPinMaterials.SelectedIndexChanged += cmbPinMaterials_SelectedIndexChanged;
             // 
             // label10
             // 
