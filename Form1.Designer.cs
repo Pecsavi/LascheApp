@@ -60,6 +60,12 @@
             chkReplaceablePin = new CheckBox();
             cmbLugType = new ComboBox();
             label8 = new Label();
+            txtTensionPinDiameter_mm = new TextBox();
+            label9 = new Label();
+            cmbPinMaterials = new ComboBox();
+            label10 = new Label();
+            lblPinFy = new Label();
+            lblPinFu = new Label();
             SuspendLayout();
             // 
             // cmbShackles
@@ -328,7 +334,7 @@
             chkReplaceablePin.AutoSize = true;
             chkReplaceablePin.Checked = true;
             chkReplaceablePin.CheckState = CheckState.Checked;
-            chkReplaceablePin.Location = new Point(494, 66);
+            chkReplaceablePin.Location = new Point(553, 181);
             chkReplaceablePin.Name = "chkReplaceablePin";
             chkReplaceablePin.Size = new Size(148, 19);
             chkReplaceablePin.TabIndex = 22;
@@ -352,11 +358,69 @@
             label8.TabIndex = 24;
             label8.Text = "Lug type";
             // 
+            // txtTensionPinDiameter_mm
+            // 
+            txtTensionPinDiameter_mm.Location = new Point(565, 23);
+            txtTensionPinDiameter_mm.Name = "txtTensionPinDiameter_mm";
+            txtTensionPinDiameter_mm.Size = new Size(100, 23);
+            txtTensionPinDiameter_mm.TabIndex = 25;
+            txtTensionPinDiameter_mm.Text = "25";
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(426, 23);
+            label9.Name = "label9";
+            label9.Size = new Size(117, 15);
+            label9.TabIndex = 26;
+            label9.Text = "Pin diameter d [mm]";
+            // 
+            // cmbPinMaterials
+            // 
+            cmbPinMaterials.FormattingEnabled = true;
+            cmbPinMaterials.Location = new Point(565, 58);
+            cmbPinMaterials.Name = "cmbPinMaterials";
+            cmbPinMaterials.Size = new Size(121, 23);
+            cmbPinMaterials.TabIndex = 27;
+            // 
+            // label10
+            // 
+            label10.AutoSize = true;
+            label10.Location = new Point(426, 58);
+            label10.Name = "label10";
+            label10.Size = new Size(70, 15);
+            label10.TabIndex = 26;
+            label10.Text = "Pin material";
+            // 
+            // lblPinFy
+            // 
+            lblPinFy.AutoSize = true;
+            lblPinFy.Location = new Point(426, 94);
+            lblPinFy.Name = "lblPinFy";
+            lblPinFy.Size = new Size(46, 15);
+            lblPinFy.TabIndex = 28;
+            lblPinFy.Text = "fy,p = -";
+            // 
+            // lblPinFu
+            // 
+            lblPinFu.AutoSize = true;
+            lblPinFu.Location = new Point(426, 129);
+            lblPinFu.Name = "lblPinFu";
+            lblPinFu.Size = new Size(47, 15);
+            lblPinFu.TabIndex = 29;
+            lblPinFu.Text = "fu,p = -";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 889);
+            Controls.Add(lblPinFu);
+            Controls.Add(lblPinFy);
+            Controls.Add(cmbPinMaterials);
+            Controls.Add(label10);
+            Controls.Add(label9);
+            Controls.Add(txtTensionPinDiameter_mm);
             Controls.Add(label8);
             Controls.Add(cmbLugType);
             Controls.Add(chkReplaceablePin);
@@ -430,5 +494,11 @@
         private CheckBox chkReplaceablePin;
         private ComboBox cmbLugType;
         private Label label8;
+        private TextBox txtTensionPinDiameter_mm;
+        private Label label9;
+        private ComboBox cmbPinMaterials;
+        private Label label10;
+        private Label lblPinFy;
+        private Label lblPinFu;
     }
 }

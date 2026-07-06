@@ -21,7 +21,14 @@ namespace LascheApp
         {
             return cmbMaterials.SelectedItem as MaterialGrade;
         }
-        
+        private MaterialGrade? GetSelectedPinMaterial()
+        {
+            if (cmbPinMaterials.SelectedItem is MaterialGrade material)
+                return material;
+
+            return null;
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             string dataDirectory = Path.Combine(
@@ -40,11 +47,66 @@ namespace LascheApp
             LoadShackleComboBox();
             LoadMaterialComboBox();
             LoadLugTypeComboBox();
+            LoadPinMaterialComboBox();
 
             UpdateSelectedShackleInfo();
             UpdateSelectedMaterialInfo();
+            UpdateSelectedPinMaterialInfo();
         }
-       
+        private void UpdateSelectedPinMaterialInfo()
+        {
+            MaterialGrade? pinMaterial = GetSelectedPinMaterial();
+
+            if (pinMaterial == null)
+            {
+                lblPinFy.Text = "fy,p = -";
+                lblPinFu.Text = "fu,p = -";
+                return;
+            }
+
+            if (!TryReadDouble(txtTensionPinDiameter_mm.Text, out double pinDiameter_mm))
+            {
+                lblPinFy.Text = "fy,p = -";
+                lblPinFu.Text = "fu,p = -";
+                return;
+            }
+
+            try
+            {
+                MaterialPropertiesAtThickness props =
+                    _materialDatabase!.GetProperties(pinMaterial.Id, pinDiameter_mm);
+
+                lblPinFy.Text = $"fy,p = {props.Fy_Nmm2:0} N/mm²";
+                lblPinFu.Text = $"fu,p = {props.Fu_Nmm2:0} N/mm²";
+            }
+            catch
+            {
+                lblPinFy.Text = "fy,p = n/a";
+                lblPinFu.Text = "fu,p = n/a";
+            }
+        }
+        private void LoadPinMaterialComboBox()
+        {
+            if (_materialDatabase == null)
+                return;
+
+            cmbPinMaterials.DataSource = null;
+
+            cmbPinMaterials.DataSource = _materialDatabase.Materials
+                .OrderBy(m => m.Name)
+                .ToList();
+
+            cmbPinMaterials.DisplayMember = "Name";
+            cmbPinMaterials.ValueMember = "Id";
+
+            MaterialGrade? defaultPinMaterial = _materialDatabase.Materials
+                .FirstOrDefault(m => m.Id == "C45E_QT")
+                ?? _materialDatabase.Materials.FirstOrDefault(m => m.Id == "C45E")
+                ?? _materialDatabase.Materials.FirstOrDefault();
+
+            if (defaultPinMaterial != null)
+                cmbPinMaterials.SelectedValue = defaultPinMaterial.Id;
+        }
         private void LoadShackleComboBox()
         {
             if (_shackleDatabase == null)
