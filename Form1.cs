@@ -277,6 +277,18 @@ namespace LascheApp
                     return;
                 }
 
+                if (!TryReadDouble(txtPinMoment_kNmm.Text, out double pinMoment_kNmm))
+                {
+                    txtBasicCheckResult.Text = "Invalid input: M_Ed [kNmm]";
+                    return;
+                }
+
+                if (!TryReadDouble(txtPinMomentSer_kNmm.Text, out double pinMomentSer_kNmm))
+                {
+                    txtBasicCheckResult.Text = "Invalid input: M_Ed,ser [kNmm]";
+                    return;
+                }
+
                 MaterialGrade? pinMaterial = GetSelectedPinMaterial();
 
                 if (pinMaterial == null)
@@ -297,15 +309,33 @@ namespace LascheApp
                     return;
                 }
 
+                PinCheckInput pinInput = new PinCheckInput
+                {
+                    F_Ed_kN = fEd_kN,
+                    F_Ed_ser_kN = fEdSer_kN,
+
+                    M_Ed_kNmm = pinMoment_kNmm,
+                    M_Ed_ser_kNmm = pinMomentSer_kNmm,
+
+                    PinDiameter_mm = tensionPinDiameter_mm,
+
+                    PinFy_Nmm2 = pinMaterialProps.Fy_Nmm2,
+                    PinFu_Nmm2 = pinMaterialProps.Fu_Nmm2,
+
+                    GammaM0 = 1.0,
+                    GammaM2 = 1.25,
+                    GammaM6_ser = 1.0,
+
+                    IsReplaceablePin = chkReplaceablePin.Checked
+                };
+
+                PinCheckResult pinResult = PinChecker.Check(pinInput);
+
                 txtBasicCheckResult.Text =
                     "Tension Lug verification\n" +
-                    "========================\n" +
-                    "Not implemented yet.\n\n" +
-                    $"Pin diameter d = {tensionPinDiameter_mm:0.0} mm\n" +
-                    $"Pin material = {pinMaterial.Name}\n" +
-                    $"fy,p = {pinMaterialProps.Fy_Nmm2:0.0} N/mm²\n" +
-                    $"fu,p = {pinMaterialProps.Fu_Nmm2:0.0} N/mm²\n\n" +
-                    "Next step: EC3 pin verification.";
+                    "========================\n\n" +
+                    $"Pin material = {pinMaterial.Name}\n\n" +
+                    FormatPinCheckResult(pinResult);
 
                 return;
             }
@@ -615,6 +645,75 @@ namespace LascheApp
                 $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}  η = {result.NetSectionTensionUtilization:0.000}";
 
         }
+        private string FormatPinCheckResult(PinCheckResult result)
+        {
+            if (result.HasErrors)
+            {
+                return
+                    "Pin verification\n" +
+                    "----------------\n" +
+                    "Input error\n\n" +
+                    string.Join(Environment.NewLine, result.Errors);
+            }
+
+            PinCheckInput input = result.Input;
+
+            string text =
+                "Pin verification\n" +
+                "----------------\n" +
+                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
+                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
+                $"Governing check: {result.GoverningCheckName}\n" +
+                $"Replaceable pin checks: {(input.IsReplaceablePin ? "active" : "not active")}\n\n" +
+
+                "Input\n" +
+                "-----\n" +
+                $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
+                $"F_Ed,ser = {input.F_Ed_ser_kN:0.00} kN\n" +
+                $"M_Ed = {input.M_Ed_kNmm:0.00} kNmm\n" +
+                $"M_Ed,ser = {input.M_Ed_ser_kNmm:0.00} kNmm\n" +
+                $"Pin diameter d = {input.PinDiameter_mm:0.0} mm\n" +
+                $"fy,p = {input.PinFy_Nmm2:0.0} N/mm²\n" +
+                $"fu,p = {input.PinFu_Nmm2:0.0} N/mm²\n" +
+                $"gammaM0 = {input.GammaM0:0.00}\n" +
+                $"gammaM2 = {input.GammaM2:0.00}\n" +
+                $"gammaM6,ser = {input.GammaM6_ser:0.00}\n\n" +
+
+                "Section values\n" +
+                "--------------\n" +
+                $"A = π * d² / 4 = {result.Area_mm2:0.0} mm²\n" +
+                $"Wel = π * d³ / 32 = {result.SectionModulus_mm3:0.0} mm³\n\n" +
+
+                "Pin shear\n" +
+                "---------\n" +
+                $"Fv,Ed = F_Ed / 2 = {result.FvEd_kN:0.00} kN\n" +
+                $"Fv,Rd = 0.6 * A * fu,p / gammaM2 = {result.FvRd_kN:0.00} kN\n" +
+                $"Check Fv,Ed <= Fv,Rd: {(result.ShearOk ? "OK" : "NOT OK")}  η = {result.ShearUtilization:0.000}\n\n" +
+
+                "Pin bending\n" +
+                "-----------\n" +
+                $"M_Ed = {result.MEd_kNmm:0.00} kNmm\n" +
+                $"M_Rd = 1.5 * Wel * fy,p / gammaM0 = {result.MRd_kNmm:0.00} kNmm\n" +
+                $"Check M_Ed <= M_Rd: {(result.BendingOk ? "OK" : "NOT OK")}  η = {result.BendingUtilization:0.000}\n\n" +
+
+                "Pin shear + bending interaction\n" +
+                "-------------------------------\n" +
+                $"η = (M_Ed / M_Rd)² + (Fv,Ed / Fv,Rd)² = {result.CombinedUtilization:0.000}\n" +
+                $"Check η <= 1.000: {(result.CombinedOk ? "OK" : "NOT OK")}";
+
+            if (input.IsReplaceablePin)
+            {
+                text +=
+                    "\n\nReplaceable pin service bending\n" +
+                    "-------------------------------\n" +
+                    $"M_Ed,ser = {result.MEdSer_kNmm:0.00} kNmm\n" +
+                    $"M_Rd,ser = 0.8 * Wel * fy,p / gammaM6,ser = {result.MRdSer_kNmm:0.00} kNmm\n" +
+                    $"Check M_Ed,ser <= M_Rd,ser: {(result.ServiceBendingOk ? "OK" : "NOT OK")}  η = {result.ServiceBendingUtilization:0.000}";
+            }
+
+            return text;
+        }
+
         private void btnSelectShackleByLoad_Click(object sender, EventArgs e)
         {
             if (_shackleDatabase == null)

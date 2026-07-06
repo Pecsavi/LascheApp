@@ -66,6 +66,10 @@
             label10 = new Label();
             lblPinFy = new Label();
             lblPinFu = new Label();
+            label11 = new Label();
+            label12 = new Label();
+            txtPinMoment_kNmm = new TextBox();
+            txtPinMomentSer_kNmm = new TextBox();
             SuspendLayout();
             // 
             // cmbShackles
@@ -124,7 +128,7 @@
             // 
             // button1
             // 
-            button1.Location = new Point(426, 267);
+            button1.Location = new Point(146, 394);
             button1.Name = "button1";
             button1.Size = new Size(177, 23);
             button1.TabIndex = 4;
@@ -202,7 +206,7 @@
             txtBasicCheckResult.Name = "txtBasicCheckResult";
             txtBasicCheckResult.ReadOnly = true;
             txtBasicCheckResult.ScrollBars = ScrollBars.Vertical;
-            txtBasicCheckResult.Size = new Size(704, 218);
+            txtBasicCheckResult.Size = new Size(704, 127);
             txtBasicCheckResult.TabIndex = 8;
             txtBasicCheckResult.Click += btnCheckBasicPadeye_Click;
             // 
@@ -412,11 +416,49 @@
             lblPinFu.TabIndex = 29;
             lblPinFu.Text = "fu,p = -";
             // 
+            // label11
+            // 
+            label11.AutoSize = true;
+            label11.Location = new Point(374, 271);
+            label11.Name = "label11";
+            label11.Size = new Size(84, 15);
+            label11.TabIndex = 30;
+            label11.Text = "M_Ed [kNmm]";
+            // 
+            // label12
+            // 
+            label12.AutoSize = true;
+            label12.Location = new Point(383, 320);
+            label12.Name = "label12";
+            label12.Size = new Size(102, 15);
+            label12.TabIndex = 31;
+            label12.Text = "M_Ed,ser [kNmm]";
+            // 
+            // txtPinMoment_kNmm
+            // 
+            txtPinMoment_kNmm.Location = new Point(532, 271);
+            txtPinMoment_kNmm.Name = "txtPinMoment_kNmm";
+            txtPinMoment_kNmm.Size = new Size(100, 23);
+            txtPinMoment_kNmm.TabIndex = 32;
+            txtPinMoment_kNmm.Text = "200";
+            // 
+            // txtPinMomentSer_kNmm
+            // 
+            txtPinMomentSer_kNmm.Location = new Point(532, 320);
+            txtPinMomentSer_kNmm.Name = "txtPinMomentSer_kNmm";
+            txtPinMomentSer_kNmm.Size = new Size(100, 23);
+            txtPinMomentSer_kNmm.TabIndex = 33;
+            txtPinMomentSer_kNmm.Text = "150";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 889);
+            Controls.Add(txtPinMomentSer_kNmm);
+            Controls.Add(txtPinMoment_kNmm);
+            Controls.Add(label12);
+            Controls.Add(label11);
             Controls.Add(lblPinFu);
             Controls.Add(lblPinFy);
             Controls.Add(cmbPinMaterials);
@@ -502,5 +544,9 @@
         private Label label10;
         private Label lblPinFy;
         private Label lblPinFu;
+        private Label label11;
+        private Label label12;
+        private TextBox txtPinMoment_kNmm;
+        private TextBox txtPinMomentSer_kNmm;
     }
 }
