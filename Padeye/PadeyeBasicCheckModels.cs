@@ -6,6 +6,7 @@ namespace LascheApp.Padeye
 {
     public class PadeyeBasicCheckInput
     {
+        public LugType LugType { get; set; } = LugType.TransportLug;
         public double F_Ed_kN { get; set; }
         public double PlateThickness_mm { get; set; }
         public double HoleDiameter_mm { get; set; }
@@ -39,7 +40,7 @@ namespace LascheApp.Padeye
         public double SigmaEd_Nmm2 { get; set; }
         public double SigmaRd_Nmm2 { get; set; }
         public bool NetSectionTensionOk { get; set; }
-     
+
 
         public List<string> Errors { get; set; } = new();
 
@@ -50,16 +51,18 @@ namespace LascheApp.Padeye
 
         public double GrossSectionTensionUtilization { get; set; }
         public double NetSectionTensionUtilization { get; set; }
-       
+
 
         public double MaxUtilization =>
             CheckItems.Count == 0 ? 0.0 : CheckItems.Max(i => i.Utilization);
 
+        public bool ShackleChecksRequired => Input.LugType == LugType.TransportLug;
+
         public bool IsOk =>
             !HasErrors &&
-            WllOk &&
-            HoleDiameterOk &&
-            ThicknessOk &&
+            (!ShackleChecksRequired || WllOk) &&
+            (!ShackleChecksRequired || HoleDiameterOk) &&
+            (!ShackleChecksRequired || ThicknessOk) &&
             GrossSectionTensionOk &&
             NetSectionTensionOk;
 
@@ -72,40 +75,47 @@ namespace LascheApp.Padeye
         {
             get
             {
-                return new List<CheckItem>
+                List<CheckItem> items = new();
+
+                if (Input.LugType == LugType.TransportLug)
                 {
-                    new CheckItem
+                    items.Add(new CheckItem
                     {
                         Name = "Shackle WLL",
                         Utilization = WllUtilization,
                         IsOk = WllOk
-                    },
-                    new CheckItem
+                    });
+
+                    items.Add(new CheckItem
                     {
                         Name = "Hole diameter clearance",
                         Utilization = HoleDiameterUtilization,
                         IsOk = HoleDiameterOk
-                    },
-                    new CheckItem
+                    });
+
+                    items.Add(new CheckItem
                     {
                         Name = "Shackle B1 thickness recommendation",
                         Utilization = ThicknessUtilization,
                         IsOk = ThicknessOk
-                    },
-                    new CheckItem
-                    {
-                        Name = "Gross section tension",
-                        Utilization = GrossSectionTensionUtilization,
-                        IsOk = GrossSectionTensionOk
-                    },
-                    new CheckItem
-                    {
-                        Name = "Net section tension",
-                        Utilization = NetSectionTensionUtilization,
-                        IsOk = NetSectionTensionOk
-                    },
-                   
-                };
+                    });
+                }
+
+                items.Add(new CheckItem
+                {
+                    Name = "Gross section tension",
+                    Utilization = GrossSectionTensionUtilization,
+                    IsOk = GrossSectionTensionOk
+                });
+
+                items.Add(new CheckItem
+                {
+                    Name = "Net section tension",
+                    Utilization = NetSectionTensionUtilization,
+                    IsOk = NetSectionTensionOk
+                });
+
+                return items;
             }
         }
     }

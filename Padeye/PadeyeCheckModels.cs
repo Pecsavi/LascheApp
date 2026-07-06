@@ -43,10 +43,14 @@ namespace LascheApp.Padeye
 
         public PadeyeBearingResult BearingResult { get; set; } = new();
 
+        public LugType LugType => BasicResult.Input.LugType;
+
+        public bool OutOfPlaneCheckRequired => LugType == LugType.TransportLug;
+
         public bool IsOk =>
              BasicResult.IsOk &&
              EcGeometryResult.IsOk &&
-             OutOfPlaneResult.IsOk &&
+             (!OutOfPlaneCheckRequired || OutOfPlaneResult.IsOk) &&
              BearingResult.IsOk;
 
         public List<CheckItem> GoverningCheckItems
@@ -66,7 +70,7 @@ namespace LascheApp.Padeye
                         items.AddRange(EcGeometryResult.MoglichkeitB_CheckItems);
                 }
 
-                if (!OutOfPlaneResult.HasErrors)
+                if (OutOfPlaneCheckRequired && !OutOfPlaneResult.HasErrors)
                 {
                     items.Add(new CheckItem
                     {

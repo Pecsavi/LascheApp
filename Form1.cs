@@ -331,11 +331,51 @@ namespace LascheApp
 
                 PinCheckResult pinResult = PinChecker.Check(pinInput);
 
-                txtBasicCheckResult.Text =
-                    "Tension Lug verification\n" +
-                    "========================\n\n" +
-                    $"Pin material = {pinMaterial.Name}\n\n" +
-                    FormatPinCheckResult(pinResult);
+                PadeyeCheckInput tensionPadeyeInput = new PadeyeCheckInput
+                {
+                    LugType = LugType.TensionLug,
+
+                    F_Ed_kN = fEd_kN,
+                    F_Ed_ser_kN = fEdSer_kN,
+
+                    PlateThickness_mm = t_mm,
+                    PlateWidth_mm = plateWidth_mm,
+                    HoleDiameter_mm = holeDiameter_mm,
+
+                    EdgeDistanceA_mm = edgeDistanceA_mm,
+                    SideDistanceC_mm = sideDistanceC_mm,
+
+                    Fy_Nmm2 = materialProps.Fy_Nmm2,
+                    E_Nmm2 = materialProps.E_Nmm2,
+                    GammaM0 = 1.0,
+                    GammaM6_ser = 1.0,
+
+                    // For Tension Lug this is the real pin diameter, not a shackle pin.
+                    ShackleDpin_mm = tensionPinDiameter_mm,
+
+                    PinClearance_mm = 2.0,
+                    IsReplaceablePin = chkReplaceablePin.Checked
+                };
+
+                PadeyeCheckResult tensionPadeyeResult =
+                    PadeyeChecker.Check(tensionPadeyeInput);
+
+                bool overallOk = pinResult.IsOk && tensionPadeyeResult.IsOk;
+
+                double maxUtilization = Math.Max(
+                    pinResult.MaxUtilization,
+                    tensionPadeyeResult.MaxUtilization);
+
+                string governingCheckName =
+                    pinResult.MaxUtilization >= tensionPadeyeResult.MaxUtilization
+                        ? pinResult.GoverningCheckName
+                        : tensionPadeyeResult.GoverningCheckName;
+
+                txtBasicCheckResult.Text = FormatTensionLugCheckResult(
+                    tensionPadeyeResult,
+                    pinResult,
+                    material.Name,
+                    pinMaterial.Name);
 
                 return;
             }
@@ -419,9 +459,90 @@ namespace LascheApp
                 _ => lugType.ToString()
             };
         }
+        private string FormatTensionLugCheckResult(
+            PadeyeCheckResult plateResult,
+            PinCheckResult pinResult,
+            string plateMaterialName,
+            string pinMaterialName)
+        {
+            bool overallOk = plateResult.IsOk && pinResult.IsOk;
+
+            List<CheckItem> allItems = new List<CheckItem>();
+
+            if (!plateResult.BasicResult.HasErrors)
+                allItems.AddRange(plateResult.BasicResult.CheckItems);
+
+            if (!plateResult.EcGeometryResult.HasErrors)
+            {
+                if (plateResult.EcGeometryResult.MoglichkeitA_MaxUtilization <= plateResult.EcGeometryResult.MoglichkeitB_MaxUtilization)
+                    allItems.AddRange(plateResult.EcGeometryResult.MoglichkeitA_CheckItems);
+                else
+                    allItems.AddRange(plateResult.EcGeometryResult.MoglichkeitB_CheckItems);
+            }
+
+            if (!plateResult.BearingResult.HasErrors)
+                allItems.AddRange(plateResult.BearingResult.CheckItems);
+
+            if (!pinResult.HasErrors)
+                allItems.AddRange(pinResult.CheckItems);
+
+            double maxUtilization = allItems.Count == 0
+                ? 0.0
+                : allItems.Max(i => i.Utilization);
+
+            string governingCheckName = allItems.Count == 0
+                ? ""
+                : allItems.OrderByDescending(i => i.Utilization).First().Name;
+
+            string text =
+                "Tension Lug verification\n" +
+                "========================\n" +
+                $"Overall result: {(overallOk ? "OK" : "NOT OK")}\n" +
+                $"Max utilization: η = {maxUtilization:0.000}\n" +
+                $"Governing check: {governingCheckName}\n\n" +
+                $"Plate material = {plateMaterialName}\n" +
+                $"Pin material = {pinMaterialName}\n\n" +
+                FormatTensionLugCheckSummary(allItems) +
+                Environment.NewLine +
+                Environment.NewLine +
+                "Plate verification\n" +
+                "==================\n\n" +
+                FormatPadeyeBasicCheckResult(plateResult.BasicResult) +
+                Environment.NewLine +
+                Environment.NewLine +
+                FormatPadeyeEcGeometryResult(plateResult.EcGeometryResult) +
+                Environment.NewLine +
+                Environment.NewLine +
+                FormatPadeyeBearingResult(plateResult.BearingResult) +
+                Environment.NewLine +
+                Environment.NewLine +
+                "Pin verification\n" +
+                "================\n\n" +
+                FormatPinCheckResult(pinResult);
+
+            return text;
+        }
+
+        private string FormatTensionLugCheckSummary(List<CheckItem> items)
+        {
+            string text =
+                "Check summary\n" +
+                "-------------\n";
+
+            foreach (CheckItem item in items.OrderByDescending(i => i.Utilization))
+            {
+                string status = item.IsOk ? "OK" : "NOT OK";
+
+                text +=
+                    $"{status,-6}  η = {item.Utilization:0.000}  {item.Name}\n";
+            }
+
+            return text.TrimEnd();
+        }
+
         private string FormatPadeyeCheckResult(PadeyeCheckResult result)
         {
-            return
+            string text =
                 FormatPadeyeOverallResult(result) +
                 Environment.NewLine +
                 Environment.NewLine +
@@ -431,13 +552,22 @@ namespace LascheApp
                 FormatPadeyeBasicCheckResult(result.BasicResult) +
                 Environment.NewLine +
                 Environment.NewLine +
-                FormatPadeyeEcGeometryResult(result.EcGeometryResult) +
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatPadeyeOutOfPlaneResult(result.OutOfPlaneResult) +
+                FormatPadeyeEcGeometryResult(result.EcGeometryResult);
+
+            if (result.OutOfPlaneCheckRequired)
+            {
+                text +=
+                    Environment.NewLine +
+                    Environment.NewLine +
+                    FormatPadeyeOutOfPlaneResult(result.OutOfPlaneResult);
+            }
+
+            text +=
                 Environment.NewLine +
                 Environment.NewLine +
                 FormatPadeyeBearingResult(result.BearingResult);
+
+            return text;
         }
         private string FormatPadeyeBearingResult(PadeyeBearingResult result)
         {
@@ -605,31 +735,37 @@ namespace LascheApp
                     "Input error\n\n" +
                     string.Join(Environment.NewLine, result.Errors);
             }
-            return
+
+            string text =
                 $"Basic padeye check\n" +
                 $"------------------\n" +
                 $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
                 $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
                 $"Governing check: {result.GoverningCheckName}\n\n" +
+                $"F_Ed = {input.F_Ed_kN:0.00} kN";
 
-                $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
-                $"WLL = {input.ShackleWLL_kN:0.00} kN\n" +
-                $"Check F_Ed <= WLL: {(result.WllOk ? "OK" : "NOT OK")}  η = {result.WllUtilization:0.000}\n\n" +
+            if (input.LugType == LugType.TransportLug)
+            {
+                text +=
+                    $"\nWLL = {input.ShackleWLL_kN:0.00} kN\n" +
+                    $"Check F_Ed <= WLL: {(result.WllOk ? "OK" : "NOT OK")}  η = {result.WllUtilization:0.000}\n\n" +
 
-                $"Dpin = {input.ShackleDpin_mm:0.0} mm\n" +
-                $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
-                $"Required d0 = Dpin + {input.PinClearance_mm:0.0} mm = {result.RequiredHoleDiameter_mm:0.0} mm\n" +
-                $"Check d0 >= Dpin + clearance: {(result.HoleDiameterOk ? "OK" : "NOT OK")}  η = {result.HoleDiameterUtilization:0.000}\n\n" +
+                    $"Dpin = {input.ShackleDpin_mm:0.0} mm\n" +
+                    $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
+                    $"Required d0 = Dpin + {input.PinClearance_mm:0.0} mm = {result.RequiredHoleDiameter_mm:0.0} mm\n" +
+                    $"Check d0 >= Dpin + clearance: {(result.HoleDiameterOk ? "OK" : "NOT OK")}  η = {result.HoleDiameterUtilization:0.000}\n\n" +
 
-                $"B1 = {input.ShackleB1_mm:0.0} mm\n" +
-                $"t = {input.PlateThickness_mm:0.0} mm\n" +
-                $"Required t = 0.75 * B1 = {result.RequiredThickness_mm:0.0} mm\n" +
-                $"Check t >= 0.75 * B1: {(result.ThicknessOk ? "OK" : "NOT OK")}  η = {result.ThicknessUtilization:0.000}\n\n" +
+                    $"B1 = {input.ShackleB1_mm:0.0} mm\n" +
+                    $"t = {input.PlateThickness_mm:0.0} mm\n" +
+                    $"Required t = 0.75 * B1 = {result.RequiredThickness_mm:0.0} mm\n" +
+                    $"Check t >= 0.75 * B1: {(result.ThicknessOk ? "OK" : "NOT OK")}  η = {result.ThicknessUtilization:0.000}\n\n" +
 
-                $"H_DNV = {input.ShackleH_DNV_mm:0.0} mm" +
+                    $"H_DNV = {input.ShackleH_DNV_mm:0.0} mm";
+            }
+
+            text +=
                 $"\n\nGross section tension check\n" +
-
-               $"---------------------------\n" +
+                $"---------------------------\n" +
                 $"b = {input.PlateWidth_mm:0.0} mm\n" +
                 $"t = {input.PlateThickness_mm:0.0} mm\n" +
                 $"A_gross = b * t = {result.GrossArea_mm2:0.0} mm²\n" +
@@ -639,11 +775,13 @@ namespace LascheApp
                 $"\n\nNet section tension check\n" +
                 $"-------------------------\n" +
                 $"b = {input.PlateWidth_mm:0.0} mm\n" +
+                $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
                 $"A_net = (b - d0) * t = {result.NetArea_mm2:0.0} mm²\n" +
                 $"Sigma_Ed = F_Ed / A_net = {result.SigmaEd_Nmm2:0.0} N/mm²\n" +
                 $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
                 $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}  η = {result.NetSectionTensionUtilization:0.000}";
 
+            return text;
         }
         private string FormatPinCheckResult(PinCheckResult result)
         {
@@ -651,7 +789,7 @@ namespace LascheApp
             {
                 return
                     "Pin verification\n" +
-                    "----------------\n" +
+                    "================\n" +
                     "Input error\n\n" +
                     string.Join(Environment.NewLine, result.Errors);
             }
@@ -660,7 +798,7 @@ namespace LascheApp
 
             string text =
                 "Pin verification\n" +
-                "----------------\n" +
+                "=================\n" +
                 $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
                 $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
                 $"Governing check: {result.GoverningCheckName}\n" +
@@ -692,8 +830,8 @@ namespace LascheApp
 
                 "Pin bending\n" +
                 "-----------\n" +
-                $"M_Ed,ser = {result.MEdSer_kNmm:0.00} · 10⁻³ kNm\n" +
-                $"M_Rd,ser = 0.8 * Wel * fy,p / gammaM6,ser = {result.MRdSer_kNmm:0.00} · 10⁻³ kNm\n" +
+                $"M_Ed = {result.MEd_kNmm:0.00} · 10⁻³ kNm\n" +
+                $"M_Rd = 1.5 * Wel * fy,p / gammaM0 = {result.MRd_kNmm:0.00} · 10⁻³ kNm\n" +
                 $"Check M_Ed <= M_Rd: {(result.BendingOk ? "OK" : "NOT OK")}  η = {result.BendingUtilization:0.000}\n\n" +
 
                 "Pin shear + bending interaction\n" +
@@ -706,8 +844,8 @@ namespace LascheApp
                 text +=
                     "\n\nReplaceable pin service bending\n" +
                     "-------------------------------\n" +
-                    $"M_Ed,ser = {result.MEdSer_kNmm:0.00} kNmm\n" +
-                    $"M_Rd,ser = 0.8 * Wel * fy,p / gammaM6,ser = {result.MRdSer_kNmm:0.00} kNmm\n" +
+                    $"M_Ed,ser = {result.MEdSer_kNmm:0.00} · 10⁻³ kNm\n" +
+                    $"M_Rd,ser = 0.8 * Wel * fy,p / gammaM6,ser = {result.MRdSer_kNmm:0.00} · 10⁻³ kNm\n" +
                     $"Check M_Ed,ser <= M_Rd,ser: {(result.ServiceBendingOk ? "OK" : "NOT OK")}  η = {result.ServiceBendingUtilization:0.000}";
             }
 

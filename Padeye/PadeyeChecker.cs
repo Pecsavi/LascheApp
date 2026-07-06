@@ -6,6 +6,8 @@
         {
             PadeyeBasicCheckInput basicInput = new PadeyeBasicCheckInput
             {
+                LugType = input.LugType,
+
                 F_Ed_kN = input.F_Ed_kN,
                 PlateThickness_mm = input.PlateThickness_mm,
                 HoleDiameter_mm = input.HoleDiameter_mm,
