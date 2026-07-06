@@ -207,43 +207,34 @@ namespace LascheApp
                 txtBasicCheckResult.Text = "No shackle selected.";
                 return;
             }
-
-            PadeyeBasicCheckInput input = new PadeyeBasicCheckInput
+            PadeyeCheckInput padeyeInput = new PadeyeCheckInput
             {
                 F_Ed_kN = fEd_kN,
+
                 PlateThickness_mm = t_mm,
+                PlateWidth_mm = plateWidth_mm,
                 HoleDiameter_mm = holeDiameter_mm,
+
+                EdgeDistanceA_mm = edgeDistanceA_mm,
+                SideDistanceC_mm = sideDistanceC_mm,
+
+                Fy_Nmm2 = materialProps.Fy_Nmm2,
+                GammaM0 = 1.0,
 
                 ShackleWLL_kN = wll_kN,
                 ShackleDpin_mm = dpin_mm,
                 ShackleB1_mm = b1_mm,
                 ShackleH_DNV_mm = hDnv_mm,
 
-                PinClearance_mm = 2.0,
-                PlateWidth_mm = plateWidth_mm,
-
-                MaterialFy_Nmm2 = materialProps.Fy_Nmm2,
-                GammaM0 = 1.0,
-            };
-            
-            PadeyeEcGeometryInput ecGeometryInput = new PadeyeEcGeometryInput
-            {
-                F_Ed_kN = fEd_kN,
-                GammaM0 = 1.0,
-                Fy_Nmm2 = materialProps.Fy_Nmm2,
-
-                PlateThickness_mm = t_mm,
-                HoleDiameter_mm = holeDiameter_mm,
-
-                EdgeDistanceA_mm = edgeDistanceA_mm,
-                SideDistanceC_mm = sideDistanceC_mm
+                PinClearance_mm = 2.0
             };
 
             PadeyeCheckResult padeyeResult =
-                PadeyeChecker.Check(input, ecGeometryInput);
+                PadeyeChecker.Check(padeyeInput);
 
             txtBasicCheckResult.Text =
                 FormatPadeyeCheckResult(padeyeResult);
+
         }
         private string FormatPadeyeCheckResult(PadeyeCheckResult result)
         {
@@ -257,7 +248,42 @@ namespace LascheApp
                 FormatPadeyeBasicCheckResult(result.BasicResult) +
                 Environment.NewLine +
                 Environment.NewLine +
-                FormatPadeyeEcGeometryResult(result.EcGeometryResult);
+                FormatPadeyeEcGeometryResult(result.EcGeometryResult) +
+                Environment.NewLine +
+                Environment.NewLine +
+                FormatPadeyeOutOfPlaneResult(result.OutOfPlaneResult);
+        }
+
+        private string FormatPadeyeOutOfPlaneResult(PadeyeOutOfPlaneResult result)
+        {
+            PadeyeOutOfPlaneInput input = result.Input;
+            if (result.HasErrors)
+            {
+                return
+                    "Out-of-plane bending check\n" +
+                    "--------------------------\n" +
+                    "Input error\n\n" +
+                    string.Join(Environment.NewLine, result.Errors);
+            }
+
+            return
+                $"Out-of-plane bending check\n" +
+                $"--------------------------\n" +
+                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
+                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
+                $"Governing check: {result.GoverningCheckName}\n\n" +
+
+                $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
+                $"H_DNV = {input.H_DNV_mm:0.0} mm\n" +
+                $"M_Ed = F_Ed * H_DNV = {result.M_Ed_Nmm:0.0} Nmm\n\n" +
+
+                $"b = {input.PlateWidth_mm:0.0} mm\n" +
+                $"t = {input.PlateThickness_mm:0.0} mm\n" +
+                $"W = b * t² / 6 = {result.SectionModulus_mm3:0.0} mm³\n\n" +
+
+                $"Sigma_bending,Ed = M_Ed / W = {result.SigmaBendingEd_Nmm2:0.0} N/mm²\n" +
+                $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
+                $"Check Sigma_bending,Ed <= Sigma_Rd: {(result.BendingOk ? "OK" : "NOT OK")}  η = {result.BendingUtilization:0.000}";
         }
         private string FormatCheckSummary(PadeyeCheckResult result)
         {
