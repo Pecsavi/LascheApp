@@ -670,8 +670,8 @@ namespace LascheApp
                 "-----\n" +
                 $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
                 $"F_Ed,ser = {input.F_Ed_ser_kN:0.00} kN\n" +
-                $"M_Ed = {input.M_Ed_kNmm:0.00} kNmm\n" +
-                $"M_Ed,ser = {input.M_Ed_ser_kNmm:0.00} kNmm\n" +
+                $"M_Ed = {input.M_Ed_kNmm:0.00} · 10⁻³ kNm\n" +
+                $"M_Ed,ser = {input.M_Ed_ser_kNmm:0.00} · 10⁻³ kNm\n" +
                 $"Pin diameter d = {input.PinDiameter_mm:0.0} mm\n" +
                 $"fy,p = {input.PinFy_Nmm2:0.0} N/mm²\n" +
                 $"fu,p = {input.PinFu_Nmm2:0.0} N/mm²\n" +
@@ -692,8 +692,8 @@ namespace LascheApp
 
                 "Pin bending\n" +
                 "-----------\n" +
-                $"M_Ed = {result.MEd_kNmm:0.00} kNmm\n" +
-                $"M_Rd = 1.5 * Wel * fy,p / gammaM0 = {result.MRd_kNmm:0.00} kNmm\n" +
+                $"M_Ed,ser = {result.MEdSer_kNmm:0.00} · 10⁻³ kNm\n" +
+                $"M_Rd,ser = 0.8 * Wel * fy,p / gammaM6,ser = {result.MRdSer_kNmm:0.00} · 10⁻³ kNm\n" +
                 $"Check M_Ed <= M_Rd: {(result.BendingOk ? "OK" : "NOT OK")}  η = {result.BendingUtilization:0.000}\n\n" +
 
                 "Pin shear + bending interaction\n" +

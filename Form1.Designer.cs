@@ -421,18 +421,18 @@
             label11.AutoSize = true;
             label11.Location = new Point(374, 271);
             label11.Name = "label11";
-            label11.Size = new Size(84, 15);
+            label11.Size = new Size(96, 15);
             label11.TabIndex = 30;
-            label11.Text = "M_Ed [kNmm]";
+            label11.Text = "M_Ed [10⁻³ kNm]";
             // 
             // label12
             // 
             label12.AutoSize = true;
             label12.Location = new Point(383, 320);
             label12.Name = "label12";
-            label12.Size = new Size(102, 15);
+            label12.Size = new Size(114, 15);
             label12.TabIndex = 31;
-            label12.Text = "M_Ed,ser [kNmm]";
+            label12.Text = "M_Ed,ser [10⁻³ kNm]";
             // 
             // txtPinMoment_kNmm
             // 
