@@ -1,4 +1,4 @@
-﻿namespace LascheApp.Padeye
+namespace LascheApp.Padeye
 {
     public static class PadeyeBasicChecker
     {
@@ -11,6 +11,9 @@
 
             if (input.F_Ed_kN <= 0)
                 result.Errors.Add("F_Ed must be greater than 0.");
+
+            if (input.LugType == LugType.TransportLug && input.F_Ed_ser_kN <= 0)
+                result.Errors.Add("F_Ed,ser must be greater than 0.");
 
             if (input.PlateThickness_mm <= 0)
                 result.Errors.Add("Plate thickness t must be greater than 0.");
@@ -75,8 +78,8 @@
 
             if (input.LugType == LugType.TransportLug)
             {
-                result.WllOk = input.F_Ed_kN <= input.ShackleWLL_kN;
-                result.WllUtilization = input.F_Ed_kN / input.ShackleWLL_kN;
+                result.WllOk = input.F_Ed_ser_kN <= input.ShackleWLL_kN;
+                result.WllUtilization = input.F_Ed_ser_kN / input.ShackleWLL_kN;
                 result.HoleDiameterOk = input.HoleDiameter_mm >= requiredHoleDiameter_mm;
                 result.HoleDiameterUtilization = requiredHoleDiameter_mm / input.HoleDiameter_mm;
                 result.ThicknessOk = input.PlateThickness_mm >= requiredThickness_mm;

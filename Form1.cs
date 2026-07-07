@@ -1,4 +1,4 @@
-﻿using LascheApp.Materials;
+using LascheApp.Materials;
 using LascheApp.Shackles;
 using LascheApp.Padeye;
 using System.Collections.Generic;
@@ -516,8 +516,6 @@ namespace LascheApp
                 FormatPadeyeBearingResult(plateResult.BearingResult) +
                 Environment.NewLine +
                 Environment.NewLine +
-                "Pin verification\n" +
-                "================\n\n" +
                 FormatPinCheckResult(pinResult);
 
             return text;
@@ -533,8 +531,16 @@ namespace LascheApp
             {
                 string status = item.IsOk ? "OK" : "NOT OK";
 
-                text +=
-                    $"{status,-6}  η = {item.Utilization:0.000}  {item.Name}\n";
+                if (item.ShowUtilization)
+                {
+                    text +=
+                        $"{status,-6}  η = {item.Utilization:0.000}  {item.Name}\n";
+                }
+                else
+                {
+                    text +=
+                        $"{status,-6}           {item.Name}\n";
+                }
             }
 
             return text.TrimEnd();
@@ -660,8 +666,16 @@ namespace LascheApp
             {
                 string status = item.IsOk ? "OK" : "NOT OK";
 
-                text +=
-                    $"{status,-6}  η = {item.Utilization:0.000}  {item.Name}\n";
+                if (item.ShowUtilization)
+                {
+                    text +=
+                        $"{status,-6}  η = {item.Utilization:0.000}  {item.Name}\n";
+                }
+                else
+                {
+                    text +=
+                        $"{status,-6}           {item.Name}\n";
+                }
             }
 
             return text.TrimEnd();
@@ -747,13 +761,14 @@ namespace LascheApp
             if (input.LugType == LugType.TransportLug)
             {
                 text +=
-                    $"\nWLL = {input.ShackleWLL_kN:0.00} kN\n" +
-                    $"Check F_Ed <= WLL: {(result.WllOk ? "OK" : "NOT OK")}  η = {result.WllUtilization:0.000}\n\n" +
+                    $"\nF_Ed,ser = {input.F_Ed_ser_kN:0.00} kN\n" +
+                    $"WLL = {input.ShackleWLL_kN:0.00} kN\n" +
+                    $"Check F_Ed,ser <= WLL: {(result.WllOk ? "OK" : "NOT OK")}  η = {result.WllUtilization:0.000}\n\n" +
 
                     $"Dpin = {input.ShackleDpin_mm:0.0} mm\n" +
                     $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
                     $"Required d0 = Dpin + {input.PinClearance_mm:0.0} mm = {result.RequiredHoleDiameter_mm:0.0} mm\n" +
-                    $"Check d0 >= Dpin + clearance: {(result.HoleDiameterOk ? "OK" : "NOT OK")}  η = {result.HoleDiameterUtilization:0.000}\n\n" +
+                    $"Check d0 >= Dpin + clearance: {(result.HoleDiameterOk ? "OK" : "NOT OK")}\n\n" +
 
                     $"B1 = {input.ShackleB1_mm:0.0} mm\n" +
                     $"t = {input.PlateThickness_mm:0.0} mm\n" +
@@ -789,7 +804,7 @@ namespace LascheApp
             {
                 return
                     "Pin verification\n" +
-                    "================\n" +
+                    "----------------\n" +
                     "Input error\n\n" +
                     string.Join(Environment.NewLine, result.Errors);
             }
@@ -798,7 +813,7 @@ namespace LascheApp
 
             string text =
                 "Pin verification\n" +
-                "=================\n" +
+                "----------------\n" +
                 $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
                 $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
                 $"Governing check: {result.GoverningCheckName}\n" +

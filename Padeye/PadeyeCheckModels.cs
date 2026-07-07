@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -87,13 +87,23 @@ namespace LascheApp.Padeye
             }
         }
 
-        public double MaxUtilization =>
-            GoverningCheckItems.Count == 0
-                ? 0.0
-                : GoverningCheckItems.Max(i => i.Utilization);
+        public double MaxUtilization
+        {
+            get
+            {
+                List<CheckItem> utilizationItems = GoverningCheckItems
+                    .Where(i => i.ShowUtilization)
+                    .ToList();
+
+                return utilizationItems.Count == 0
+                    ? 0.0
+                    : utilizationItems.Max(i => i.Utilization);
+            }
+        }
 
         public string GoverningCheckName =>
             GoverningCheckItems
+                .Where(i => i.ShowUtilization)
                 .OrderByDescending(i => i.Utilization)
                 .FirstOrDefault()?.Name ?? "";
     }

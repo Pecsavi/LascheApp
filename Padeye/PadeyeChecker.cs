@@ -1,4 +1,4 @@
-﻿namespace LascheApp.Padeye
+namespace LascheApp.Padeye
 {
     public static class PadeyeChecker
     {
@@ -9,6 +9,7 @@
                 LugType = input.LugType,
 
                 F_Ed_kN = input.F_Ed_kN,
+                F_Ed_ser_kN = input.F_Ed_ser_kN,
                 PlateThickness_mm = input.PlateThickness_mm,
                 HoleDiameter_mm = input.HoleDiameter_mm,
                 PlateWidth_mm = input.PlateWidth_mm,

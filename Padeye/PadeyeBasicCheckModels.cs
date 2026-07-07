@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System;
 using System.Linq;
 
@@ -8,6 +8,7 @@ namespace LascheApp.Padeye
     {
         public LugType LugType { get; set; } = LugType.TransportLug;
         public double F_Ed_kN { get; set; }
+        public double F_Ed_ser_kN { get; set; }
         public double PlateThickness_mm { get; set; }
         public double HoleDiameter_mm { get; set; }
 
@@ -40,7 +41,7 @@ namespace LascheApp.Padeye
         public double SigmaEd_Nmm2 { get; set; }
         public double SigmaRd_Nmm2 { get; set; }
         public bool NetSectionTensionOk { get; set; }
-
+     
 
         public List<string> Errors { get; set; } = new();
 
@@ -51,10 +52,21 @@ namespace LascheApp.Padeye
 
         public double GrossSectionTensionUtilization { get; set; }
         public double NetSectionTensionUtilization { get; set; }
+       
 
+        public double MaxUtilization
+        {
+            get
+            {
+                List<CheckItem> utilizationItems = CheckItems
+                    .Where(i => i.ShowUtilization)
+                    .ToList();
 
-        public double MaxUtilization =>
-            CheckItems.Count == 0 ? 0.0 : CheckItems.Max(i => i.Utilization);
+                return utilizationItems.Count == 0
+                    ? 0.0
+                    : utilizationItems.Max(i => i.Utilization);
+            }
+        }
 
         public bool ShackleChecksRequired => Input.LugType == LugType.TransportLug;
 
@@ -68,6 +80,7 @@ namespace LascheApp.Padeye
 
         public string GoverningCheckName =>
          CheckItems
+             .Where(i => i.ShowUtilization)
              .OrderByDescending(i => i.Utilization)
              .FirstOrDefault()?.Name ?? "";
 
@@ -90,7 +103,8 @@ namespace LascheApp.Padeye
                     {
                         Name = "Hole diameter clearance",
                         Utilization = HoleDiameterUtilization,
-                        IsOk = HoleDiameterOk
+                        IsOk = HoleDiameterOk,
+                        ShowUtilization = false
                     });
 
                     items.Add(new CheckItem
