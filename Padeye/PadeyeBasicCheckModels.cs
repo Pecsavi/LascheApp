@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.Linq;
 
@@ -111,7 +111,8 @@ namespace LascheApp.Padeye
                     {
                         Name = "Shackle B1 thickness recommendation",
                         Utilization = ThicknessUtilization,
-                        IsOk = ThicknessOk
+                        IsOk = ThicknessOk,
+                        ShowUtilization = false
                     });
                 }
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace LascheApp.Padeye
 {
@@ -6,6 +6,20 @@ namespace LascheApp.Padeye
     {
         public double F_Ed_kN { get; set; }
         public double H_DNV_mm { get; set; }
+
+        /// <summary>
+        /// Out-of-plane angle in degrees.
+        /// 0° means force acts in the lug plate plane.
+        /// 90° means full force acts out of plane.
+        /// </summary>
+        public double OutOfPlaneAngle_deg { get; set; } = 0.0;
+
+        /// <summary>
+        /// Optional direct out-of-plane load factor.
+        /// If set, this value is used instead of sin(angle).
+        /// Range: 0.0 ... 1.0.
+        /// </summary>
+        public double? OutOfPlaneLoadFactorInput { get; set; }
 
         public double PlateWidth_mm { get; set; }
         public double PlateThickness_mm { get; set; }
@@ -21,6 +35,9 @@ namespace LascheApp.Padeye
         public List<string> Errors { get; set; } = new();
 
         public bool HasErrors => Errors.Count > 0;
+
+        public double OutOfPlaneLoadFactor { get; set; }
+        public double F_OutOfPlane_Ed_kN { get; set; }
 
         public double M_Ed_Nmm { get; set; }
         public double SectionModulus_mm3 { get; set; }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -21,6 +21,8 @@ namespace LascheApp.Padeye
         public double SideDistanceC_mm { get; set; }
 
         public double Fy_Nmm2 { get; set; }
+        public double Fu_Nmm2 { get; set; }
+        public double BetaW { get; set; } = 0.9;
         public double GammaM0 { get; set; } = 1.0;
 
         public double ShackleWLL_kN { get; set; }
@@ -32,6 +34,16 @@ namespace LascheApp.Padeye
 
         public bool IsReplaceablePin { get; set; } = true;
 
+        public double DnvOutOfPlaneAngle_deg { get; set; }
+        public double DnvBeta { get; set; } = 0.7;
+        public double DnvGammaM { get; set; } = 1.15;
+        public double GammaM2 { get; set; } = 1.25;
+
+        public double CheekPlateThickness_mm { get; set; }
+        public double Rpl_mm { get; set; }
+        public double Rch_mm { get; set; }
+        public double CheekPlateWeldA_mm { get; set; }
+
 
     }
     public class PadeyeCheckResult
@@ -40,17 +52,18 @@ namespace LascheApp.Padeye
         public PadeyeEcGeometryResult EcGeometryResult { get; set; } = new();
 
         public PadeyeOutOfPlaneResult OutOfPlaneResult { get; set; } = new();
+        public PadeyeDnvOutOfPlaneResult DnvOutOfPlaneResult { get; set; } = new();
 
         public PadeyeBearingResult BearingResult { get; set; } = new();
 
         public LugType LugType => BasicResult.Input.LugType;
 
-        public bool OutOfPlaneCheckRequired => LugType == LugType.TransportLug;
+        public bool DnvOutOfPlaneCheckRequired => LugType == LugType.TransportLug && DnvOutOfPlaneResult.IsActive;
 
         public bool IsOk =>
              BasicResult.IsOk &&
              EcGeometryResult.IsOk &&
-             (!OutOfPlaneCheckRequired || OutOfPlaneResult.IsOk) &&
+             (!DnvOutOfPlaneCheckRequired || DnvOutOfPlaneResult.IsOk) &&
              BearingResult.IsOk;
 
         public List<CheckItem> GoverningCheckItems
@@ -63,22 +76,10 @@ namespace LascheApp.Padeye
                     items.AddRange(BasicResult.CheckItems);
 
                 if (!EcGeometryResult.HasErrors)
-                {
-                    if (EcGeometryResult.MoglichkeitA_MaxUtilization <= EcGeometryResult.MoglichkeitB_MaxUtilization)
-                        items.AddRange(EcGeometryResult.MoglichkeitA_CheckItems);
-                    else
-                        items.AddRange(EcGeometryResult.MoglichkeitB_CheckItems);
-                }
+                    items.AddRange(EcGeometryResult.SummaryCheckItems);
 
-                if (OutOfPlaneCheckRequired && !OutOfPlaneResult.HasErrors)
-                {
-                    items.Add(new CheckItem
-                    {
-                        Name = OutOfPlaneResult.GoverningCheckName,
-                        Utilization = OutOfPlaneResult.MaxUtilization,
-                        IsOk = OutOfPlaneResult.IsOk
-                    });
-                }
+                if (DnvOutOfPlaneCheckRequired && !DnvOutOfPlaneResult.HasErrors)
+                    items.AddRange(DnvOutOfPlaneResult.CheckItems);
 
                 if (!BearingResult.HasErrors)
                     items.AddRange(BearingResult.CheckItems);

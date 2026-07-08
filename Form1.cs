@@ -1,10 +1,11 @@
-using LascheApp.Materials;
+﻿using LascheApp.Materials;
 using LascheApp.Shackles;
 using LascheApp.Padeye;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System;
+using System.Windows.Forms;
 
 namespace LascheApp
 {
@@ -203,6 +204,34 @@ namespace LascheApp
                 out value);
         }
 
+        private bool TryReadOptionalDoubleControl(
+            string controlName,
+            double defaultValue,
+            out double value,
+            out string error)
+        {
+            value = defaultValue;
+            error = "";
+
+            Control[] controls = Controls.Find(controlName, true);
+
+            if (controls.Length == 0)
+                return true;
+
+            string text = controls[0].Text;
+
+            if (string.IsNullOrWhiteSpace(text))
+                return true;
+
+            if (!TryReadDouble(text, out value))
+            {
+                error = $"Invalid input: {controlName}";
+                return false;
+            }
+
+            return true;
+        }
+
         private void btnCheckBasicPadeye_Click(object sender, EventArgs e)
         {
             txtBasicCheckResult.Clear();
@@ -237,15 +266,28 @@ namespace LascheApp
                 return;
             }
 
-            if (!TryReadDouble(txtEdgeDistanceA_mm.Text, out double edgeDistanceA_mm))
+            // User input is e = distance from plate end to hole centre.
+            // The EC geometry checker still uses the internal values a and c:
+            // a = e - d0 / 2
+            // c = (b - d0) / 2
+            if (!TryReadDouble(txtEdgeDistanceA_mm.Text, out double endDistanceE_mm))
             {
-                txtBasicCheckResult.Text = "Invalid input: a [mm]";
+                txtBasicCheckResult.Text = "Invalid input: e [mm]";
                 return;
             }
 
-            if (!TryReadDouble(txtSideDistanceC_mm.Text, out double sideDistanceC_mm))
+            double edgeDistanceA_mm = endDistanceE_mm - holeDiameter_mm / 2.0;
+            double sideDistanceC_mm = (plateWidth_mm - holeDiameter_mm) / 2.0;
+
+            if (edgeDistanceA_mm <= 0)
             {
-                txtBasicCheckResult.Text = "Invalid input: c [mm]";
+                txtBasicCheckResult.Text = "Invalid geometry: e must be greater than d0 / 2.";
+                return;
+            }
+
+            if (sideDistanceC_mm <= 0)
+            {
+                txtBasicCheckResult.Text = "Invalid geometry: b must be greater than d0.";
                 return;
             }
 
@@ -346,7 +388,9 @@ namespace LascheApp
                     SideDistanceC_mm = sideDistanceC_mm,
 
                     Fy_Nmm2 = materialProps.Fy_Nmm2,
+                    Fu_Nmm2 = materialProps.Fu_Nmm2,
                     E_Nmm2 = materialProps.E_Nmm2,
+                    BetaW = materialProps.BetaW,
                     GammaM0 = 1.0,
                     GammaM6_ser = 1.0,
 
@@ -393,6 +437,42 @@ namespace LascheApp
             }
 
 
+            if (!TryReadOptionalDoubleControl("txtDnvOutOfPlaneAngle_deg", 0.0, out double dnvAlpha_deg, out string dnvAlphaError))
+            {
+                txtBasicCheckResult.Text = dnvAlphaError;
+                return;
+            }
+
+            if (!TryReadOptionalDoubleControl("txtDnvBeta", 0.7, out double dnvBeta, out string dnvBetaError))
+            {
+                txtBasicCheckResult.Text = dnvBetaError;
+                return;
+            }
+
+            if (!TryReadOptionalDoubleControl("txtCheekPlateThickness_mm", 0.0, out double cheekPlateThickness_mm, out string cheekThicknessError))
+            {
+                txtBasicCheckResult.Text = cheekThicknessError;
+                return;
+            }
+
+            if (!TryReadOptionalDoubleControl("txtRpl_mm", 0.0, out double rpl_mm, out string rplError))
+            {
+                txtBasicCheckResult.Text = rplError;
+                return;
+            }
+
+            if (!TryReadOptionalDoubleControl("txtRch_mm", 0.0, out double rch_mm, out string rchError))
+            {
+                txtBasicCheckResult.Text = rchError;
+                return;
+            }
+
+            if (!TryReadOptionalDoubleControl("txtCheekPlateWeldA_mm", 0.0, out double cheekPlateWeldA_mm, out string weldAError))
+            {
+                txtBasicCheckResult.Text = weldAError;
+                return;
+            }
+
             PadeyeCheckInput padeyeInput = new PadeyeCheckInput
             {
                 LugType = lugType,
@@ -408,7 +488,9 @@ namespace LascheApp
                 SideDistanceC_mm = sideDistanceC_mm,
 
                 Fy_Nmm2 = materialProps.Fy_Nmm2,
+                Fu_Nmm2 = materialProps.Fu_Nmm2,
                 E_Nmm2 = materialProps.E_Nmm2,
+                BetaW = materialProps.BetaW,
                 GammaM0 = 1.0,
                 GammaM6_ser = 1.0,
 
@@ -419,7 +501,17 @@ namespace LascheApp
 
                 PinClearance_mm = 2.0,
 
-                IsReplaceablePin = chkReplaceablePin.Checked
+                IsReplaceablePin = chkReplaceablePin.Checked,
+
+                DnvOutOfPlaneAngle_deg = dnvAlpha_deg,
+                DnvBeta = dnvBeta,
+                DnvGammaM = 1.15,
+                GammaM2 = 1.25,
+
+                CheekPlateThickness_mm = cheekPlateThickness_mm,
+                Rpl_mm = rpl_mm,
+                Rch_mm = rch_mm,
+                CheekPlateWeldA_mm = cheekPlateWeldA_mm
             };
 
             PadeyeCheckResult padeyeResult =
@@ -473,12 +565,7 @@ namespace LascheApp
                 allItems.AddRange(plateResult.BasicResult.CheckItems);
 
             if (!plateResult.EcGeometryResult.HasErrors)
-            {
-                if (plateResult.EcGeometryResult.MoglichkeitA_MaxUtilization <= plateResult.EcGeometryResult.MoglichkeitB_MaxUtilization)
-                    allItems.AddRange(plateResult.EcGeometryResult.MoglichkeitA_CheckItems);
-                else
-                    allItems.AddRange(plateResult.EcGeometryResult.MoglichkeitB_CheckItems);
-            }
+                allItems.AddRange(plateResult.EcGeometryResult.SummaryCheckItems);
 
             if (!plateResult.BearingResult.HasErrors)
                 allItems.AddRange(plateResult.BearingResult.CheckItems);
@@ -486,13 +573,17 @@ namespace LascheApp
             if (!pinResult.HasErrors)
                 allItems.AddRange(pinResult.CheckItems);
 
-            double maxUtilization = allItems.Count == 0
-                ? 0.0
-                : allItems.Max(i => i.Utilization);
+            List<CheckItem> utilizationItems = allItems
+                .Where(i => i.ShowUtilization)
+                .ToList();
 
-            string governingCheckName = allItems.Count == 0
+            double maxUtilization = utilizationItems.Count == 0
+                ? 0.0
+                : utilizationItems.Max(i => i.Utilization);
+
+            string governingCheckName = utilizationItems.Count == 0
                 ? ""
-                : allItems.OrderByDescending(i => i.Utilization).First().Name;
+                : utilizationItems.OrderByDescending(i => i.Utilization).First().Name;
 
             string text =
                 "Tension Lug verification\n" +
@@ -523,27 +614,59 @@ namespace LascheApp
 
         private string FormatTensionLugCheckSummary(List<CheckItem> items)
         {
+            return FormatGroupedCheckSummary(items);
+        }
+
+        private string FormatGroupedCheckSummary(IEnumerable<CheckItem> items)
+        {
+            List<CheckItem> geometryItems = items
+                .Where(i => !i.ShowUtilization)
+                .ToList();
+
+            List<CheckItem> utilizationItems = items
+                .Where(i => i.ShowUtilization)
+                .OrderByDescending(i => i.Utilization)
+                .ToList();
+
             string text =
                 "Check summary\n" +
                 "-------------\n";
 
-            foreach (CheckItem item in items.OrderByDescending(i => i.Utilization))
+            if (geometryItems.Count > 0)
             {
-                string status = item.IsOk ? "OK" : "NOT OK";
+                text +=
+                    "\nGeometry checks\n" +
+                    "---------------\n";
 
-                if (item.ShowUtilization)
-                {
-                    text +=
-                        $"{status,-6}  η = {item.Utilization:0.000}  {item.Name}\n";
-                }
-                else
-                {
-                    text +=
-                        $"{status,-6}           {item.Name}\n";
-                }
+                foreach (CheckItem item in geometryItems)
+                    text += FormatGeometrySummaryLine(item) + Environment.NewLine;
+            }
+
+            if (utilizationItems.Count > 0)
+            {
+                text +=
+                    "\nUtilization checks\n" +
+                    "------------------\n";
+
+                foreach (CheckItem item in utilizationItems)
+                    text += FormatUtilizationSummaryLine(item) + Environment.NewLine;
             }
 
             return text.TrimEnd();
+        }
+
+        private string FormatGeometrySummaryLine(CheckItem item)
+        {
+            string status = item.IsOk ? "OK" : "NOT OK";
+
+            return $"{status,-7}         {item.Name}";
+        }
+
+        private string FormatUtilizationSummaryLine(CheckItem item)
+        {
+            string status = item.IsOk ? "OK" : "NOT OK";
+
+            return $"{status,-7} η = {item.Utilization:0.000}  {item.Name}";
         }
 
         private string FormatPadeyeCheckResult(PadeyeCheckResult result)
@@ -560,12 +683,12 @@ namespace LascheApp
                 Environment.NewLine +
                 FormatPadeyeEcGeometryResult(result.EcGeometryResult);
 
-            if (result.OutOfPlaneCheckRequired)
+            if (result.DnvOutOfPlaneCheckRequired)
             {
                 text +=
                     Environment.NewLine +
                     Environment.NewLine +
-                    FormatPadeyeOutOfPlaneResult(result.OutOfPlaneResult);
+                    FormatPadeyeDnvOutOfPlaneResult(result.DnvOutOfPlaneResult);
             }
 
             text +=
@@ -575,6 +698,89 @@ namespace LascheApp
 
             return text;
         }
+        private string FormatPadeyeDnvOutOfPlaneResult(PadeyeDnvOutOfPlaneResult result)
+        {
+            PadeyeDnvOutOfPlaneInput input = result.Input;
+
+            if (!result.IsActive)
+            {
+                return
+                    "DNV out-of-plane checks\n" +
+                    "-----------------------\n" +
+                    "Not active.";
+            }
+
+            if (result.HasErrors)
+            {
+                return
+                    "DNV out-of-plane checks\n" +
+                    "-----------------------\n" +
+                    "Input error\n\n" +
+                    string.Join(Environment.NewLine, result.Errors);
+            }
+
+            string text =
+                "DNV out-of-plane checks\n" +
+                "-----------------------\n" +
+                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
+                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
+                $"Governing check: {result.GoverningCheckName}\n\n" +
+
+                "Load decomposition\n" +
+                "------------------\n" +
+                $"Fds = {input.F_Ed_kN:0.00} kN\n" +
+                $"alpha = {input.Alpha_deg:0.0}°\n" +
+                $"Fd = Fds * cos(alpha) = {result.Fd_kN:0.00} kN\n" +
+                $"Fdl = Fds * sin(alpha) = {result.Fdl_kN:0.00} kN\n" +
+                $"h = {input.H_DNV_mm:0.0} mm\n" +
+                $"Me = Fdl * h = {result.Me_kNm:0.00} kNm\n\n" +
+
+                "DNV parameters\n" +
+                "--------------\n" +
+                $"Dpin = {input.Dpin_mm:0.0} mm\n" +
+                $"DH = {input.HoleDiameter_mm:0.0} mm\n" +
+                $"tpl = {input.MainPlateThickness_mm:0.0} mm\n" +
+                $"tch = {input.CheekPlateThickness_mm:0.0} mm\n" +
+                $"t = tpl + 2 * tch = {input.TotalThickness_mm:0.0} mm\n" +
+                $"Rpl = {input.Rpl_mm:0.0} mm\n" +
+                $"Rch = {input.Rch_mm:0.0} mm\n" +
+                $"Rpad = (Rpl * tpl + 2 * Rch * tch) / t = {result.Rpad_mm:0.0} mm\n" +
+                $"beta = {input.Beta:0.000}\n" +
+                $"delta = 4 * tan(alpha) * h / t + 1 = {result.Delta:0.000}\n" +
+                $"beta,eff = {(result.Delta >= 1.3 ? "beta * (delta - 0.3)" : "beta")} = {result.BetaEffective:0.000}\n" +
+                $"sigma_Rd = fy / gammaM = {result.SigmaRd_Nmm2:0.0} N/mm²";
+
+            if (result.OutOfPlaneChecksActive)
+            {
+                text +=
+                    "\n\nDNV out-of-plane bearing\n" +
+                    "------------------------\n" +
+                    $"Dpin / DH = {result.DpinToHoleRatio:0.000}\n" +
+                    $"Formula branch: {(result.BearingFormulaWithClearance ? "Dpin / DH < 0.96" : "Dpin / DH >= 0.96")}\n" +
+                    $"sigma_Ed,1 = {result.SigmaEd1_Nmm2:0.0} N/mm²\n" +
+                    $"Check sigma_Ed,1 <= sigma_Rd: {(result.DnvBearingOk ? "OK" : "NOT OK")}  η = {result.DnvBearingUtilization:0.000}\n\n" +
+
+                    "DNV tear-out\n" +
+                    "------------\n" +
+                    $"sigma_Ed,2 = 1.7 * Fd / ((2 * Rpl - DH) * t) = {result.SigmaEd2_Nmm2:0.0} N/mm²\n" +
+                    $"Check sigma_Ed,2 <= sigma_Rd: {(result.TearOutOk ? "OK" : "NOT OK")}  η = {result.TearOutUtilization:0.000}";
+            }
+
+            if (result.CheekPlateWeldCheckActive)
+            {
+                text +=
+                    "\n\nCheek plate weld check\n" +
+                    "----------------------\n" +
+                    $"DCH = 2 * Rch = {result.Dch_mm:0.0} mm\n" +
+                    $"a = {input.WeldA_mm:0.0} mm\n" +
+                    $"sigma_Ed,3 = Fd * tch / (1.5 * t * DCH * a) * delta = {result.SigmaEd3_Nmm2:0.0} N/mm²\n" +
+                    $"fvwd = fu / (sqrt(3) * betaW * gammaM2) = {result.Fvwd_Nmm2:0.0} N/mm²\n" +
+                    $"Check sigma_Ed,3 <= fvwd: {(result.CheekPlateWeldOk ? "OK" : "NOT OK")}  η = {result.CheekPlateWeldUtilization:0.000}";
+            }
+
+            return text;
+        }
+
         private string FormatPadeyeBearingResult(PadeyeBearingResult result)
         {
             PadeyeBearingInput input = result.Input;
@@ -657,28 +863,7 @@ namespace LascheApp
         }
         private string FormatCheckSummary(PadeyeCheckResult result)
         {
-            string text =
-                "Check summary\n" +
-                "-------------\n";
-
-            foreach (CheckItem item in result.GoverningCheckItems
-                         .OrderByDescending(i => i.Utilization))
-            {
-                string status = item.IsOk ? "OK" : "NOT OK";
-
-                if (item.ShowUtilization)
-                {
-                    text +=
-                        $"{status,-6}  η = {item.Utilization:0.000}  {item.Name}\n";
-                }
-                else
-                {
-                    text +=
-                        $"{status,-6}           {item.Name}\n";
-                }
-            }
-
-            return text.TrimEnd();
+            return FormatGroupedCheckSummary(result.GoverningCheckItems);
         }
         private string FormatPadeyeOverallResult(PadeyeCheckResult result)
         {
@@ -701,6 +886,12 @@ namespace LascheApp
                     "Input error\n\n" +
                     string.Join(Environment.NewLine, result.Errors);
             }
+            double e_mm = input.EdgeDistanceA_mm + input.HoleDiameter_mm / 2.0;
+            double requiredE_mm = result.RequiredEdgeDistanceA_mm + input.HoleDiameter_mm / 2.0;
+
+            double b_mm = 2.0 * input.SideDistanceC_mm + input.HoleDiameter_mm;
+            double requiredB_mm = 2.0 * result.RequiredSideDistanceC_mm + input.HoleDiameter_mm;
+
             return
                 $"EC geometry check\n" +
                 $"-----------------\n" +
@@ -718,13 +909,15 @@ namespace LascheApp
                 $"t = {input.PlateThickness_mm:0.0} mm\n" +
                 $"d0 = {input.HoleDiameter_mm:0.0} mm\n\n" +
 
-                $"a = {input.EdgeDistanceA_mm:0.0} mm\n" +
-                $"Required a = F_Ed * gammaM0 / (2 * t * fy) + 2*d0/3 = {result.RequiredEdgeDistanceA_mm:0.0} mm\n" +
-                $"Check a >= required a: {(result.EdgeDistanceA_Ok ? "OK" : "NOT OK")}  η = {result.EdgeDistanceA_Utilization:0.000}\n\n" +
+                $"e = {e_mm:0.0} mm\n" +
+                $"a = e - d0 / 2 = {input.EdgeDistanceA_mm:0.0} mm\n" +
+                $"Required e = required a + d0 / 2 = {requiredE_mm:0.0} mm\n" +
+                $"Check e >= required e: {(result.EdgeDistanceA_Ok ? "OK" : "NOT OK")}  η = {result.EdgeDistanceA_Utilization:0.000}\n\n" +
 
-                $"c = {input.SideDistanceC_mm:0.0} mm\n" +
-                $"Required c = F_Ed * gammaM0 / (2 * t * fy) + d0/3 = {result.RequiredSideDistanceC_mm:0.0} mm\n" +
-                $"Check c >= required c: {(result.SideDistanceC_Ok ? "OK" : "NOT OK")}  η = {result.SideDistanceC_Utilization:0.000}\n\n" +
+                $"b = {b_mm:0.0} mm\n" +
+                $"c = (b - d0) / 2 = {input.SideDistanceC_mm:0.0} mm\n" +
+                $"Required b = 2 * required c + d0 = {requiredB_mm:0.0} mm\n" +
+                $"Check b >= required b: {(result.SideDistanceC_Ok ? "OK" : "NOT OK")}  η = {result.SideDistanceC_Utilization:0.000}\n\n" +
 
                 $"Möglichkeit B\n" +
                 $"-------------\n" +
@@ -872,14 +1065,14 @@ namespace LascheApp
             if (_shackleDatabase == null)
                 return;
 
-            if (!TryReadDouble(txtLoad_kN.Text, out double fEd_kN))
+            if (!TryReadDouble(txtLoadSer_kN.Text, out double fEdSer_kN))
             {
-                MessageBox.Show("Invalid input: F_Ed [kN]");
+                MessageBox.Show("Invalid input: F_Ed,ser [kN]");
                 return;
             }
 
             ShackleData? suitableShackle =
-                _shackleDatabase.GetSmallestSuitableByWll(fEd_kN);
+                _shackleDatabase.GetSmallestSuitableByWll(fEdSer_kN);
 
             if (suitableShackle == null)
             {

@@ -1,4 +1,6 @@
-﻿namespace LascheApp.Padeye
+using System;
+
+namespace LascheApp.Padeye
 {
     public static class PadeyeOutOfPlaneChecker
     {
@@ -15,6 +17,13 @@
             if (input.H_DNV_mm <= 0)
                 result.Errors.Add("H_DNV must be greater than 0.");
 
+            if (input.OutOfPlaneAngle_deg < 0 || input.OutOfPlaneAngle_deg > 90)
+                result.Errors.Add("Out-of-plane angle must be between 0° and 90°.");
+
+            if (input.OutOfPlaneLoadFactorInput.HasValue &&
+                (input.OutOfPlaneLoadFactorInput.Value < 0 || input.OutOfPlaneLoadFactorInput.Value > 1))
+                result.Errors.Add("Out-of-plane load factor must be between 0.0 and 1.0.");
+
             if (input.PlateWidth_mm <= 0)
                 result.Errors.Add("Plate width b must be greater than 0.");
 
@@ -30,11 +39,15 @@
             if (result.HasErrors)
                 return result;
 
-            double fEd_N =
-                input.F_Ed_kN * 1000.0;
+            double outOfPlaneLoadFactor = input.OutOfPlaneLoadFactorInput.HasValue
+                ? input.OutOfPlaneLoadFactorInput.Value
+                : Math.Sin(input.OutOfPlaneAngle_deg * Math.PI / 180.0);
+
+            double fOutOfPlaneEd_N =
+                input.F_Ed_kN * 1000.0 * outOfPlaneLoadFactor;
 
             double mEd_Nmm =
-                fEd_N * input.H_DNV_mm;
+                fOutOfPlaneEd_N * input.H_DNV_mm;
 
             double sectionModulus_mm3 =
                 input.PlateWidth_mm *
@@ -47,6 +60,9 @@
 
             double sigmaRd_Nmm2 =
                 input.Fy_Nmm2 / input.GammaM0;
+
+            result.OutOfPlaneLoadFactor = outOfPlaneLoadFactor;
+            result.F_OutOfPlane_Ed_kN = fOutOfPlaneEd_N / 1000.0;
 
             result.M_Ed_Nmm = mEd_Nmm;
             result.SectionModulus_mm3 = sectionModulus_mm3;

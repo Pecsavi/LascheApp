@@ -81,6 +81,41 @@ namespace LascheApp.Padeye
             }
         }
 
+
+        public string SummaryCheckName
+        {
+            get
+            {
+                if (MoglichkeitA_Ok && MoglichkeitB_Ok)
+                    return "EC geometry check - Method A and B OK";
+
+                if (MoglichkeitA_Ok)
+                    return "EC geometry check - Method A OK";
+
+                if (MoglichkeitB_Ok)
+                    return "EC geometry check - Method B OK";
+
+                return "EC geometry check - Method A and B NOT OK";
+            }
+        }
+
+        public List<CheckItem> SummaryCheckItems
+        {
+            get
+            {
+                return new List<CheckItem>
+                {
+                    new CheckItem
+                    {
+                        Name = SummaryCheckName,
+                        Utilization = MaxUtilization,
+                        IsOk = IsOk,
+                        ShowUtilization = false
+                    }
+                };
+            }
+        }
+
         public List<CheckItem> MoglichkeitA_CheckItems
         {
             get

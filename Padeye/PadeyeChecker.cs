@@ -1,4 +1,4 @@
-namespace LascheApp.Padeye
+﻿namespace LascheApp.Padeye
 {
     public static class PadeyeChecker
     {
@@ -50,6 +50,31 @@ namespace LascheApp.Padeye
                 GammaM0 = input.GammaM0
             };
 
+            PadeyeDnvOutOfPlaneInput dnvOutOfPlaneInput = new PadeyeDnvOutOfPlaneInput
+            {
+                F_Ed_kN = input.F_Ed_kN,
+                Alpha_deg = input.DnvOutOfPlaneAngle_deg,
+                H_DNV_mm = input.ShackleH_DNV_mm,
+
+                Dpin_mm = input.ShackleDpin_mm,
+                HoleDiameter_mm = input.HoleDiameter_mm,
+
+                MainPlateThickness_mm = input.PlateThickness_mm,
+                CheekPlateThickness_mm = input.CheekPlateThickness_mm,
+                Rpl_mm = input.Rpl_mm,
+                Rch_mm = input.Rch_mm,
+                WeldA_mm = input.CheekPlateWeldA_mm,
+
+                Fy_Nmm2 = input.Fy_Nmm2,
+                Fu_Nmm2 = input.Fu_Nmm2,
+                E_Nmm2 = input.E_Nmm2,
+                BetaW = input.BetaW,
+
+                Beta = input.DnvBeta,
+                GammaM = input.DnvGammaM,
+                GammaM2 = input.GammaM2
+            };
+
             PadeyeBearingInput bearingInput = new PadeyeBearingInput
             {
                 F_Ed_kN = input.F_Ed_kN,
@@ -77,6 +102,9 @@ namespace LascheApp.Padeye
             PadeyeOutOfPlaneResult outOfPlaneResult =
                 PadeyeOutOfPlaneChecker.Check(outOfPlaneInput);
 
+            PadeyeDnvOutOfPlaneResult dnvOutOfPlaneResult =
+                PadeyeDnvOutOfPlaneChecker.Check(dnvOutOfPlaneInput);
+
             PadeyeBearingResult bearingResult =
                 PadeyeBearingChecker.Check(bearingInput);
 
@@ -85,6 +113,7 @@ namespace LascheApp.Padeye
                 BasicResult = basicResult,
                 EcGeometryResult = ecGeometryResult,
                 OutOfPlaneResult = outOfPlaneResult,
+                DnvOutOfPlaneResult = dnvOutOfPlaneResult,
                 BearingResult = bearingResult
             };
         }
