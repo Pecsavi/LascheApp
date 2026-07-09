@@ -124,13 +124,13 @@ namespace LascheApp.Padeye
                 {
                     new CheckItem
                     {
-                        Name = "EC geometry Möglichkeit A - edge distance a",
+                        Name = "EC geometry Method A - edge distance a",
                         Utilization = EdgeDistanceA_Utilization,
                         IsOk = EdgeDistanceA_Ok
                     },
                     new CheckItem
                     {
-                        Name = "EC geometry Möglichkeit A - side distance c",
+                        Name = "EC geometry Method A - side distance c",
                         Utilization = SideDistanceC_Utilization,
                         IsOk = SideDistanceC_Ok
                     }
@@ -146,13 +146,13 @@ namespace LascheApp.Padeye
                 {
                     new CheckItem
                     {
-                        Name = "EC geometry Möglichkeit B - thickness t",
+                        Name = "EC geometry Method B - thickness t",
                         Utilization = ThicknessMoglichkeitB_Utilization,
                         IsOk = ThicknessMoglichkeitB_Ok
                     },
                     new CheckItem
                     {
-                        Name = "EC geometry Möglichkeit B - hole diameter d0",
+                        Name = "EC geometry Method B - hole diameter d0",
                         Utilization = HoleDiameterMoglichkeitB_Utilization,
                         IsOk = HoleDiameterMoglichkeitB_Ok
                     }

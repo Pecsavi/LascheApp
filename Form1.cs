@@ -899,9 +899,9 @@ namespace LascheApp
                 $"Max utilization: η = {result.MaxUtilization:0.000}\n\n" +
                 $"Governing check: {result.GoverningCheckName}\n\n" +
 
-                $"Möglichkeit A\n" +
+                $"Method A\n" +
                 $"-------------\n" +
-                $"Result Möglichkeit A: {(result.MoglichkeitA_Ok ? "OK" : "NOT OK")}\n" +
+                $"Result Method A: {(result.MoglichkeitA_Ok ? "OK" : "NOT OK")}\n" +
                 $"Max utilization A: η = {result.MoglichkeitA_MaxUtilization:0.000}\n\n" +
                 $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
                 $"fy = {input.Fy_Nmm2:0.0} N/mm²\n" +
@@ -919,9 +919,9 @@ namespace LascheApp
                 $"Required b = 2 * required c + d0 = {requiredB_mm:0.0} mm\n" +
                 $"Check b >= required b: {(result.SideDistanceC_Ok ? "OK" : "NOT OK")}  η = {result.SideDistanceC_Utilization:0.000}\n\n" +
 
-                $"Möglichkeit B\n" +
+                $"Method B\n" +
                 $"-------------\n" +
-                $"Result Möglichkeit B: {(result.MoglichkeitB_Ok ? "OK" : "NOT OK")}\n" +
+                $"Result Method B: {(result.MoglichkeitB_Ok ? "OK" : "NOT OK")}\n" +
                 $"Max utilization B: η = {result.MoglichkeitB_MaxUtilization:0.000}\n\n" +
                 $"t = {input.PlateThickness_mm:0.0} mm\n" +
                 $"Required t = 0.7 * sqrt(F_Ed * gammaM0 / fy) = {result.RequiredThickness_MoglichkeitB_mm:0.0} mm\n" +
