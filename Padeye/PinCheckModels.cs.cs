@@ -10,7 +10,11 @@ namespace LascheApp.Padeye
 
         public double M_Ed_kNmm { get; set; }
         public double M_Ed_ser_kNmm { get; set; }
+        public bool MomentCalculatedFromTensionLugGeometry { get; set; } = false;
 
+        public double InnerLugThicknessT_mm { get; set; }
+        public double OuterLugThicknessT2_mm { get; set; }
+        public double GapS_mm { get; set; }
         public double PinDiameter_mm { get; set; }
 
         public double PinFy_Nmm2 { get; set; } // fyp
@@ -21,6 +25,7 @@ namespace LascheApp.Padeye
         public double GammaM6_ser { get; set; } = 1.0;
 
         public bool IsReplaceablePin { get; set; } = true;
+
     }
 
     public class PinCheckResult

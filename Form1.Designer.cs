@@ -81,6 +81,10 @@
             chkIncludeCheekPlatesInBearing = new CheckBox();
             richTextBox1 = new RichTextBox();
             label6 = new Label();
+            lblGapS = new Label();
+            txtGapS_mm = new TextBox();
+            lblOuterLugThicknessT2 = new Label();
+            txtOuterLugThicknessT2_mm = new TextBox();
             SuspendLayout();
             // 
             // cmbShackles
@@ -153,7 +157,7 @@
             txtLoad_kN.Name = "txtLoad_kN";
             txtLoad_kN.Size = new Size(100, 23);
             txtLoad_kN.TabIndex = 5;
-            txtLoad_kN.Text = "120";
+            txtLoad_kN.Text = "1400";
             // 
             // txtPlateThickness_mm
             // 
@@ -161,7 +165,7 @@
             txtPlateThickness_mm.Name = "txtPlateThickness_mm";
             txtPlateThickness_mm.Size = new Size(100, 23);
             txtPlateThickness_mm.TabIndex = 6;
-            txtPlateThickness_mm.Text = "30";
+            txtPlateThickness_mm.Text = "60";
             txtPlateThickness_mm.TextChanged += txtPlateThickness_mm_TextChanged;
             // 
             // txtHoleDiameter_mm
@@ -171,7 +175,7 @@
             txtHoleDiameter_mm.Name = "txtHoleDiameter_mm";
             txtHoleDiameter_mm.Size = new Size(100, 23);
             txtHoleDiameter_mm.TabIndex = 7;
-            txtHoleDiameter_mm.Text = "29";
+            txtHoleDiameter_mm.Text = "32";
             // 
             // label1
             // 
@@ -316,7 +320,7 @@
             txtLoadSer_kN.Name = "txtLoadSer_kN";
             txtLoadSer_kN.Size = new Size(100, 23);
             txtLoadSer_kN.TabIndex = 21;
-            txtLoadSer_kN.Text = "80";
+            txtLoadSer_kN.Text = "700";
             // 
             // label7
             // 
@@ -332,7 +336,7 @@
             chkReplaceablePin.AutoSize = true;
             chkReplaceablePin.Checked = true;
             chkReplaceablePin.CheckState = CheckState.Checked;
-            chkReplaceablePin.Location = new Point(554, 211);
+            chkReplaceablePin.Location = new Point(253, 164);
             chkReplaceablePin.Name = "chkReplaceablePin";
             chkReplaceablePin.Size = new Size(148, 19);
             chkReplaceablePin.TabIndex = 22;
@@ -362,7 +366,7 @@
             txtTensionPinDiameter_mm.Name = "txtTensionPinDiameter_mm";
             txtTensionPinDiameter_mm.Size = new Size(100, 23);
             txtTensionPinDiameter_mm.TabIndex = 25;
-            txtTensionPinDiameter_mm.Text = "29";
+            txtTensionPinDiameter_mm.Text = "32";
             txtTensionPinDiameter_mm.TextChanged += txtTensionPinDiameter_mm_TextChanged;
             // 
             // label9
@@ -563,11 +567,50 @@
             label6.TabIndex = 46;
             label6.Text = "Lug material";
             // 
+            // lblGapS
+            // 
+            lblGapS.AutoSize = true;
+            lblGapS.Location = new Point(426, 227);
+            lblGapS.Name = "lblGapS";
+            lblGapS.Size = new Size(69, 15);
+            lblGapS.TabIndex = 48;
+            lblGapS.Text = "Gap s [mm]";
+            // 
+            // txtGapS_mm
+            // 
+            txtGapS_mm.Location = new Point(565, 227);
+            txtGapS_mm.Name = "txtGapS_mm";
+            txtGapS_mm.Size = new Size(100, 23);
+            txtGapS_mm.TabIndex = 47;
+            txtGapS_mm.Text = "5";
+            txtGapS_mm.TextChanged += textBox1_TextChanged;
+            // 
+            // lblOuterLugThicknessT2
+            // 
+            lblOuterLugThicknessT2.AutoSize = true;
+            lblOuterLugThicknessT2.Location = new Point(426, 194);
+            lblOuterLugThicknessT2.Name = "lblOuterLugThicknessT2";
+            lblOuterLugThicknessT2.Size = new Size(103, 15);
+            lblOuterLugThicknessT2.TabIndex = 50;
+            lblOuterLugThicknessT2.Text = "Outer lug t2 [mm]";
+            // 
+            // txtOuterLugThicknessT2_mm
+            // 
+            txtOuterLugThicknessT2_mm.Location = new Point(565, 194);
+            txtOuterLugThicknessT2_mm.Name = "txtOuterLugThicknessT2_mm";
+            txtOuterLugThicknessT2_mm.Size = new Size(100, 23);
+            txtOuterLugThicknessT2_mm.TabIndex = 49;
+            txtOuterLugThicknessT2_mm.Text = "40";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1138, 1138);
+            Controls.Add(lblOuterLugThicknessT2);
+            Controls.Add(txtOuterLugThicknessT2_mm);
+            Controls.Add(lblGapS);
+            Controls.Add(txtGapS_mm);
             Controls.Add(label6);
             Controls.Add(richTextBox1);
             Controls.Add(chkIncludeCheekPlatesInBearing);
@@ -683,5 +726,9 @@
         private CheckBox chkIncludeCheekPlatesInBearing;
         private RichTextBox richTextBox1;
         private Label label6;
+        private Label lblGapS;
+        private TextBox txtGapS_mm;
+        private Label lblOuterLugThicknessT2;
+        private TextBox txtOuterLugThicknessT2_mm;
     }
 }

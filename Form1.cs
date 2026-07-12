@@ -318,18 +318,40 @@ namespace LascheApp
                     txtBasicCheckResult.Text = "Invalid input: pin diameter d [mm]";
                     return;
                 }
-
-                if (!TryReadDouble(txtPinMoment_kNmm.Text, out double pinMoment_kNmm))
+                if (!TryReadDouble(txtOuterLugThicknessT2_mm.Text, out double outerLugThicknessT2_mm))
                 {
-                    txtBasicCheckResult.Text = "Invalid input: M_Ed [kNmm]";
+                    txtBasicCheckResult.Text = "Invalid input: outer lug thickness t2 [mm]";
                     return;
                 }
 
-                if (!TryReadDouble(txtPinMomentSer_kNmm.Text, out double pinMomentSer_kNmm))
+                if (!TryReadDouble(txtGapS_mm.Text, out double gapS_mm))
                 {
-                    txtBasicCheckResult.Text = "Invalid input: M_Ed,ser [kNmm]";
+                    txtBasicCheckResult.Text = "Invalid input: gap s [mm]";
                     return;
                 }
+            
+
+                if (outerLugThicknessT2_mm <= 0)
+                {
+                    txtBasicCheckResult.Text = "Invalid input: outer lug thickness t2 must be greater than 0.";
+                    return;
+                }
+
+                if (gapS_mm < 0)
+                {
+                    txtBasicCheckResult.Text = "Invalid input: gap s must not be negative.";
+                    return;
+                }
+
+                    double pinMoment_kNmm =
+                        fEd_kN / 8.0 *
+                        (outerLugThicknessT2_mm + 4.0 * gapS_mm + 2.0 * t_mm);
+
+                    double pinMomentSer_kNmm =
+                        pinMoment_kNmm * fEdSer_kN / fEd_kN;
+
+                txtPinMoment_kNmm.Text = pinMoment_kNmm.ToString("0.00");
+                txtPinMomentSer_kNmm.Text = pinMomentSer_kNmm.ToString("0.00");
 
                 MaterialGrade? pinMaterial = GetSelectedPinMaterial();
 
@@ -358,6 +380,11 @@ namespace LascheApp
 
                     M_Ed_kNmm = pinMoment_kNmm,
                     M_Ed_ser_kNmm = pinMomentSer_kNmm,
+
+                    MomentCalculatedFromTensionLugGeometry = true,
+                    InnerLugThicknessT_mm = t_mm,
+                    OuterLugThicknessT2_mm = outerLugThicknessT2_mm,
+                    GapS_mm = gapS_mm,
 
                     PinDiameter_mm = tensionPinDiameter_mm,
 
@@ -1016,6 +1043,23 @@ namespace LascheApp
             }
 
             PinCheckInput input = result.Input;
+            string momentInputText;
+
+            if (input.MomentCalculatedFromTensionLugGeometry)
+            {
+                momentInputText =
+                    $"t = {input.InnerLugThicknessT_mm:0.0} mm\n" +
+                    $"t2 = {input.OuterLugThicknessT2_mm:0.0} mm\n" +
+                    $"s = {input.GapS_mm:0.0} mm\n" +
+                    $"M_Ed = F_Ed / 8 * (t2 + 4 * s + 2 * t) = {input.M_Ed_kNmm:0.00} · 10⁻³ kNm\n" +
+                    $"M_Ed,ser = M_Ed * F_Ed,ser / F_Ed = {input.M_Ed_ser_kNmm:0.00} · 10⁻³ kNm\n";
+            }
+            else
+            {
+                momentInputText =
+                    $"M_Ed = {input.M_Ed_kNmm:0.00} · 10⁻³ kNm\n" +
+                    $"M_Ed,ser = {input.M_Ed_ser_kNmm:0.00} · 10⁻³ kNm\n";
+            }
 
             string text =
                 "Pin verification\n" +
@@ -1029,8 +1073,7 @@ namespace LascheApp
                 "-----\n" +
                 $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
                 $"F_Ed,ser = {input.F_Ed_ser_kN:0.00} kN\n" +
-                $"M_Ed = {input.M_Ed_kNmm:0.00} · 10⁻³ kNm\n" +
-                $"M_Ed,ser = {input.M_Ed_ser_kNmm:0.00} · 10⁻³ kNm\n" +
+                momentInputText +
                 $"Pin diameter d = {input.PinDiameter_mm:0.0} mm\n" +
                 $"fy,p = {input.PinFy_Nmm2:0.0} N/mm²\n" +
                 $"fu,p = {input.PinFu_Nmm2:0.0} N/mm²\n" +
@@ -1168,6 +1211,11 @@ namespace LascheApp
         private void txtTensionPinDiameter_mm_TextChanged(object sender, EventArgs e)
         {
             UpdateSelectedPinMaterialInfo();
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
