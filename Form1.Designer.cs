@@ -583,8 +583,7 @@
             txtGapS_mm.Size = new Size(100, 23);
             txtGapS_mm.TabIndex = 47;
             txtGapS_mm.Text = "5";
-            txtGapS_mm.TextChanged += textBox1_TextChanged;
-            // 
+           
             // lblOuterLugThicknessT2
             // 
             lblOuterLugThicknessT2.AutoSize = true;

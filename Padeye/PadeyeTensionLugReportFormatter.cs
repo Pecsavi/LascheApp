@@ -108,7 +108,22 @@ namespace LascheApp.Padeye
             sb.AppendLine($"F_Ed     = {Fmt2(basic.F_Ed_kN)} kN");
             sb.AppendLine($"F_Ed,ser = {Fmt2(basic.F_Ed_ser_kN)} kN");
             sb.AppendLine();
-            sb.AppendLine($"t = {Fmt1(basic.PlateThickness_mm)} mm");
+            sb.AppendLine($"tpl = {Fmt1(basic.PlateThickness_mm)} mm");
+
+            if (basic.CheekPlateThickness_mm > 0.0)
+            {
+                sb.AppendLine($"tch = {Fmt1(basic.CheekPlateThickness_mm)} mm");
+
+                if (basic.IncludeCheekPlatesInBearing)
+                    sb.AppendLine($"t = tpl + 2 * tch = {Fmt1(basic.TotalBearingThickness_mm)} mm");
+                else
+                    sb.AppendLine($"t = tpl = {Fmt1(basic.PlateThickness_mm)} mm");
+            }
+            else
+            {
+                sb.AppendLine($"t = tpl = {Fmt1(basic.PlateThickness_mm)} mm");
+            }
+
             sb.AppendLine($"d0 = {Fmt1(basic.HoleDiameter_mm)} mm");
             sb.AppendLine($"b = {Fmt1(basic.PlateWidth_mm)} mm");
             sb.AppendLine($"e = {Fmt1(e_mm)} mm");
@@ -196,7 +211,7 @@ namespace LascheApp.Padeye
             sb.AppendLine();
 
             AppendPinOverall(sb, pinResult);
-            AppendPinInput(sb, pinResult);
+            AppendPinInput(sb, lugResult, pinResult);
             AppendPinChecks(sb, pinResult);
         }
 
@@ -356,9 +371,12 @@ namespace LascheApp.Padeye
 
         private static void AppendPinInput(
             StringBuilder sb,
-            PinCheckResult result)
+            PadeyeCheckResult lugResult,
+            PinCheckResult pinResult)
         {
-            PinCheckInput input = result.Input;
+            PadeyeBasicCheckInput basic = lugResult.BasicResult.Input;
+            PinCheckInput input = pinResult.Input;
+            
 
             sb.AppendLine("\tInput");
             sb.AppendLine("\t-----");
@@ -367,7 +385,12 @@ namespace LascheApp.Padeye
 
             if (input.MomentCalculatedFromTensionLugGeometry)
             {
-                sb.AppendLine($"\tt = {Fmt1(input.InnerLugThicknessT_mm)} mm");
+                sb.AppendLine("\tEffective inner lug thickness for pin bending:");
+
+                if (basic.CheekPlateThickness_mm > 0.0)
+                    sb.AppendLine($"\tt = tpl + 2 * tch = {Fmt1(input.InnerLugThicknessT_mm)} mm");
+                else
+                    sb.AppendLine($"\tt = tpl = {Fmt1(input.InnerLugThicknessT_mm)} mm");
                 sb.AppendLine($"\tt2 = {Fmt1(input.OuterLugThicknessT2_mm)} mm");
                 sb.AppendLine($"\ts = {Fmt1(input.GapS_mm)} mm");
                 sb.AppendLine($"\tM_Ed = F_Ed / 8 * (t2 + 4 * s + 2 * t) = {Fmt2(input.M_Ed_kNmm)} · 10⁻³ kNm");

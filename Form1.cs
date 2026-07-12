@@ -266,10 +266,6 @@ namespace LascheApp
                 return;
             }
 
-            // User input is e = distance from plate end to hole centre.
-            // The EC geometry checker still uses the internal values a and c:
-            // a = e - d0 / 2
-            // c = (b - d0) / 2
             if (!TryReadDouble(txtEdgeDistanceA_mm.Text, out double endDistanceE_mm))
             {
                 txtBasicCheckResult.Text = "Invalid input: e [mm]";
@@ -329,7 +325,27 @@ namespace LascheApp
                     txtBasicCheckResult.Text = "Invalid input: gap s [mm]";
                     return;
                 }
-            
+                if (!TryReadOptionalDoubleControl("txtCheekPlateThickness_mm", 0.0, out double tensionCheekPlateThickness_mm, out string tensionCheekThicknessError))
+                {
+                    txtBasicCheckResult.Text = tensionCheekThicknessError;
+                    return;
+                }
+
+                if (tensionCheekPlateThickness_mm < 0)
+                {
+                    txtBasicCheckResult.Text = "Invalid input: cheek plate thickness tch must not be negative.";
+                    return;
+                }
+
+                double innerLugThicknessForPinMoment_mm =
+             t_mm + 2.0 * tensionCheekPlateThickness_mm;
+
+                if (chkIncludeCheekPlatesInBearing.Checked && tensionCheekPlateThickness_mm <= 0)
+                {
+                    txtBasicCheckResult.Text = "Invalid input: cheek plate thickness tch must be greater than 0 if cheek plates are considered.";
+                    return;
+                }
+                
 
                 if (outerLugThicknessT2_mm <= 0)
                 {
@@ -343,12 +359,12 @@ namespace LascheApp
                     return;
                 }
 
-                    double pinMoment_kNmm =
-                        fEd_kN / 8.0 *
-                        (outerLugThicknessT2_mm + 4.0 * gapS_mm + 2.0 * t_mm);
+                double pinMoment_kNmm =
+                    fEd_kN / 8.0 *
+                    (outerLugThicknessT2_mm + 4.0 * gapS_mm + 2.0 * innerLugThicknessForPinMoment_mm);
 
-                    double pinMomentSer_kNmm =
-                        pinMoment_kNmm * fEdSer_kN / fEd_kN;
+                double pinMomentSer_kNmm =
+                    pinMoment_kNmm * fEdSer_kN / fEd_kN;
 
                 txtPinMoment_kNmm.Text = pinMoment_kNmm.ToString("0.00");
                 txtPinMomentSer_kNmm.Text = pinMomentSer_kNmm.ToString("0.00");
@@ -382,7 +398,8 @@ namespace LascheApp
                     M_Ed_ser_kNmm = pinMomentSer_kNmm,
 
                     MomentCalculatedFromTensionLugGeometry = true,
-                    InnerLugThicknessT_mm = t_mm,
+                    InnerLugThicknessT_mm = innerLugThicknessForPinMoment_mm,
+                  
                     OuterLugThicknessT2_mm = outerLugThicknessT2_mm,
                     GapS_mm = gapS_mm,
 
@@ -410,6 +427,9 @@ namespace LascheApp
                     PlateThickness_mm = t_mm,
                     PlateWidth_mm = plateWidth_mm,
                     HoleDiameter_mm = holeDiameter_mm,
+
+                    CheekPlateThickness_mm = tensionCheekPlateThickness_mm,
+                    IncludeCheekPlatesInBearing = chkIncludeCheekPlatesInBearing.Checked,
 
                     EdgeDistanceA_mm = edgeDistanceA_mm,
                     SideDistanceC_mm = sideDistanceC_mm,
@@ -442,12 +462,20 @@ namespace LascheApp
                         ? pinResult.GoverningCheckName
                         : tensionPadeyeResult.GoverningCheckName;
 
-                txtBasicCheckResult.Text = FormatTensionLugCheckResult(
+                txtBasicCheckResult.Text =
+                PadeyeTensionLugReportFormatter.Format(
                     tensionPadeyeResult,
                     pinResult,
-                    material.Name,
-                    pinMaterial.Name);
-
+                new PadeyeTensionLugReportInfo
+                {
+                    Project = "S-1099",
+                    Gantry = "NL1",
+                    Connection = "Gantry 1 - Gantry 2",
+                    PreparedBy = Environment.UserName,
+                    Date = DateTime.Today,
+                    PlateMaterial = material.Name,
+                    PinMaterial = pinMaterial.Name
+                });
                 return;
             }
 
@@ -582,540 +610,8 @@ namespace LascheApp
             cmbLugType.ValueMember = "Key";
             cmbLugType.SelectedValue = LugType.TransportLug;
         }
-        private string FormatLugType(LugType lugType)
-        {
-            return lugType switch
-            {
-                LugType.TransportLug => "Transport Lug",
-                LugType.TensionLug => "Tension Lug",
-                _ => lugType.ToString()
-            };
-        }
-        private string FormatTensionLugCheckResult(
-            PadeyeCheckResult plateResult,
-            PinCheckResult pinResult,
-            string plateMaterialName,
-            string pinMaterialName)
-        {
-            bool overallOk = plateResult.IsOk && pinResult.IsOk;
-
-            List<CheckItem> allItems = new List<CheckItem>();
-
-            if (!plateResult.BasicResult.HasErrors)
-                allItems.AddRange(plateResult.BasicResult.CheckItems);
-
-            if (!plateResult.EcGeometryResult.HasErrors)
-                allItems.AddRange(plateResult.EcGeometryResult.SummaryCheckItems);
-
-            if (!plateResult.BearingResult.HasErrors)
-                allItems.AddRange(plateResult.BearingResult.CheckItems);
-
-            if (!pinResult.HasErrors)
-                allItems.AddRange(pinResult.CheckItems);
-
-            List<CheckItem> utilizationItems = allItems
-                .Where(i => i.ShowUtilization)
-                .ToList();
-
-            double maxUtilization = utilizationItems.Count == 0
-                ? 0.0
-                : utilizationItems.Max(i => i.Utilization);
-
-            string governingCheckName = utilizationItems.Count == 0
-                ? ""
-                : utilizationItems.OrderByDescending(i => i.Utilization).First().Name;
-
-            string text =
-                "Tension Lug verification\n" +
-                "========================\n" +
-                $"Overall result: {(overallOk ? "OK" : "NOT OK")}\n" +
-                $"Max utilization: η = {maxUtilization:0.000}\n" +
-                $"Governing check: {governingCheckName}\n\n" +
-                $"Plate material = {plateMaterialName}\n" +
-                $"Pin material = {pinMaterialName}\n\n" +
-                FormatTensionLugCheckSummary(allItems) +
-                Environment.NewLine +
-                Environment.NewLine +
-                "Plate verification\n" +
-                "==================\n\n" +
-                FormatPadeyeBasicCheckResult(plateResult.BasicResult) +
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatPadeyeEcGeometryResult(plateResult.EcGeometryResult) +
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatPadeyeBearingResult(plateResult.BearingResult) +
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatPinCheckResult(pinResult);
-
-            return text;
-        }
-
-        private string FormatTensionLugCheckSummary(List<CheckItem> items)
-        {
-            return FormatGroupedCheckSummary(items);
-        }
-
-        private string FormatGroupedCheckSummary(IEnumerable<CheckItem> items)
-        {
-            List<CheckItem> geometryItems = items
-                .Where(i => !i.ShowUtilization)
-                .ToList();
-
-            List<CheckItem> utilizationItems = items
-                .Where(i => i.ShowUtilization)
-                .OrderByDescending(i => i.Utilization)
-                .ToList();
-
-            string text =
-                "Check summary\n" +
-                "-------------\n";
-
-            if (geometryItems.Count > 0)
-            {
-                text +=
-                    "\nGeometry checks\n" +
-                    "---------------\n";
-
-                foreach (CheckItem item in geometryItems)
-                    text += FormatGeometrySummaryLine(item) + Environment.NewLine;
-            }
-
-            if (utilizationItems.Count > 0)
-            {
-                text +=
-                    "\nUtilization checks\n" +
-                    "------------------\n";
-
-                foreach (CheckItem item in utilizationItems)
-                    text += FormatUtilizationSummaryLine(item) + Environment.NewLine;
-            }
-
-            return text.TrimEnd();
-        }
-
-        private string FormatGeometrySummaryLine(CheckItem item)
-        {
-            string status = item.IsOk ? "OK" : "NOT OK";
-
-            return $"{status,-7}         {item.Name}";
-        }
-
-        private string FormatUtilizationSummaryLine(CheckItem item)
-        {
-            string status = item.IsOk ? "OK" : "NOT OK";
-
-            return $"{status,-7} η = {item.Utilization:0.000}  {item.Name}";
-        }
-
-        private string FormatPadeyeCheckResult(PadeyeCheckResult result)
-        {
-            string text =
-                FormatPadeyeOverallResult(result) +
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatCheckSummary(result) +
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatPadeyeBasicCheckResult(result.BasicResult) +
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatPadeyeEcGeometryResult(result.EcGeometryResult);
-
-            if (result.DnvOutOfPlaneCheckRequired)
-            {
-                text +=
-                    Environment.NewLine +
-                    Environment.NewLine +
-                    FormatPadeyeDnvOutOfPlaneResult(result.DnvOutOfPlaneResult);
-            }
-
-            text +=
-                Environment.NewLine +
-                Environment.NewLine +
-                FormatPadeyeBearingResult(result.BearingResult);
-
-            return text;
-        }
-        private string FormatPadeyeDnvOutOfPlaneResult(PadeyeDnvOutOfPlaneResult result)
-        {
-            PadeyeDnvOutOfPlaneInput input = result.Input;
-
-            if (!result.IsActive)
-            {
-                return
-                    "DNV out-of-plane checks\n" +
-                    "-----------------------\n" +
-                    "Not active.";
-            }
-
-            if (result.HasErrors)
-            {
-                return
-                    "DNV out-of-plane checks\n" +
-                    "-----------------------\n" +
-                    "Input error\n\n" +
-                    string.Join(Environment.NewLine, result.Errors);
-            }
-
-            string text =
-                "DNV out-of-plane checks\n" +
-                "-----------------------\n" +
-                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
-                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
-                $"Governing check: {result.GoverningCheckName}\n\n" +
-
-                "Load decomposition\n" +
-                "------------------\n" +
-                $"Fds = {input.F_Ed_kN:0.00} kN\n" +
-                $"alpha = {input.Alpha_deg:0.0}°\n" +
-                $"Fd = Fds * cos(alpha) = {result.Fd_kN:0.00} kN\n" +
-                $"Fdl = Fds * sin(alpha) = {result.Fdl_kN:0.00} kN\n" +
-                $"h = {input.H_DNV_mm:0.0} mm\n" +
-                $"Me = Fdl * h = {result.Me_kNm:0.00} kNm\n\n" +
-
-                "DNV parameters\n" +
-                "--------------\n" +
-                $"Dpin = {input.Dpin_mm:0.0} mm\n" +
-                $"DH = {input.HoleDiameter_mm:0.0} mm\n" +
-                $"tpl = {input.MainPlateThickness_mm:0.0} mm\n" +
-                $"tch = {input.CheekPlateThickness_mm:0.0} mm\n" +
-                $"t = tpl + 2 * tch = {input.TotalThickness_mm:0.0} mm\n" +
-                $"Rpl = {input.Rpl_mm:0.0} mm\n" +
-                $"Rch = {input.Rch_mm:0.0} mm\n" +
-                $"Rpad = (Rpl * tpl + 2 * Rch * tch) / t = {result.Rpad_mm:0.0} mm\n" +
-                $"beta = {input.Beta:0.000}\n" +
-                $"delta = 4 * tan(alpha) * h / t + 1 = {result.Delta:0.000}\n" +
-                $"beta,eff = {(result.Delta >= 1.3 ? "beta * (delta - 0.3)" : "beta")} = {result.BetaEffective:0.000}\n" +
-                $"sigma_Rd = fy / gammaM = {result.SigmaRd_Nmm2:0.0} N/mm²";
-
-            if (result.OutOfPlaneChecksActive)
-            {
-                text +=
-                    "\n\nDNV out-of-plane bearing\n" +
-                    "------------------------\n" +
-                    $"Dpin / DH = {result.DpinToHoleRatio:0.000}\n" +
-                    $"Formula branch: {(result.BearingFormulaWithClearance ? "Dpin / DH < 0.96" : "Dpin / DH >= 0.96")}\n" +
-                    $"sigma_Ed,1 = {result.SigmaEd1_Nmm2:0.0} N/mm²\n" +
-                    $"Check sigma_Ed,1 <= sigma_Rd: {(result.DnvBearingOk ? "OK" : "NOT OK")}  η = {result.DnvBearingUtilization:0.000}\n\n" +
-
-                    "DNV tear-out\n" +
-                    "------------\n" +
-                    $"sigma_Ed,2 = 1.7 * Fd / ((2 * Rpl - DH) * t) = {result.SigmaEd2_Nmm2:0.0} N/mm²\n" +
-                    $"Check sigma_Ed,2 <= sigma_Rd: {(result.TearOutOk ? "OK" : "NOT OK")}  η = {result.TearOutUtilization:0.000}";
-            }
-
-            if (result.CheekPlateWeldCheckActive)
-            {
-                text +=
-                    "\n\nCheek plate weld check\n" +
-                    "----------------------\n" +
-                    $"DCH = 2 * Rch = {result.Dch_mm:0.0} mm\n" +
-                    $"a = {input.WeldA_mm:0.0} mm\n" +
-                    $"sigma_Ed,3 = Fd * tch / (1.5 * t * DCH * a) * delta = {result.SigmaEd3_Nmm2:0.0} N/mm²\n" +
-                    $"fvwd = fu / (sqrt(3) * betaW * gammaM2) = {result.Fvwd_Nmm2:0.0} N/mm²\n" +
-                    $"Check sigma_Ed,3 <= fvwd: {(result.CheekPlateWeldOk ? "OK" : "NOT OK")}  η = {result.CheekPlateWeldUtilization:0.000}";
-            }
-
-            return text;
-        }
-
-        private string FormatPadeyeBearingResult(PadeyeBearingResult result)
-        {
-            PadeyeBearingInput input = result.Input;
-
-            if (result.HasErrors)
-            {
-                return
-                    "Pin-hole bearing check\n" +
-                    "----------------------\n" +
-                    "Input error\n\n" +
-                    string.Join(Environment.NewLine, result.Errors);
-            }
-
-            string text =
-                $"Pin-hole bearing check\n" +
-                $"----------------------\n" +
-                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
-                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
-                $"Governing check: {result.GoverningCheckName}\n" +
-                $"Replaceable pin checks: {(input.IsReplaceablePin ? "active" : "not active")}\n\n" +
-
-                $"Pin-hole bearing design\n" +
-                $"-----------------------\n" +
-                $"Fb,Ed = {input.F_Ed_kN:0.00} kN\n" +
-                $"Fb,Rd = 1.5 * t * d * fy / gammaM0 = {result.FbRd_kN:0.00} kN\n" +
-                $"Check Fb,Ed <= Fb,Rd: {(result.BearingDesignOk ? "OK" : "NOT OK")}  η = {result.BearingDesignUtilization:0.000}";
-
-            if (input.IsReplaceablePin)
-            {
-                text +=
-                    $"\n\nReplaceable pin service bearing\n" +
-                    $"-------------------------------\n" +
-                    $"Fb,Ed,ser = {input.F_Ed_ser_kN:0.00} kN\n" +
-                    $"Fb,Rd,ser = 0.6 * t * d * fy / gammaM6,ser = {result.FbRdSer_kN:0.00} kN\n" +
-                    $"Check Fb,Ed,ser <= Fb,Rd,ser: {(result.BearingServiceOk ? "OK" : "NOT OK")}  η = {result.BearingServiceUtilization:0.000}\n\n" +
-
-                    $"Replaceable pin contact stress\n" +
-                    $"------------------------------\n" +
-                    $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
-                    $"d = {input.PinDiameter_mm:0.0} mm\n" +
-                    $"E = {input.E_Nmm2:0.0} N/mm²\n" +
-                    $"sigma_h,Ed = 0.591 * sqrt(E * Fb,Ed,ser * (d0 - d) / (d² * t)) = {result.SigmaHEd_Nmm2:0.0} N/mm²\n" +
-                    $"fh,Rd = 2.5 * fy / gammaM6,ser = {result.FhRd_Nmm2:0.0} N/mm²\n" +
-                    $"Check sigma_h,Ed <= fh,Rd: {(result.HolePinStressOk ? "OK" : "NOT OK")}  η = {result.HolePinStressUtilization:0.000}";
-            }
-
-            return text;
-        }
-
-        private string FormatPadeyeOutOfPlaneResult(PadeyeOutOfPlaneResult result)
-        {
-            PadeyeOutOfPlaneInput input = result.Input;
-            if (result.HasErrors)
-            {
-                return
-                    "Out-of-plane bending check\n" +
-                    "--------------------------\n" +
-                    "Input error\n\n" +
-                    string.Join(Environment.NewLine, result.Errors);
-            }
-
-            return
-                $"Out-of-plane bending check\n" +
-                $"--------------------------\n" +
-                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
-                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
-                $"Governing check: {result.GoverningCheckName}\n\n" +
-
-                $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
-                $"H_DNV = {input.H_DNV_mm:0.0} mm\n" +
-                $"M_Ed = F_Ed * H_DNV = {result.M_Ed_Nmm:0.0} Nmm\n\n" +
-
-                $"b = {input.PlateWidth_mm:0.0} mm\n" +
-                $"t = {input.PlateThickness_mm:0.0} mm\n" +
-                $"W = b * t² / 6 = {result.SectionModulus_mm3:0.0} mm³\n\n" +
-
-                $"Sigma_bending,Ed = M_Ed / W = {result.SigmaBendingEd_Nmm2:0.0} N/mm²\n" +
-                $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
-                $"Check Sigma_bending,Ed <= Sigma_Rd: {(result.BendingOk ? "OK" : "NOT OK")}  η = {result.BendingUtilization:0.000}";
-        }
-        private string FormatCheckSummary(PadeyeCheckResult result)
-        {
-            return FormatGroupedCheckSummary(result.GoverningCheckItems);
-        }
-        private string FormatPadeyeOverallResult(PadeyeCheckResult result)
-        {
-            return
-                $"Padeye overall result\n" +
-                $"=====================\n" +
-                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
-                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
-                $"Governing check: {result.GoverningCheckName}";
-        }
-
-        private string FormatPadeyeEcGeometryResult(PadeyeEcGeometryResult result)
-        {
-            PadeyeEcGeometryInput input = result.Input;
-            if (result.HasErrors)
-            {
-                return
-                    "EC geometry check\n" +
-                    "-----------------\n" +
-                    "Input error\n\n" +
-                    string.Join(Environment.NewLine, result.Errors);
-            }
-            double e_mm = input.EdgeDistanceA_mm + input.HoleDiameter_mm / 2.0;
-            double requiredE_mm = result.RequiredEdgeDistanceA_mm + input.HoleDiameter_mm / 2.0;
-
-            double b_mm = 2.0 * input.SideDistanceC_mm + input.HoleDiameter_mm;
-            double requiredB_mm = 2.0 * result.RequiredSideDistanceC_mm + input.HoleDiameter_mm;
-
-            return
-                $"EC geometry check\n" +
-                $"-----------------\n" +
-                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
-                $"Max utilization: η = {result.MaxUtilization:0.000}\n\n" +
-                $"Governing check: {result.GoverningCheckName}\n\n" +
-
-                $"Method A\n" +
-                $"-------------\n" +
-                $"Result Method A: {(result.MoglichkeitA_Ok ? "OK" : "NOT OK")}\n" +
-                $"Max utilization A: η = {result.MoglichkeitA_MaxUtilization:0.000}\n\n" +
-                $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
-                $"fy = {input.Fy_Nmm2:0.0} N/mm²\n" +
-                $"gammaM0 = {input.GammaM0:0.00}\n" +
-                $"t = {input.PlateThickness_mm:0.0} mm\n" +
-                $"d0 = {input.HoleDiameter_mm:0.0} mm\n\n" +
-
-                $"e = {e_mm:0.0} mm\n" +
-                $"a = e - d0 / 2 = {input.EdgeDistanceA_mm:0.0} mm\n" +
-                $"Required e = required a + d0 / 2 = {requiredE_mm:0.0} mm\n" +
-                $"Check e >= required e: {(result.EdgeDistanceA_Ok ? "OK" : "NOT OK")}  η = {result.EdgeDistanceA_Utilization:0.000}\n\n" +
-
-                $"b = {b_mm:0.0} mm\n" +
-                $"c = (b - d0) / 2 = {input.SideDistanceC_mm:0.0} mm\n" +
-                $"Required b = 2 * required c + d0 = {requiredB_mm:0.0} mm\n" +
-                $"Check b >= required b: {(result.SideDistanceC_Ok ? "OK" : "NOT OK")}  η = {result.SideDistanceC_Utilization:0.000}\n\n" +
-
-                $"Method B\n" +
-                $"-------------\n" +
-                $"Result Method B: {(result.MoglichkeitB_Ok ? "OK" : "NOT OK")}\n" +
-                $"Max utilization B: η = {result.MoglichkeitB_MaxUtilization:0.000}\n\n" +
-                $"t = {input.PlateThickness_mm:0.0} mm\n" +
-                $"Required t = 0.7 * sqrt(F_Ed * gammaM0 / fy) = {result.RequiredThickness_MoglichkeitB_mm:0.0} mm\n" +
-                $"Check t >= required t: {(result.ThicknessMoglichkeitB_Ok ? "OK" : "NOT OK")}  η = {result.ThicknessMoglichkeitB_Utilization:0.000}\n\n" +
-
-                $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
-                $"Max d0 = 2.5 * t = {result.MaxHoleDiameter_MoglichkeitB_mm:0.0} mm\n" +
-                $"Check d0 <= 2.5 * t: {(result.HoleDiameterMoglichkeitB_Ok ? "OK" : "NOT OK")}  η = {result.HoleDiameterMoglichkeitB_Utilization:0.000}";
-        }
-        private string FormatPadeyeBasicCheckResult(PadeyeBasicCheckResult result)
-        {
-            PadeyeBasicCheckInput input = result.Input;
-            if (result.HasErrors)
-            {
-                return
-                    "Basic padeye check\n" +
-                    "------------------\n" +
-                    "Input error\n\n" +
-                    string.Join(Environment.NewLine, result.Errors);
-            }
-
-            string text =
-                $"Basic padeye check\n" +
-                $"------------------\n" +
-                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
-                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
-                $"Governing check: {result.GoverningCheckName}\n\n" +
-                $"F_Ed = {input.F_Ed_kN:0.00} kN";
-
-            if (input.LugType == LugType.TransportLug)
-            {
-                text +=
-                    $"\nF_Ed,ser = {input.F_Ed_ser_kN:0.00} kN\n" +
-                    $"WLL = {input.ShackleWLL_kN:0.00} kN\n" +
-                    $"Check F_Ed,ser <= WLL: {(result.WllOk ? "OK" : "NOT OK")}  η = {result.WllUtilization:0.000}\n\n" +
-
-                    $"Dpin = {input.ShackleDpin_mm:0.0} mm\n" +
-                    $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
-                    $"Required d0 = Dpin + {input.PinClearance_mm:0.0} mm = {result.RequiredHoleDiameter_mm:0.0} mm\n" +
-                    $"Check d0 >= Dpin + clearance: {(result.HoleDiameterOk ? "OK" : "NOT OK")}\n\n" +
-
-                    $"B1 = {input.ShackleB1_mm:0.0} mm\n" +
-                    $"t = {input.PlateThickness_mm:0.0} mm\n" +
-                    $"Required t = 0.75 * B1 = {result.RequiredThickness_mm:0.0} mm\n" +
-                    $"Check t >= 0.75 * B1: {(result.ThicknessOk ? "OK" : "NOT OK")}  η = {result.ThicknessUtilization:0.000}\n\n" +
-
-                    $"H_DNV = {input.ShackleH_DNV_mm:0.0} mm";
-            }
-
-            text +=
-                $"\n\nGross section tension check\n" +
-                $"---------------------------\n" +
-                $"b = {input.PlateWidth_mm:0.0} mm\n" +
-                $"t = {input.PlateThickness_mm:0.0} mm\n" +
-                $"A_gross = b * t = {result.GrossArea_mm2:0.0} mm²\n" +
-                $"Sigma_gross,Ed = F_Ed / A_gross = {result.SigmaGrossEd_Nmm2:0.0} N/mm²\n" +
-                $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
-                $"Check Sigma_gross,Ed <= Sigma_Rd: {(result.GrossSectionTensionOk ? "OK" : "NOT OK")}  η = {result.GrossSectionTensionUtilization:0.000}" +
-                $"\n\nNet section tension check\n" +
-                $"-------------------------\n" +
-                $"b = {input.PlateWidth_mm:0.0} mm\n" +
-                $"d0 = {input.HoleDiameter_mm:0.0} mm\n" +
-                $"A_net = (b - d0) * t = {result.NetArea_mm2:0.0} mm²\n" +
-                $"Sigma_Ed = F_Ed / A_net = {result.SigmaEd_Nmm2:0.0} N/mm²\n" +
-                $"Sigma_Rd = fy / gammaM0 = {result.SigmaRd_Nmm2:0.0} N/mm²\n" +
-                $"Check Sigma_Ed <= Sigma_Rd: {(result.NetSectionTensionOk ? "OK" : "NOT OK")}  η = {result.NetSectionTensionUtilization:0.000}";
-
-            return text;
-        }
-        private string FormatPinCheckResult(PinCheckResult result)
-        {
-            if (result.HasErrors)
-            {
-                return
-                    "Pin verification\n" +
-                    "----------------\n" +
-                    "Input error\n\n" +
-                    string.Join(Environment.NewLine, result.Errors);
-            }
-
-            PinCheckInput input = result.Input;
-            string momentInputText;
-
-            if (input.MomentCalculatedFromTensionLugGeometry)
-            {
-                momentInputText =
-                    $"t = {input.InnerLugThicknessT_mm:0.0} mm\n" +
-                    $"t2 = {input.OuterLugThicknessT2_mm:0.0} mm\n" +
-                    $"s = {input.GapS_mm:0.0} mm\n" +
-                    $"M_Ed = F_Ed / 8 * (t2 + 4 * s + 2 * t) = {input.M_Ed_kNmm:0.00} · 10⁻³ kNm\n" +
-                    $"M_Ed,ser = M_Ed * F_Ed,ser / F_Ed = {input.M_Ed_ser_kNmm:0.00} · 10⁻³ kNm\n";
-            }
-            else
-            {
-                momentInputText =
-                    $"M_Ed = {input.M_Ed_kNmm:0.00} · 10⁻³ kNm\n" +
-                    $"M_Ed,ser = {input.M_Ed_ser_kNmm:0.00} · 10⁻³ kNm\n";
-            }
-
-            string text =
-                "Pin verification\n" +
-                "----------------\n" +
-                $"Overall result: {(result.IsOk ? "OK" : "NOT OK")}\n" +
-                $"Max utilization: η = {result.MaxUtilization:0.000}\n" +
-                $"Governing check: {result.GoverningCheckName}\n" +
-                $"Replaceable pin checks: {(input.IsReplaceablePin ? "active" : "not active")}\n\n" +
-
-                "Input\n" +
-                "-----\n" +
-                $"F_Ed = {input.F_Ed_kN:0.00} kN\n" +
-                $"F_Ed,ser = {input.F_Ed_ser_kN:0.00} kN\n" +
-                momentInputText +
-                $"Pin diameter d = {input.PinDiameter_mm:0.0} mm\n" +
-                $"fy,p = {input.PinFy_Nmm2:0.0} N/mm²\n" +
-                $"fu,p = {input.PinFu_Nmm2:0.0} N/mm²\n" +
-                $"gammaM0 = {input.GammaM0:0.00}\n" +
-                $"gammaM2 = {input.GammaM2:0.00}\n" +
-                $"gammaM6,ser = {input.GammaM6_ser:0.00}\n\n" +
-
-                "Section values\n" +
-                "--------------\n" +
-                $"A = π * d² / 4 = {result.Area_mm2:0.0} mm²\n" +
-                $"Wel = π * d³ / 32 = {result.SectionModulus_mm3:0.0} mm³\n\n" +
-
-                "Pin shear\n" +
-                "---------\n" +
-                $"Fv,Ed = F_Ed / 2 = {result.FvEd_kN:0.00} kN\n" +
-                $"Fv,Rd = 0.6 * A * fu,p / gammaM2 = {result.FvRd_kN:0.00} kN\n" +
-                $"Check Fv,Ed <= Fv,Rd: {(result.ShearOk ? "OK" : "NOT OK")}  η = {result.ShearUtilization:0.000}\n\n" +
-
-                "Pin bending\n" +
-                "-----------\n" +
-                $"M_Ed = {result.MEd_kNmm:0.00} · 10⁻³ kNm\n" +
-                $"M_Rd = 1.5 * Wel * fy,p / gammaM0 = {result.MRd_kNmm:0.00} · 10⁻³ kNm\n" +
-                $"Check M_Ed <= M_Rd: {(result.BendingOk ? "OK" : "NOT OK")}  η = {result.BendingUtilization:0.000}\n\n" +
-
-                "Pin shear + bending interaction\n" +
-                "-------------------------------\n" +
-                $"η = (M_Ed / M_Rd)² + (Fv,Ed / Fv,Rd)² = {result.CombinedUtilization:0.000}\n" +
-                $"Check η <= 1.000: {(result.CombinedOk ? "OK" : "NOT OK")}";
-
-            if (input.IsReplaceablePin)
-            {
-                text +=
-                    "\n\nReplaceable pin service bending\n" +
-                    "-------------------------------\n" +
-                    $"M_Ed,ser = {result.MEdSer_kNmm:0.00} · 10⁻³ kNm\n" +
-                    $"M_Rd,ser = 0.8 * Wel * fy,p / gammaM6,ser = {result.MRdSer_kNmm:0.00} · 10⁻³ kNm\n" +
-                    $"Check M_Ed,ser <= M_Rd,ser: {(result.ServiceBendingOk ? "OK" : "NOT OK")}  η = {result.ServiceBendingUtilization:0.000}";
-            }
-
-            return text;
-        }
-
+       
+         
         private void btnSelectShackleByLoad_Click(object sender, EventArgs e)
         {
             if (_shackleDatabase == null)
@@ -1213,9 +709,5 @@ namespace LascheApp
             UpdateSelectedPinMaterialInfo();
         }
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-
-        }
     }
 }
