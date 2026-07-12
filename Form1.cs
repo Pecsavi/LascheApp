@@ -499,7 +499,7 @@ namespace LascheApp
                 ShackleB1_mm = b1_mm,
                 ShackleH_DNV_mm = hDnv_mm,
 
-                PinClearance_mm = 2.0,
+                PinClearance_mm = 3.0,
 
                 IsReplaceablePin = chkReplaceablePin.Checked,
 
@@ -511,14 +511,27 @@ namespace LascheApp
                 CheekPlateThickness_mm = cheekPlateThickness_mm,
                 Rpl_mm = rpl_mm,
                 Rch_mm = rch_mm,
-                CheekPlateWeldA_mm = cheekPlateWeldA_mm
+                CheekPlateWeldA_mm = cheekPlateWeldA_mm,
+
+                IncludeCheekPlatesInBearing = chkIncludeCheekPlatesInBearing.Checked
             };
 
             PadeyeCheckResult padeyeResult =
                 PadeyeChecker.Check(padeyeInput);
 
             txtBasicCheckResult.Text =
-                FormatPadeyeCheckResult(padeyeResult);
+                PadeyeTransportLugReportFormatter.Format(
+                    padeyeResult,
+                    new PadeyeTransportLugReportInfo
+                    {
+                        Project = "S-1099",
+                        Gantry = "NL1",
+                        Connection = "Gantry 1 - Gantry 2",
+                        PreparedBy = Environment.UserName,
+                        Date = DateTime.Today,
+                        PlateMaterial = material.Name,
+                        ShackleName = GetSelectedShackle()?.Name ?? ""
+                    });
 
         }
         private LugType GetSelectedLugType()

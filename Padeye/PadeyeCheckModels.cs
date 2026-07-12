@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,6 +12,7 @@ namespace LascheApp.Padeye
         public double E_Nmm2 { get; set; } = 210000.0;
         public double GammaM6_ser { get; set; } = 1.0;
 
+        // Main lug plate thickness tpl.
         public double PlateThickness_mm { get; set; }
         public double PlateWidth_mm { get; set; }
         public double HoleDiameter_mm { get; set; }
@@ -30,8 +30,7 @@ namespace LascheApp.Padeye
         public double ShackleB1_mm { get; set; }
         public double ShackleH_DNV_mm { get; set; }
 
-        public double PinClearance_mm { get; set; } = 2.0;
-
+        public double PinClearance_mm { get; set; } = 3.0;
         public bool IsReplaceablePin { get; set; } = true;
 
         public double DnvOutOfPlaneAngle_deg { get; set; }
@@ -44,21 +43,27 @@ namespace LascheApp.Padeye
         public double Rch_mm { get; set; }
         public double CheekPlateWeldA_mm { get; set; }
 
+        // False by default. True only if cheek plates are welded before final drilling/reaming.
+        public bool IncludeCheekPlatesInBearing { get; set; } = false;
 
+        public double BearingThickness_mm =>
+            IncludeCheekPlatesInBearing
+                ? PlateThickness_mm + 2.0 * CheekPlateThickness_mm
+                : PlateThickness_mm;
     }
+
     public class PadeyeCheckResult
     {
         public PadeyeBasicCheckResult BasicResult { get; set; } = new();
         public PadeyeEcGeometryResult EcGeometryResult { get; set; } = new();
-
         public PadeyeOutOfPlaneResult OutOfPlaneResult { get; set; } = new();
         public PadeyeDnvOutOfPlaneResult DnvOutOfPlaneResult { get; set; } = new();
-
         public PadeyeBearingResult BearingResult { get; set; } = new();
 
         public LugType LugType => BasicResult.Input.LugType;
 
-        public bool DnvOutOfPlaneCheckRequired => LugType == LugType.TransportLug && DnvOutOfPlaneResult.IsActive;
+        public bool DnvOutOfPlaneCheckRequired =>
+            LugType == LugType.TransportLug && DnvOutOfPlaneResult.IsActive;
 
         public bool IsOk =>
              BasicResult.IsOk &&

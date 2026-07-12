@@ -113,7 +113,24 @@ namespace LascheApp.Padeye
             if (result.OutOfPlaneChecksActive)
             {
                 result.DpinToHoleRatio = input.Dpin_mm / input.HoleDiameter_mm;
+
+                double outOfPlaneRatio =
+                    Math.Abs(Math.Sin(alphaRad));
+
+                result.PinDiameterRecommendationActive =
+                    outOfPlaneRatio > 0.10;
+
+                result.PinDiameterRecommendationOk =
+                    !result.PinDiameterRecommendationActive ||
+                    result.DpinToHoleRatio >= 0.94;
+
+                result.PinDiameterRecommendationUtilization =
+                    result.DpinToHoleRatio > 0.0
+                        ? 0.94 / result.DpinToHoleRatio
+                        : 0.0;
+
                 result.BearingFormulaWithClearance = result.DpinToHoleRatio < 0.96;
+                
 
                 if (result.BearingFormulaWithClearance)
                 {
@@ -152,10 +169,12 @@ namespace LascheApp.Padeye
             {
                 result.Dch_mm = 2.0 * input.Rch_mm;
 
+                double deltaFactor = Math.Abs(input.Alpha_deg) > 1e-9 ? delta : 1.0;
+
                 result.SigmaEd3_Nmm2 =
                     fd_N * input.CheekPlateThickness_mm /
                     (1.5 * t * result.Dch_mm * input.WeldA_mm) *
-                    delta;
+                    deltaFactor;
 
                 result.Fvwd_Nmm2 =
                     input.Fu_Nmm2 /

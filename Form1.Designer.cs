@@ -78,12 +78,15 @@
             label16 = new Label();
             txtCheekPlateWeldA_mm = new TextBox();
             label17 = new Label();
+            chkIncludeCheekPlatesInBearing = new CheckBox();
+            richTextBox1 = new RichTextBox();
+            label6 = new Label();
             SuspendLayout();
             // 
             // cmbShackles
             // 
             cmbShackles.FormattingEnabled = true;
-            cmbShackles.Location = new Point(155, 379);
+            cmbShackles.Location = new Point(129, 329);
             cmbShackles.Name = "cmbShackles";
             cmbShackles.Size = new Size(121, 23);
             cmbShackles.TabIndex = 0;
@@ -92,16 +95,16 @@
             // lblShackleWll
             // 
             lblShackleWll.AutoSize = true;
-            lblShackleWll.Location = new Point(34, 382);
+            lblShackleWll.Location = new Point(45, 332);
             lblShackleWll.Name = "lblShackleWll";
-            lblShackleWll.Size = new Size(77, 15);
+            lblShackleWll.Size = new Size(64, 15);
             lblShackleWll.TabIndex = 1;
-            lblShackleWll.Text = "lblShackleWll";
+            lblShackleWll.Text = "ShackleWll";
             // 
             // lblShackleDpin
             // 
             lblShackleDpin.AutoSize = true;
-            lblShackleDpin.Location = new Point(34, 415);
+            lblShackleDpin.Location = new Point(44, 357);
             lblShackleDpin.Name = "lblShackleDpin";
             lblShackleDpin.Size = new Size(85, 15);
             lblShackleDpin.TabIndex = 2;
@@ -110,7 +113,7 @@
             // lblShackleB1
             // 
             lblShackleB1.AutoSize = true;
-            lblShackleB1.Location = new Point(34, 449);
+            lblShackleB1.Location = new Point(44, 391);
             lblShackleB1.Name = "lblShackleB1";
             lblShackleB1.Size = new Size(73, 15);
             lblShackleB1.TabIndex = 3;
@@ -119,7 +122,7 @@
             // lblShackleHDnv
             // 
             lblShackleHDnv.AutoSize = true;
-            lblShackleHDnv.Location = new Point(34, 479);
+            lblShackleHDnv.Location = new Point(44, 421);
             lblShackleHDnv.Name = "lblShackleHDnv";
             lblShackleHDnv.Size = new Size(90, 15);
             lblShackleHDnv.TabIndex = 3;
@@ -128,7 +131,7 @@
             // lblShackleInfo
             // 
             lblShackleInfo.AutoSize = true;
-            lblShackleInfo.Location = new Point(34, 513);
+            lblShackleInfo.Location = new Point(44, 455);
             lblShackleInfo.Name = "lblShackleInfo";
             lblShackleInfo.Size = new Size(81, 15);
             lblShackleInfo.TabIndex = 3;
@@ -136,7 +139,7 @@
             // 
             // button1
             // 
-            button1.Location = new Point(187, 505);
+            button1.Location = new Point(267, 324);
             button1.Name = "button1";
             button1.Size = new Size(177, 23);
             button1.TabIndex = 4;
@@ -154,7 +157,7 @@
             // 
             // txtPlateThickness_mm
             // 
-            txtPlateThickness_mm.Location = new Point(120, 129);
+            txtPlateThickness_mm.Location = new Point(120, 147);
             txtPlateThickness_mm.Name = "txtPlateThickness_mm";
             txtPlateThickness_mm.Size = new Size(100, 23);
             txtPlateThickness_mm.TabIndex = 6;
@@ -164,11 +167,11 @@
             // txtHoleDiameter_mm
             // 
             txtHoleDiameter_mm.AcceptsReturn = true;
-            txtHoleDiameter_mm.Location = new Point(120, 168);
+            txtHoleDiameter_mm.Location = new Point(120, 186);
             txtHoleDiameter_mm.Name = "txtHoleDiameter_mm";
             txtHoleDiameter_mm.Size = new Size(100, 23);
             txtHoleDiameter_mm.TabIndex = 7;
-            txtHoleDiameter_mm.Text = "27";
+            txtHoleDiameter_mm.Text = "29";
             // 
             // label1
             // 
@@ -182,7 +185,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(34, 132);
+            label2.Location = new Point(34, 150);
             label2.Name = "label2";
             label2.Size = new Size(44, 15);
             label2.TabIndex = 3;
@@ -191,7 +194,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(34, 168);
+            label3.Location = new Point(34, 186);
             label3.Name = "label3";
             label3.Size = new Size(53, 15);
             label3.TabIndex = 3;
@@ -199,7 +202,7 @@
             // 
             // btnCheckBasicPadeye
             // 
-            btnCheckBasicPadeye.Location = new Point(46, 688);
+            btnCheckBasicPadeye.Location = new Point(84, 767);
             btnCheckBasicPadeye.Name = "btnCheckBasicPadeye";
             btnCheckBasicPadeye.Size = new Size(177, 23);
             btnCheckBasicPadeye.TabIndex = 4;
@@ -209,18 +212,18 @@
             // 
             // txtBasicCheckResult
             // 
-            txtBasicCheckResult.Location = new Point(48, 717);
+            txtBasicCheckResult.Location = new Point(311, 370);
             txtBasicCheckResult.Multiline = true;
             txtBasicCheckResult.Name = "txtBasicCheckResult";
             txtBasicCheckResult.ReadOnly = true;
             txtBasicCheckResult.ScrollBars = ScrollBars.Vertical;
-            txtBasicCheckResult.Size = new Size(704, 97);
+            txtBasicCheckResult.Size = new Size(706, 733);
             txtBasicCheckResult.TabIndex = 8;
             txtBasicCheckResult.Click += btnCheckBasicPadeye_Click;
             // 
             // btnSelectShackleByLoad
             // 
-            btnSelectShackleByLoad.Location = new Point(244, 168);
+            btnSelectShackleByLoad.Location = new Point(253, 285);
             btnSelectShackleByLoad.Name = "btnSelectShackleByLoad";
             btnSelectShackleByLoad.Size = new Size(177, 23);
             btnSelectShackleByLoad.TabIndex = 4;
@@ -231,7 +234,7 @@
             // cmbMaterials
             // 
             cmbMaterials.FormattingEnabled = true;
-            cmbMaterials.Location = new Point(35, 551);
+            cmbMaterials.Location = new Point(252, 50);
             cmbMaterials.Name = "cmbMaterials";
             cmbMaterials.Size = new Size(121, 23);
             cmbMaterials.TabIndex = 9;
@@ -240,7 +243,7 @@
             // lblMaterialBetaW
             // 
             lblMaterialBetaW.AutoSize = true;
-            lblMaterialBetaW.Location = new Point(604, 554);
+            lblMaterialBetaW.Location = new Point(510, 58);
             lblMaterialBetaW.Name = "lblMaterialBetaW";
             lblMaterialBetaW.Size = new Size(97, 15);
             lblMaterialBetaW.TabIndex = 12;
@@ -249,7 +252,7 @@
             // lblMaterialE
             // 
             lblMaterialE.AutoSize = true;
-            lblMaterialE.Location = new Point(470, 554);
+            lblMaterialE.Location = new Point(413, 58);
             lblMaterialE.Name = "lblMaterialE";
             lblMaterialE.Size = new Size(69, 15);
             lblMaterialE.TabIndex = 13;
@@ -258,7 +261,7 @@
             // lblMaterialFu
             // 
             lblMaterialFu.AutoSize = true;
-            lblMaterialFu.Location = new Point(341, 554);
+            lblMaterialFu.Location = new Point(510, 28);
             lblMaterialFu.Name = "lblMaterialFu";
             lblMaterialFu.Size = new Size(76, 15);
             lblMaterialFu.TabIndex = 11;
@@ -267,7 +270,7 @@
             // lblMaterialFy
             // 
             lblMaterialFy.AutoSize = true;
-            lblMaterialFy.Location = new Point(223, 554);
+            lblMaterialFy.Location = new Point(413, 28);
             lblMaterialFy.Name = "lblMaterialFy";
             lblMaterialFy.Size = new Size(75, 15);
             lblMaterialFy.TabIndex = 10;
@@ -275,7 +278,7 @@
             // 
             // txtPlateWidth_mm
             // 
-            txtPlateWidth_mm.Location = new Point(130, 594);
+            txtPlateWidth_mm.Location = new Point(123, 215);
             txtPlateWidth_mm.Name = "txtPlateWidth_mm";
             txtPlateWidth_mm.Size = new Size(100, 23);
             txtPlateWidth_mm.TabIndex = 14;
@@ -284,7 +287,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(48, 597);
+            label4.Location = new Point(41, 218);
             label4.Name = "label4";
             label4.Size = new Size(47, 15);
             label4.TabIndex = 15;
@@ -293,7 +296,7 @@
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(46, 639);
+            label5.Location = new Point(39, 254);
             label5.Name = "label5";
             label5.Size = new Size(46, 15);
             label5.TabIndex = 16;
@@ -301,7 +304,7 @@
             // 
             // txtEdgeDistanceA_mm
             // 
-            txtEdgeDistanceA_mm.Location = new Point(130, 636);
+            txtEdgeDistanceA_mm.Location = new Point(123, 251);
             txtEdgeDistanceA_mm.Name = "txtEdgeDistanceA_mm";
             txtEdgeDistanceA_mm.Size = new Size(100, 23);
             txtEdgeDistanceA_mm.TabIndex = 18;
@@ -329,7 +332,7 @@
             chkReplaceablePin.AutoSize = true;
             chkReplaceablePin.Checked = true;
             chkReplaceablePin.CheckState = CheckState.Checked;
-            chkReplaceablePin.Location = new Point(553, 172);
+            chkReplaceablePin.Location = new Point(554, 211);
             chkReplaceablePin.Name = "chkReplaceablePin";
             chkReplaceablePin.Size = new Size(148, 19);
             chkReplaceablePin.TabIndex = 22;
@@ -355,17 +358,17 @@
             // 
             // txtTensionPinDiameter_mm
             // 
-            txtTensionPinDiameter_mm.Location = new Point(565, 23);
+            txtTensionPinDiameter_mm.Location = new Point(565, 160);
             txtTensionPinDiameter_mm.Name = "txtTensionPinDiameter_mm";
             txtTensionPinDiameter_mm.Size = new Size(100, 23);
             txtTensionPinDiameter_mm.TabIndex = 25;
-            txtTensionPinDiameter_mm.Text = "=lblShackleDpin";
+            txtTensionPinDiameter_mm.Text = "29";
             txtTensionPinDiameter_mm.TextChanged += txtTensionPinDiameter_mm_TextChanged;
             // 
             // label9
             // 
             label9.AutoSize = true;
-            label9.Location = new Point(426, 23);
+            label9.Location = new Point(426, 160);
             label9.Name = "label9";
             label9.Size = new Size(117, 15);
             label9.TabIndex = 26;
@@ -374,7 +377,7 @@
             // cmbPinMaterials
             // 
             cmbPinMaterials.FormattingEnabled = true;
-            cmbPinMaterials.Location = new Point(565, 58);
+            cmbPinMaterials.Location = new Point(253, 107);
             cmbPinMaterials.Name = "cmbPinMaterials";
             cmbPinMaterials.Size = new Size(121, 23);
             cmbPinMaterials.TabIndex = 27;
@@ -383,7 +386,7 @@
             // label10
             // 
             label10.AutoSize = true;
-            label10.Location = new Point(426, 58);
+            label10.Location = new Point(253, 89);
             label10.Name = "label10";
             label10.Size = new Size(70, 15);
             label10.TabIndex = 26;
@@ -392,7 +395,7 @@
             // lblPinFy
             // 
             lblPinFy.AutoSize = true;
-            lblPinFy.Location = new Point(426, 94);
+            lblPinFy.Location = new Point(426, 110);
             lblPinFy.Name = "lblPinFy";
             lblPinFy.Size = new Size(46, 15);
             lblPinFy.TabIndex = 28;
@@ -401,7 +404,7 @@
             // lblPinFu
             // 
             lblPinFu.AutoSize = true;
-            lblPinFu.Location = new Point(426, 129);
+            lblPinFu.Location = new Point(539, 110);
             lblPinFu.Name = "lblPinFu";
             lblPinFu.Size = new Size(47, 15);
             lblPinFu.TabIndex = 29;
@@ -410,7 +413,7 @@
             // label11
             // 
             label11.AutoSize = true;
-            label11.Location = new Point(383, 382);
+            label11.Location = new Point(460, 285);
             label11.Name = "label11";
             label11.Size = new Size(96, 15);
             label11.TabIndex = 30;
@@ -419,7 +422,7 @@
             // label12
             // 
             label12.AutoSize = true;
-            label12.Location = new Point(383, 431);
+            label12.Location = new Point(460, 334);
             label12.Name = "label12";
             label12.Size = new Size(114, 15);
             label12.TabIndex = 31;
@@ -427,7 +430,7 @@
             // 
             // txtPinMoment_kNmm
             // 
-            txtPinMoment_kNmm.Location = new Point(532, 382);
+            txtPinMoment_kNmm.Location = new Point(591, 281);
             txtPinMoment_kNmm.Name = "txtPinMoment_kNmm";
             txtPinMoment_kNmm.Size = new Size(100, 23);
             txtPinMoment_kNmm.TabIndex = 32;
@@ -435,7 +438,7 @@
             // 
             // txtPinMomentSer_kNmm
             // 
-            txtPinMomentSer_kNmm.Location = new Point(532, 431);
+            txtPinMomentSer_kNmm.Location = new Point(591, 330);
             txtPinMomentSer_kNmm.Name = "txtPinMomentSer_kNmm";
             txtPinMomentSer_kNmm.Size = new Size(100, 23);
             txtPinMomentSer_kNmm.TabIndex = 33;
@@ -444,7 +447,7 @@
             // txtDnvOutOfPlaneAngle_deg
             // 
             txtDnvOutOfPlaneAngle_deg.AcceptsReturn = true;
-            txtDnvOutOfPlaneAngle_deg.Location = new Point(209, 246);
+            txtDnvOutOfPlaneAngle_deg.Location = new Point(129, 289);
             txtDnvOutOfPlaneAngle_deg.Name = "txtDnvOutOfPlaneAngle_deg";
             txtDnvOutOfPlaneAngle_deg.Size = new Size(100, 23);
             txtDnvOutOfPlaneAngle_deg.TabIndex = 35;
@@ -453,7 +456,7 @@
             // label13
             // 
             label13.AutoSize = true;
-            label13.Location = new Point(34, 247);
+            label13.Location = new Point(43, 289);
             label13.Name = "label13";
             label13.Size = new Size(63, 15);
             label13.TabIndex = 34;
@@ -462,7 +465,7 @@
             // label14
             // 
             label14.AutoSize = true;
-            label14.Location = new Point(34, 285);
+            label14.Location = new Point(48, 609);
             label14.Name = "label14";
             label14.Size = new Size(51, 15);
             label14.TabIndex = 36;
@@ -471,7 +474,7 @@
             // txtRpl_mm
             // 
             txtRpl_mm.AcceptsReturn = true;
-            txtRpl_mm.Location = new Point(209, 282);
+            txtRpl_mm.Location = new Point(161, 606);
             txtRpl_mm.Name = "txtRpl_mm";
             txtRpl_mm.Size = new Size(100, 23);
             txtRpl_mm.TabIndex = 37;
@@ -480,7 +483,7 @@
             // txtCheekPlateThickness_mm
             // 
             txtCheekPlateThickness_mm.AcceptsReturn = true;
-            txtCheekPlateThickness_mm.Location = new Point(204, 211);
+            txtCheekPlateThickness_mm.Location = new Point(161, 488);
             txtCheekPlateThickness_mm.Name = "txtCheekPlateThickness_mm";
             txtCheekPlateThickness_mm.Size = new Size(100, 23);
             txtCheekPlateThickness_mm.TabIndex = 39;
@@ -489,16 +492,16 @@
             // label15
             // 
             label15.AutoSize = true;
-            label15.Location = new Point(34, 211);
+            label15.Location = new Point(48, 488);
             label15.Name = "label15";
-            label15.Size = new Size(163, 15);
+            label15.Size = new Size(69, 15);
             label15.TabIndex = 38;
-            label15.Text = "CheekPlateThickness_mm      ";
+            label15.Text = "tch_mm      ";
             // 
             // txtRch_mm
             // 
             txtRch_mm.AcceptsReturn = true;
-            txtRch_mm.Location = new Point(208, 311);
+            txtRch_mm.Location = new Point(161, 635);
             txtRch_mm.Name = "txtRch_mm";
             txtRch_mm.Size = new Size(100, 23);
             txtRch_mm.TabIndex = 41;
@@ -507,7 +510,7 @@
             // label16
             // 
             label16.AutoSize = true;
-            label16.Location = new Point(34, 314);
+            label16.Location = new Point(48, 638);
             label16.Name = "label16";
             label16.Size = new Size(54, 15);
             label16.TabIndex = 40;
@@ -516,7 +519,7 @@
             // txtCheekPlateWeldA_mm
             // 
             txtCheekPlateWeldA_mm.AcceptsReturn = true;
-            txtCheekPlateWeldA_mm.Location = new Point(209, 342);
+            txtCheekPlateWeldA_mm.Location = new Point(161, 666);
             txtCheekPlateWeldA_mm.Name = "txtCheekPlateWeldA_mm";
             txtCheekPlateWeldA_mm.Size = new Size(100, 23);
             txtCheekPlateWeldA_mm.TabIndex = 43;
@@ -525,17 +528,49 @@
             // label17
             // 
             label17.AutoSize = true;
-            label17.Location = new Point(35, 345);
+            label17.Location = new Point(49, 669);
             label17.Name = "label17";
-            label17.Size = new Size(128, 15);
+            label17.Size = new Size(91, 15);
             label17.TabIndex = 42;
-            label17.Text = "CheekPlateWeldA_mm";
+            label17.Text = "tch_WeldA_mm";
+            // 
+            // chkIncludeCheekPlatesInBearing
+            // 
+            chkIncludeCheekPlatesInBearing.AutoSize = true;
+            chkIncludeCheekPlatesInBearing.Location = new Point(49, 527);
+            chkIncludeCheekPlatesInBearing.Name = "chkIncludeCheekPlatesInBearing";
+            chkIncludeCheekPlatesInBearing.Size = new Size(256, 19);
+            chkIncludeCheekPlatesInBearing.TabIndex = 44;
+            chkIncludeCheekPlatesInBearing.Text = "Cheek plates considered in the calculation.*";
+            chkIncludeCheekPlatesInBearing.UseVisualStyleBackColor = true;
+            // 
+            // richTextBox1
+            // 
+            richTextBox1.BackColor = SystemColors.Control;
+            richTextBox1.BorderStyle = BorderStyle.None;
+            richTextBox1.Location = new Point(83, 552);
+            richTextBox1.Name = "richTextBox1";
+            richTextBox1.Size = new Size(221, 42);
+            richTextBox1.TabIndex = 45;
+            richTextBox1.Text = "* Only valid if cheek plates are welded before final drilling/reaming of the hole.";
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(253, 20);
+            label6.Name = "label6";
+            label6.Size = new Size(73, 15);
+            label6.TabIndex = 46;
+            label6.Text = "Lug material";
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 889);
+            ClientSize = new Size(1138, 1138);
+            Controls.Add(label6);
+            Controls.Add(richTextBox1);
+            Controls.Add(chkIncludeCheekPlatesInBearing);
             Controls.Add(txtCheekPlateWeldA_mm);
             Controls.Add(label17);
             Controls.Add(txtRch_mm);
@@ -645,5 +680,8 @@
         private Label label16;
         private TextBox txtCheekPlateWeldA_mm;
         private Label label17;
+        private CheckBox chkIncludeCheekPlatesInBearing;
+        private RichTextBox richTextBox1;
+        private Label label6;
     }
 }

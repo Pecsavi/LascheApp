@@ -53,6 +53,9 @@ namespace LascheApp.Padeye
         public double SigmaRd_Nmm2 { get; set; }
 
         public double DpinToHoleRatio { get; set; }
+        public bool PinDiameterRecommendationActive { get; set; }
+        public bool PinDiameterRecommendationOk { get; set; }
+        public double PinDiameterRecommendationUtilization { get; set; }
         public bool BearingFormulaWithClearance { get; set; }
         public double SigmaEd1_Nmm2 { get; set; }
         public bool DnvBearingOk { get; set; }
@@ -86,14 +89,23 @@ namespace LascheApp.Padeye
                 {
                     items.Add(new CheckItem
                     {
-                        Name = "DNV out-of-plane bearing",
+                        Name = PinDiameterRecommendationOk
+                        ? "Pin diameter recommendation for significant angled pull fulfilled: Dpin / DH >= 0.94"
+                        : "Pin diameter recommendation for significant angled pull NOT fulfilled: Dpin / DH >= 0.94",
+                        Utilization = PinDiameterRecommendationUtilization,
+                        IsOk = PinDiameterRecommendationOk,
+                        ShowUtilization = false
+                    });
+                    items.Add(new CheckItem
+                    {
+                        Name = "Bearing at angled pull (according to DNV standard)",
                         Utilization = DnvBearingUtilization,
                         IsOk = DnvBearingOk
                     });
 
                     items.Add(new CheckItem
                     {
-                        Name = "DNV tear-out",
+                        Name = "tear-out at angled pull (according to DNV standard)",
                         Utilization = TearOutUtilization,
                         IsOk = TearOutOk
                     });
