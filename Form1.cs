@@ -53,6 +53,46 @@ namespace LascheApp
             UpdateSelectedShackleInfo();
             UpdateSelectedMaterialInfo();
             UpdateSelectedPinMaterialInfo();
+
+            UpdateLugTypeUi();
+        }
+
+        private void UpdateLugTypeUi()
+        {
+            bool isTransportLug = GetSelectedLugType() == LugType.TransportLug;
+            bool isTensionLug = GetSelectedLugType() == LugType.TensionLug;
+
+            cmbShackles.Visible = isTransportLug;
+            lblShackleWll.Visible = isTransportLug;
+            lblShackleDpin.Visible = isTransportLug;
+            lblShackleB1.Visible = isTransportLug;
+            lblShackleHDnv.Visible = isTransportLug;
+            lblShackleInfo.Visible = isTransportLug;
+            btnSelectShackleByLoad.Visible = isTransportLug;
+
+            txtDnvOutOfPlaneAngle_deg.Visible = isTransportLug;
+            label13.Visible = isTransportLug;
+            txtRpl_mm.Visible = isTransportLug;
+            label14.Visible = isTransportLug;
+            txtRch_mm.Visible = isTransportLug;
+            label16.Visible = isTransportLug;
+            txtCheekPlateWeldA_mm.Visible = isTransportLug;
+            label17.Visible = isTransportLug;
+
+            cmbPinMaterials.Visible = isTensionLug;
+            label10.Visible = isTensionLug;
+            lblPinFy.Visible = isTensionLug;
+            lblPinFu.Visible = isTensionLug;
+            txtTensionPinDiameter_mm.Visible = isTensionLug;
+            label9.Visible = isTensionLug;
+            txtOuterLugThicknessT2_mm.Visible = isTensionLug;
+            lblOuterLugThicknessT2.Visible = isTensionLug;
+            txtGapS_mm.Visible = isTensionLug;
+            lblGapS.Visible = isTensionLug;
+
+            grpTransportLug.Visible = isTransportLug;
+            grpTensionLug.Visible = isTensionLug;
+
         }
         private void UpdateSelectedPinMaterialInfo()
         {
@@ -172,27 +212,6 @@ namespace LascheApp
             return true;
         }
 
-        private void btnTestSelectedShackle_Click(object sender, EventArgs e)
-        {
-            bool ok = TryGetSelectedShackleGeometry(
-                out double dpin_mm,
-                out double b1_mm,
-                out double hDnv_mm,
-                out double wll_kN);
-
-            if (!ok)
-            {
-                MessageBox.Show("No shackle selected.");
-                return;
-            }
-
-            MessageBox.Show(
-                $"Selected shackle geometry:\n\n" +
-                $"Dpin = {dpin_mm:0.0} mm\n" +
-                $"B1 = {b1_mm:0.0} mm\n" +
-                $"H_DNV = {hDnv_mm:0.0} mm\n" +
-                $"WLL = {wll_kN:0.00} kN");
-        }
         private bool TryReadDouble(string text, out double value)
         {
             text = text.Trim().Replace(',', '.');
@@ -345,7 +364,7 @@ namespace LascheApp
                     txtBasicCheckResult.Text = "Invalid input: cheek plate thickness tch must be greater than 0 if cheek plates are considered.";
                     return;
                 }
-                
+
 
                 if (outerLugThicknessT2_mm <= 0)
                 {
@@ -365,9 +384,6 @@ namespace LascheApp
 
                 double pinMomentSer_kNmm =
                     pinMoment_kNmm * fEdSer_kN / fEd_kN;
-
-                txtPinMoment_kNmm.Text = pinMoment_kNmm.ToString("0.00");
-                txtPinMomentSer_kNmm.Text = pinMomentSer_kNmm.ToString("0.00");
 
                 MaterialGrade? pinMaterial = GetSelectedPinMaterial();
 
@@ -399,7 +415,7 @@ namespace LascheApp
 
                     MomentCalculatedFromTensionLugGeometry = true,
                     InnerLugThicknessT_mm = innerLugThicknessForPinMoment_mm,
-                  
+
                     OuterLugThicknessT2_mm = outerLugThicknessT2_mm,
                     GapS_mm = gapS_mm,
 
@@ -610,8 +626,8 @@ namespace LascheApp
             cmbLugType.ValueMember = "Key";
             cmbLugType.SelectedValue = LugType.TransportLug;
         }
-       
-         
+
+
         private void btnSelectShackleByLoad_Click(object sender, EventArgs e)
         {
             if (_shackleDatabase == null)
@@ -707,6 +723,11 @@ namespace LascheApp
         private void txtTensionPinDiameter_mm_TextChanged(object sender, EventArgs e)
         {
             UpdateSelectedPinMaterialInfo();
+        }
+
+        private void cmbLugType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateLugTypeUi();
         }
 
     }

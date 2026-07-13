@@ -237,7 +237,21 @@ namespace LascheApp.Padeye
             sb.AppendLine($"\tF_Ed,ser = {Fmt2(basic.F_Ed_ser_kN)} kN");
             sb.AppendLine($"\tfy = {Fmt1(basic.MaterialFy_Nmm2)} N/mm²");
             sb.AppendLine($"\tgammaM0 = {Fmt2(basic.GammaM0)}");
-            sb.AppendLine($"\tt = {Fmt1(basic.PlateThickness_mm)} mm");
+            sb.AppendLine($"\ttpl = {Fmt1(basic.PlateThickness_mm)} mm");
+
+            if (basic.CheekPlateThickness_mm > 0.0)
+            {
+                sb.AppendLine($"\ttch = {Fmt1(basic.CheekPlateThickness_mm)} mm");
+
+                if (basic.IncludeCheekPlatesInBearing)
+                    sb.AppendLine($"\tt = tpl + 2 * tch = {Fmt1(basic.TotalBearingThickness_mm)} mm");
+                else
+                    sb.AppendLine($"\tt = tpl = {Fmt1(basic.PlateThickness_mm)} mm");
+            }
+            else
+            {
+                sb.AppendLine($"\tt = tpl = {Fmt1(basic.PlateThickness_mm)} mm");
+            }
             sb.AppendLine($"\td0 = {Fmt1(basic.HoleDiameter_mm)} mm");
             sb.AppendLine($"\tb = {Fmt1(basic.PlateWidth_mm)} mm");
             sb.AppendLine();
