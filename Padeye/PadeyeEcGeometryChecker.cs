@@ -42,6 +42,7 @@ namespace LascheApp.Padeye
 
             double t_mm = input.EffectiveThickness_mm;
 
+
             if (t_mm <= 0)
             {
                 result.Errors.Add("Effective thickness t must be greater than 0.");
@@ -51,6 +52,8 @@ namespace LascheApp.Padeye
             double forceTerm_mm =
                 fEd_N * input.GammaM0 /
                 (2.0 * t_mm * input.Fy_Nmm2);
+
+
 
             result.RequiredEdgeDistanceA_mm =
                 forceTerm_mm + 2.0 * input.HoleDiameter_mm / 3.0;
@@ -69,6 +72,14 @@ namespace LascheApp.Padeye
 
             result.SideDistanceC_Utilization =
                 result.RequiredSideDistanceC_mm / input.SideDistanceC_mm;
+            
+            double e_mm =
+                input.EdgeDistanceA_mm +
+                input.HoleDiameter_mm / 2.0;
+
+            double b_mm =
+                2.0 * input.SideDistanceC_mm +
+                input.HoleDiameter_mm;
 
             result.RequiredThickness_MoglichkeitB_mm =
                 0.7 * Math.Sqrt(fEd_N * input.GammaM0 / input.Fy_Nmm2);
@@ -78,16 +89,44 @@ namespace LascheApp.Padeye
                 input.Fy_Nmm2 /
                 input.GammaM0;
 
-            result.ForceResistance_MoglichkeitB_kN = forceResistanceB_N / 1000.0;
-            result.MaxHoleDiameter_MoglichkeitB_mm = 2.5 * t_mm;
+            result.ForceResistance_MoglichkeitB_kN =
+                forceResistanceB_N / 1000.0;
 
-            result.ThicknessMoglichkeitB_Ok = fEd_N <= forceResistanceB_N;
-            result.HoleDiameterMoglichkeitB_Ok = input.HoleDiameter_mm <= result.MaxHoleDiameter_MoglichkeitB_mm;
+            result.MaxHoleDiameter_MoglichkeitB_mm =
+                2.5 * t_mm;
 
-            result.ForceMoglichkeitB_Utilization = fEd_N / forceResistanceB_N;
-            result.HoleDiameterMoglichkeitB_Utilization = 0.0;
+            result.RequiredEdgeDistance_MoglichkeitB_mm =
+                1.6 * input.HoleDiameter_mm;
+
+            result.RequiredPlateWidth_MoglichkeitB_mm =
+                2.5 * input.HoleDiameter_mm;
+
+            result.ThicknessMoglichkeitB_Ok =
+                t_mm >= result.RequiredThickness_MoglichkeitB_mm;
+
+            result.HoleDiameterMoglichkeitB_Ok =
+                input.HoleDiameter_mm <= result.MaxHoleDiameter_MoglichkeitB_mm;
+
+            result.EdgeDistanceMoglichkeitB_Ok =
+                e_mm >= result.RequiredEdgeDistance_MoglichkeitB_mm;
+
+            result.PlateWidthMoglichkeitB_Ok =
+                b_mm >= result.RequiredPlateWidth_MoglichkeitB_mm;
+
+            result.ForceMoglichkeitB_Utilization =
+                result.RequiredThickness_MoglichkeitB_mm / t_mm;
+
+            result.HoleDiameterMoglichkeitB_Utilization =
+                input.HoleDiameter_mm / result.MaxHoleDiameter_MoglichkeitB_mm;
+
+            result.EdgeDistanceMoglichkeitB_Utilization =
+                result.RequiredEdgeDistance_MoglichkeitB_mm / e_mm;
+
+            result.PlateWidthMoglichkeitB_Utilization =
+                result.RequiredPlateWidth_MoglichkeitB_mm / b_mm;
 
             return result;
+            
         }
     }
 }

@@ -410,9 +410,9 @@ namespace LascheApp.Padeye
             double fRdMethodB_kN = result.ForceResistance_MoglichkeitB_kN;
             double methodBForceUtilization = result.ForceMoglichkeitB_Utilization;
 
-            sb.AppendLine("\tMöglichkeit A");
+            sb.AppendLine("\tMethod A");
             sb.AppendLine("\t-------------");
-            sb.AppendLine($"\t\tResult Möglichkeit A: {Ok(result.MoglichkeitA_Ok)}");
+            sb.AppendLine($"\t\tResult Method A: {Ok(result.MoglichkeitA_Ok)}");
             sb.AppendLine($"\t\tMax utilization A: η = {FmtEta(result.MoglichkeitA_MaxUtilization)}");
             sb.AppendLine();
             sb.AppendLine($"\t\tF_Ed = {Fmt2(input.F_Ed_kN)} kN");
@@ -444,14 +444,16 @@ namespace LascheApp.Padeye
             sb.AppendLine($"\t\tCheck b >= required b: {Ok(result.SideDistanceC_Ok)}  η = {FmtEta(result.SideDistanceC_Utilization)}");
             sb.AppendLine();
 
-            sb.AppendLine("\tMöglichkeit B");
-            sb.AppendLine("\t-------------");
-            sb.AppendLine($"\t\tResult Möglichkeit B: {Ok(result.MoglichkeitB_Ok)}");
-            sb.AppendLine($"\t\tMax utilization B: η = {FmtEta(Math.Max(methodBForceUtilization, 0.0))}");
+            sb.AppendLine("\tMethod B");
+            sb.AppendLine("\t--------");
+            sb.AppendLine($"\t\tResult Method B: {Ok(result.MoglichkeitB_Ok)}");
+            sb.AppendLine($"\t\tMax utilization B: η = {FmtEta(result.MoglichkeitB_MaxUtilization)}");
             sb.AppendLine();
+
             sb.AppendLine($"\t\tF_Ed = {Fmt2(input.F_Ed_kN)} kN");
             sb.AppendLine($"\t\tfy = {Fmt1(input.Fy_Nmm2)} N/mm²");
             sb.AppendLine($"\t\tgammaM0 = {Fmt2(input.GammaM0)}");
+
             if (input.IncludeCheekPlatesInBearing)
             {
                 sb.AppendLine($"\t\ttpl = {Fmt1(input.PlateThickness_mm)} mm");
@@ -463,14 +465,28 @@ namespace LascheApp.Padeye
                 sb.AppendLine($"\t\ttpl = {Fmt1(input.PlateThickness_mm)} mm");
                 sb.AppendLine($"\t\tt = tpl = {Fmt1(t_mm)} mm");
             }
+
             sb.AppendLine($"\t\td0 = {Fmt1(input.HoleDiameter_mm)} mm");
+            sb.AppendLine($"\t\te = {Fmt1(e_mm)} mm");
+            sb.AppendLine($"\t\tb = {Fmt1(b_mm)} mm");
             sb.AppendLine();
-            sb.AppendLine($"\t\tFRd = (t / 0.7)² * fy / gammaM0 = {Fmt2(fRdMethodB_kN)} kN");
-            sb.AppendLine($"\t\tCheck F_Ed <= FRd: {Ok(input.F_Ed_kN <= fRdMethodB_kN)}  η = {FmtEta(methodBForceUtilization)}");
+
+            sb.AppendLine($"\t\ttmin = 0.7 * sqrt(F_Ed * gammaM0 / fy) = {Fmt1(result.RequiredThickness_MoglichkeitB_mm)} mm");
+            sb.AppendLine($"\t\tCheck t >= tmin: {Ok(result.ThicknessMoglichkeitB_Ok)}  η = {FmtEta(result.ThicknessMoglichkeitB_Utilization)}");
             sb.AppendLine();
-            sb.AppendLine($"\t\tMax d0 = 2.5 * t = {Fmt1(result.MaxHoleDiameter_MoglichkeitB_mm)} mm");
-            sb.AppendLine($"\t\tCheck d0 <= 2.5 * t: {Ok(result.HoleDiameterMoglichkeitB_Ok)}");
+
+            sb.AppendLine($"\t\td0,max = 2.5 * t = {Fmt1(result.MaxHoleDiameter_MoglichkeitB_mm)} mm");
+            sb.AppendLine($"\t\tCheck d0 <= d0,max: {Ok(result.HoleDiameterMoglichkeitB_Ok)}  η = {FmtEta(result.HoleDiameterMoglichkeitB_Utilization)}");
             sb.AppendLine();
+
+            sb.AppendLine($"\t\temin = 1.6 * d0 = {Fmt1(result.RequiredEdgeDistance_MoglichkeitB_mm)} mm");
+            sb.AppendLine($"\t\tCheck e >= emin: {Ok(result.EdgeDistanceMoglichkeitB_Ok)}  η = {FmtEta(result.EdgeDistanceMoglichkeitB_Utilization)}");
+            sb.AppendLine();
+
+            sb.AppendLine($"\t\tbmin = 2.5 * d0 = {Fmt1(result.RequiredPlateWidth_MoglichkeitB_mm)} mm");
+            sb.AppendLine($"\t\tCheck b >= bmin: {Ok(result.PlateWidthMoglichkeitB_Ok)}  η = {FmtEta(result.PlateWidthMoglichkeitB_Utilization)}");
+            sb.AppendLine();
+
         }
 
         private static void AppendBearing(

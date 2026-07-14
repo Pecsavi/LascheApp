@@ -48,8 +48,13 @@ namespace LascheApp.Padeye
         public double ForceMoglichkeitB_Utilization { get; set; }
 
         public double MaxHoleDiameter_MoglichkeitB_mm { get; set; }
+        public double RequiredEdgeDistance_MoglichkeitB_mm { get; set; }
+        public double RequiredPlateWidth_MoglichkeitB_mm { get; set; }
+
         public bool ThicknessMoglichkeitB_Ok { get; set; }
         public bool HoleDiameterMoglichkeitB_Ok { get; set; }
+        public bool EdgeDistanceMoglichkeitB_Ok { get; set; }
+        public bool PlateWidthMoglichkeitB_Ok { get; set; }
 
         public double ThicknessMoglichkeitB_Utilization
         {
@@ -58,7 +63,10 @@ namespace LascheApp.Padeye
         }
 
         public double HoleDiameterMoglichkeitB_Utilization { get; set; }
+        public double EdgeDistanceMoglichkeitB_Utilization { get; set; }
+        public double PlateWidthMoglichkeitB_Utilization { get; set; }
 
+      
         public List<string> Errors { get; set; } = new();
         public bool HasErrors => Errors.Count > 0;
 
@@ -67,8 +75,10 @@ namespace LascheApp.Padeye
             SideDistanceC_Ok;
 
         public bool MoglichkeitB_Ok =>
-            ThicknessMoglichkeitB_Ok &&
-            HoleDiameterMoglichkeitB_Ok;
+             ThicknessMoglichkeitB_Ok &&
+             HoleDiameterMoglichkeitB_Ok &&
+             EdgeDistanceMoglichkeitB_Ok &&
+             PlateWidthMoglichkeitB_Ok;
 
         public bool IsOk =>
             !HasErrors &&
@@ -107,16 +117,27 @@ namespace LascheApp.Padeye
                 {
                     new CheckItem
                     {
-                        Name = "EC geometry Method B - force resistance",
-                        Utilization = ForceMoglichkeitB_Utilization,
+                        Name = "EC geometry Method B - minimum thickness",
+                        Utilization = ThicknessMoglichkeitB_Utilization,
                         IsOk = ThicknessMoglichkeitB_Ok
                     },
                     new CheckItem
                     {
-                        Name = "EC geometry Method B - hole diameter d0 <= 2.5 * t",
-                        Utilization = 0.0,
-                        IsOk = HoleDiameterMoglichkeitB_Ok,
-                        ShowUtilization = false
+                        Name = "EC geometry Method B - maximum hole diameter",
+                        Utilization = HoleDiameterMoglichkeitB_Utilization,
+                        IsOk = HoleDiameterMoglichkeitB_Ok
+                    },
+                    new CheckItem
+                    {
+                        Name = "EC geometry Method B - edge distance e",
+                        Utilization = EdgeDistanceMoglichkeitB_Utilization,
+                        IsOk = EdgeDistanceMoglichkeitB_Ok
+                    },
+                    new CheckItem
+                    {
+                        Name = "EC geometry Method B - plate width b",
+                        Utilization = PlateWidthMoglichkeitB_Utilization,
+                        IsOk = PlateWidthMoglichkeitB_Ok
                     }
                 };
             }
