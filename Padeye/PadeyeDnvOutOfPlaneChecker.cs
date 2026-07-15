@@ -23,7 +23,7 @@ namespace LascheApp.Padeye
             if (input.Alpha_deg < 0 || input.Alpha_deg >= 90.0)
                 result.Errors.Add("Out-of-plane angle alpha must be >= 0 and < 90 degrees.");
 
-            if (input.H_DNV_mm <= 0)
+            if (result.OutOfPlaneChecksActive && input.H_DNV_mm <= 0)
                 result.Errors.Add("H_DNV must be greater than 0.");
 
             if (input.Dpin_mm <= 0)
@@ -56,10 +56,10 @@ namespace LascheApp.Padeye
             if (result.OutOfPlaneChecksActive)
             {
                 if (input.Rpl_mm <= 0)
-                    result.Errors.Add("Rpl must be greater than 0 for DNV out-of-plane checks.");
+                    result.Errors.Add("e must be greater than 0 for DNV tear-out check.");
 
                 if (2.0 * input.Rpl_mm <= input.HoleDiameter_mm)
-                    result.Errors.Add("2 * Rpl must be greater than DH for DNV tear-out check.");
+                    result.Errors.Add("2 * e must be greater than DH for DNV tear-out check.");
             }
 
             if (result.CheekPlateWeldCheckActive)

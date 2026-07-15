@@ -603,10 +603,10 @@ namespace LascheApp.Padeye
 
             sb.AppendLine("\tTear out - only for angled pull");
             sb.AppendLine("\t-------------------------------");
-            sb.AppendLine($"\t\tRpl = {Fmt1(input.Rpl_mm)} mm");
+            sb.AppendLine($"\t\te = {Fmt1(input.Rpl_mm)} mm");
             sb.AppendLine($"\t\tDH = {Fmt1(input.HoleDiameter_mm)} mm");
             sb.AppendLine($"\t\tt = {Fmt1(input.TotalThickness_mm)} mm");
-            sb.AppendLine($"\t\tsigma_Ed,2 = 1.7 * Fd / ((2 * Rpl - DH) * t) = {Fmt1(result.SigmaEd2_Nmm2)} N/mm²");
+            sb.AppendLine($"\t\tsigma_Ed,2 = 1.7 * Fd / ((2 * e - DH) * t) = {Fmt1(result.SigmaEd2_Nmm2)} N/mm²");
             sb.AppendLine($"\t\tCheck sigma_Ed,2 <= sigma_Rd: {Ok(result.TearOutOk)}  η = {FmtEta(result.TearOutUtilization)}");
             sb.AppendLine();
         }

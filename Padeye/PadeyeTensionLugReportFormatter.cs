@@ -205,6 +205,7 @@ namespace LascheApp.Padeye
             AppendLugInput(sb, lugResult);
             AppendEcGeometry(sb, lugResult.EcGeometryResult);
             AppendBearing(sb, lugResult.BearingResult);
+            AppendCheekPlateWeld(sb, lugResult.DnvOutOfPlaneResult);
 
             sb.AppendLine();
             sb.AppendLine("2.2. Pin");
@@ -397,7 +398,40 @@ namespace LascheApp.Padeye
                 sb.AppendLine();
             }
         }
+        private static void AppendCheekPlateWeld(
+            StringBuilder sb,
+            PadeyeDnvOutOfPlaneResult result)
+        {
+            if (!result.CheekPlateWeldCheckActive)
+                return;
 
+            PadeyeDnvOutOfPlaneInput input = result.Input;
+
+            if (result.HasErrors)
+            {
+                AppendErrorBlock(sb, "\tCheek plate weld", result.Errors);
+                return;
+            }
+
+            sb.AppendLine("\tCheek plate weld");
+            sb.AppendLine("\t----------------");
+            sb.AppendLine($"\t\tFd = F_Ed * cos(alpha) = {Fmt2(result.Fd_kN)} kN");
+            sb.AppendLine($"\t\talpha = {Fmt1(input.Alpha_deg)}°");
+            sb.AppendLine($"\t\ttch = {Fmt1(input.CheekPlateThickness_mm)} mm");
+            sb.AppendLine($"\t\tt = tpl + 2 * tch = {Fmt1(input.TotalThickness_mm)} mm");
+            sb.AppendLine($"\t\tDCH = 2 * Rch = {Fmt1(result.Dch_mm)} mm");
+            sb.AppendLine($"\t\ta = {Fmt1(input.WeldA_mm)} mm");
+
+            if (Math.Abs(input.Alpha_deg) > 1e-9)
+            sb.AppendLine($"\t\tdelta = {Fmt3(result.Delta)}");
+            else
+                sb.AppendLine("\t\tdelta = 1.000 (straight tension)");
+
+            sb.AppendLine($"\t\tsigma_Ed,w = Fd * tch / (1.5 * t * DCH * a) * delta = {Fmt1(result.SigmaEd3_Nmm2)} N/mm²");
+            sb.AppendLine($"\t\tfvwd = fu / (sqrt(3) * betaW * gammaM2) = {Fmt1(result.Fvwd_Nmm2)} N/mm²");
+            sb.AppendLine($"\t\tCheck sigma_Ed,w <= fvwd: {Ok(result.CheekPlateWeldOk)}  η = {FmtEta(result.CheekPlateWeldUtilization)}");
+            sb.AppendLine();
+        }
         private static void AppendPinOverall(
             StringBuilder sb,
             PinCheckResult result)
@@ -634,6 +668,10 @@ namespace LascheApp.Padeye
             return value.ToString("0.00");
         }
 
+        private static string Fmt3(double value)
+        {
+            return value.ToString("0.000");
+        }
         private static string FmtEta(double value)
         {
             return value.ToString("0.000");

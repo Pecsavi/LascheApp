@@ -38,9 +38,12 @@ namespace LascheApp.Padeye
                 SideDistanceC_mm = input.SideDistanceC_mm
             };
 
-            double cheekPlateThicknessForResistance_mm = input.IncludeCheekPlatesInBearing
-                ? input.CheekPlateThickness_mm
-                : 0.0;
+            double cheekPlateThicknessForResistance_mm =
+                input.LugType == LugType.TensionLug
+                    ? input.CheekPlateThickness_mm
+                    : input.IncludeCheekPlatesInBearing
+                        ? input.CheekPlateThickness_mm
+                        : 0.0;
 
             PadeyeDnvOutOfPlaneInput dnvOutOfPlaneInput = new PadeyeDnvOutOfPlaneInput
             {

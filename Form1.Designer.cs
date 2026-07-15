@@ -65,8 +65,6 @@
             lblPinFu = new Label();
             txtDnvOutOfPlaneAngle_deg = new TextBox();
             label13 = new Label();
-            label14 = new Label();
-            txtRpl_mm = new TextBox();
             txtCheekPlateThickness_mm = new TextBox();
             label15 = new Label();
             txtRch_mm = new TextBox();
@@ -113,7 +111,7 @@
             // lblShackleDpin
             // 
             lblShackleDpin.AutoSize = true;
-            lblShackleDpin.Location = new Point(254, 65);
+            lblShackleDpin.Location = new Point(25, 126);
             lblShackleDpin.Name = "lblShackleDpin";
             lblShackleDpin.Size = new Size(108, 15);
             lblShackleDpin.TabIndex = 2;
@@ -122,7 +120,7 @@
             // lblShackleB1
             // 
             lblShackleB1.AutoSize = true;
-            lblShackleB1.Location = new Point(254, 97);
+            lblShackleB1.Location = new Point(25, 158);
             lblShackleB1.Name = "lblShackleB1";
             lblShackleB1.Size = new Size(96, 15);
             lblShackleB1.TabIndex = 3;
@@ -131,7 +129,7 @@
             // lblShackleHDnv
             // 
             lblShackleHDnv.AutoSize = true;
-            lblShackleHDnv.Location = new Point(254, 129);
+            lblShackleHDnv.Location = new Point(25, 190);
             lblShackleHDnv.Name = "lblShackleHDnv";
             lblShackleHDnv.Size = new Size(121, 15);
             lblShackleHDnv.TabIndex = 3;
@@ -140,7 +138,7 @@
             // lblShackleInfo
             // 
             lblShackleInfo.AutoSize = true;
-            lblShackleInfo.Location = new Point(254, 161);
+            lblShackleInfo.Location = new Point(25, 222);
             lblShackleInfo.Name = "lblShackleInfo";
             lblShackleInfo.Size = new Size(71, 15);
             lblShackleInfo.TabIndex = 3;
@@ -166,7 +164,7 @@
             // txtHoleDiameter_mm
             // 
             txtHoleDiameter_mm.AcceptsReturn = true;
-            txtHoleDiameter_mm.Location = new Point(98, 81);
+            txtHoleDiameter_mm.Location = new Point(98, 57);
             txtHoleDiameter_mm.Name = "txtHoleDiameter_mm";
             txtHoleDiameter_mm.Size = new Size(69, 23);
             txtHoleDiameter_mm.TabIndex = 7;
@@ -193,7 +191,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(12, 84);
+            label3.Location = new Point(12, 60);
             label3.Name = "label3";
             label3.Size = new Size(53, 15);
             label3.TabIndex = 3;
@@ -236,7 +234,6 @@
             cmbMaterials.Name = "cmbMaterials";
             cmbMaterials.Size = new Size(111, 23);
             cmbMaterials.TabIndex = 9;
-
             cmbMaterials.SelectedIndexChanged += cmbMaterials_SelectedIndexChanged;
             // 
             // lblMaterialBetaW
@@ -277,7 +274,7 @@
             // 
             // txtPlateWidth_mm
             // 
-            txtPlateWidth_mm.Location = new Point(98, 112);
+            txtPlateWidth_mm.Location = new Point(98, 88);
             txtPlateWidth_mm.Name = "txtPlateWidth_mm";
             txtPlateWidth_mm.Size = new Size(69, 23);
             txtPlateWidth_mm.TabIndex = 14;
@@ -286,7 +283,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(12, 115);
+            label4.Location = new Point(14, 91);
             label4.Name = "label4";
             label4.Size = new Size(47, 15);
             label4.TabIndex = 15;
@@ -295,7 +292,7 @@
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(12, 146);
+            label5.Location = new Point(12, 122);
             label5.Name = "label5";
             label5.Size = new Size(46, 15);
             label5.TabIndex = 16;
@@ -303,7 +300,7 @@
             // 
             // txtEdgeDistanceA_mm
             // 
-            txtEdgeDistanceA_mm.Location = new Point(98, 143);
+            txtEdgeDistanceA_mm.Location = new Point(98, 119);
             txtEdgeDistanceA_mm.Name = "txtEdgeDistanceA_mm";
             txtEdgeDistanceA_mm.Size = new Size(69, 23);
             txtEdgeDistanceA_mm.TabIndex = 18;
@@ -428,28 +425,10 @@
             label13.TabIndex = 34;
             label13.Text = "alpha [deg]";
             // 
-            // label14
-            // 
-            label14.AutoSize = true;
-            label14.Location = new Point(23, 126);
-            label14.Name = "label14";
-            label14.Size = new Size(57, 15);
-            label14.TabIndex = 36;
-            label14.Text = "Rpl [mm]";
-            // 
-            // txtRpl_mm
-            // 
-            txtRpl_mm.AcceptsReturn = true;
-            txtRpl_mm.Location = new Point(109, 122);
-            txtRpl_mm.Name = "txtRpl_mm";
-            txtRpl_mm.Size = new Size(91, 23);
-            txtRpl_mm.TabIndex = 37;
-            txtRpl_mm.Text = "60";
-            // 
             // txtCheekPlateThickness_mm
             // 
             txtCheekPlateThickness_mm.AcceptsReturn = true;
-            txtCheekPlateThickness_mm.Location = new Point(98, 52);
+            txtCheekPlateThickness_mm.Location = new Point(298, 98);
             txtCheekPlateThickness_mm.Name = "txtCheekPlateThickness_mm";
             txtCheekPlateThickness_mm.Size = new Size(69, 23);
             txtCheekPlateThickness_mm.TabIndex = 39;
@@ -458,7 +437,7 @@
             // label15
             // 
             label15.AutoSize = true;
-            label15.Location = new Point(12, 55);
+            label15.Location = new Point(213, 101);
             label15.Name = "label15";
             label15.Size = new Size(57, 15);
             label15.TabIndex = 38;
@@ -467,16 +446,16 @@
             // txtRch_mm
             // 
             txtRch_mm.AcceptsReturn = true;
-            txtRch_mm.Location = new Point(109, 154);
+            txtRch_mm.Location = new Point(298, 129);
             txtRch_mm.Name = "txtRch_mm";
-            txtRch_mm.Size = new Size(91, 23);
+            txtRch_mm.Size = new Size(69, 23);
             txtRch_mm.TabIndex = 41;
             txtRch_mm.Text = "50";
             // 
             // label16
             // 
             label16.AutoSize = true;
-            label16.Location = new Point(23, 156);
+            label16.Location = new Point(213, 132);
             label16.Name = "label16";
             label16.Size = new Size(60, 15);
             label16.TabIndex = 40;
@@ -485,16 +464,16 @@
             // txtCheekPlateWeldA_mm
             // 
             txtCheekPlateWeldA_mm.AcceptsReturn = true;
-            txtCheekPlateWeldA_mm.Location = new Point(109, 186);
+            txtCheekPlateWeldA_mm.Location = new Point(298, 160);
             txtCheekPlateWeldA_mm.Name = "txtCheekPlateWeldA_mm";
-            txtCheekPlateWeldA_mm.Size = new Size(91, 23);
+            txtCheekPlateWeldA_mm.Size = new Size(69, 23);
             txtCheekPlateWeldA_mm.TabIndex = 43;
             txtCheekPlateWeldA_mm.Text = "10";
             // 
             // label17
             // 
             label17.AutoSize = true;
-            label17.Location = new Point(23, 186);
+            label17.Location = new Point(213, 163);
             label17.Name = "label17";
             label17.Size = new Size(76, 15);
             label17.TabIndex = 42;
@@ -594,11 +573,15 @@
             grpLugGeometry.Controls.Add(txtPlateWidth_mm);
             grpLugGeometry.Controls.Add(label4);
             grpLugGeometry.Controls.Add(richTextBox1);
+            grpLugGeometry.Controls.Add(txtCheekPlateWeldA_mm);
             grpLugGeometry.Controls.Add(label5);
             grpLugGeometry.Controls.Add(chkIncludeCheekPlatesInBearing);
+            grpLugGeometry.Controls.Add(label17);
             grpLugGeometry.Controls.Add(txtEdgeDistanceA_mm);
             grpLugGeometry.Controls.Add(txtCheekPlateThickness_mm);
+            grpLugGeometry.Controls.Add(txtRch_mm);
             grpLugGeometry.Controls.Add(label15);
+            grpLugGeometry.Controls.Add(label16);
             grpLugGeometry.Location = new Point(23, 269);
             grpLugGeometry.Name = "grpLugGeometry";
             grpLugGeometry.Size = new Size(489, 205);
@@ -615,17 +598,11 @@
             grpTransportLug.Controls.Add(lblShackleWll);
             grpTransportLug.Controls.Add(lblShackleDpin);
             grpTransportLug.Controls.Add(lblShackleB1);
-            grpTransportLug.Controls.Add(txtCheekPlateWeldA_mm);
             grpTransportLug.Controls.Add(lblShackleHDnv);
-            grpTransportLug.Controls.Add(label17);
             grpTransportLug.Controls.Add(lblShackleInfo);
-            grpTransportLug.Controls.Add(txtRch_mm);
-            grpTransportLug.Controls.Add(label14);
-            grpTransportLug.Controls.Add(label16);
-            grpTransportLug.Controls.Add(txtRpl_mm);
             grpTransportLug.Location = new Point(23, 494);
             grpTransportLug.Name = "grpTransportLug";
-            grpTransportLug.Size = new Size(489, 221);
+            grpTransportLug.Size = new Size(487, 255);
             grpTransportLug.TabIndex = 53;
             grpTransportLug.TabStop = false;
             grpTransportLug.Text = "Transport Lug / Shackle / DNV";
@@ -665,9 +642,9 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1076, 929);
+            Controls.Add(grpTransportLug);
             Controls.Add(groupBox5);
             Controls.Add(grpTensionLug);
-            Controls.Add(grpTransportLug);
             Controls.Add(grpLugGeometry);
             Controls.Add(grpLoads);
             Name = "Form1";
@@ -725,8 +702,6 @@
         private Label lblPinFu;
         private TextBox txtDnvOutOfPlaneAngle_deg;
         private Label label13;
-        private Label label14;
-        private TextBox txtRpl_mm;
         private TextBox txtCheekPlateThickness_mm;
         private Label label15;
         private TextBox txtRch_mm;

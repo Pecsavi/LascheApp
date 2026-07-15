@@ -72,12 +72,10 @@ namespace LascheApp
 
             txtDnvOutOfPlaneAngle_deg.Visible = isTransportLug;
             label13.Visible = isTransportLug;
-            txtRpl_mm.Visible = isTransportLug;
-            label14.Visible = isTransportLug;
-            txtRch_mm.Visible = isTransportLug;
-            label16.Visible = isTransportLug;
-            txtCheekPlateWeldA_mm.Visible = isTransportLug;
-            label17.Visible = isTransportLug;
+            txtRch_mm.Visible = true;
+            label16.Visible = true;
+            txtCheekPlateWeldA_mm.Visible = true;
+            label17.Visible = true;
 
             cmbPinMaterials.Visible = isTensionLug;
             label10.Visible = isTensionLug;
@@ -356,6 +354,30 @@ namespace LascheApp
                     return;
                 }
 
+                if (!TryReadOptionalDoubleControl("txtRch_mm", 0.0, out double tensionRch_mm, out string tensionRchError))
+                {
+                    txtBasicCheckResult.Text = tensionRchError;
+                    return;
+                }
+
+                if (!TryReadOptionalDoubleControl("txtCheekPlateWeldA_mm", 0.0, out double tensionCheekPlateWeldA_mm, out string tensionWeldAError))
+                {
+                    txtBasicCheckResult.Text = tensionWeldAError;
+                    return;
+                }
+
+                if (tensionCheekPlateThickness_mm > 0.0 && tensionRch_mm <= 0.0)
+                {
+                    txtBasicCheckResult.Text = "Invalid input: Rch must be greater than 0 if cheek plates are present.";
+                    return;
+                }
+
+                if (tensionCheekPlateThickness_mm > 0.0 && tensionCheekPlateWeldA_mm <= 0.0)
+                {
+                    txtBasicCheckResult.Text = "Invalid input: cheek plate weld throat a_weld must be greater than 0 if cheek plates are present.";
+                    return;
+                }
+
                 double innerLugThicknessForPinMoment_mm =
              t_mm + 2.0 * tensionCheekPlateThickness_mm;
 
@@ -456,6 +478,14 @@ namespace LascheApp
                     BetaW = materialProps.BetaW,
                     GammaM0 = 1.0,
                     GammaM6_ser = 1.0,
+                    GammaM2 = 1.25,
+
+                    DnvOutOfPlaneAngle_deg = 0.0,
+                    DnvBeta = 0.7,
+                    DnvGammaM = 1.15,
+
+                    Rch_mm = tensionRch_mm,
+                    CheekPlateWeldA_mm = tensionCheekPlateWeldA_mm,
 
                     // For Tension Lug this is the real pin diameter, not a shackle pin.
                     ShackleDpin_mm = tensionPinDiameter_mm,
@@ -526,11 +556,7 @@ namespace LascheApp
                 return;
             }
 
-            if (!TryReadOptionalDoubleControl("txtRpl_mm", 0.0, out double rpl_mm, out string rplError))
-            {
-                txtBasicCheckResult.Text = rplError;
-                return;
-            }
+            double rpl_mm = endDistanceE_mm;
 
             if (!TryReadOptionalDoubleControl("txtRch_mm", 0.0, out double rch_mm, out string rchError))
             {
@@ -729,6 +755,6 @@ namespace LascheApp
         {
             UpdateLugTypeUi();
         }
-
+               
     }
 }

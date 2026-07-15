@@ -63,7 +63,8 @@ namespace LascheApp.Padeye
         public LugType LugType => BasicResult.Input.LugType;
 
         public bool DnvOutOfPlaneCheckRequired =>
-            LugType == LugType.TransportLug && DnvOutOfPlaneResult.IsActive;
+             (LugType == LugType.TransportLug && DnvOutOfPlaneResult.IsActive) ||
+             (LugType == LugType.TensionLug && DnvOutOfPlaneResult.CheekPlateWeldCheckActive);
 
         public bool IsOk =>
              BasicResult.IsOk &&
