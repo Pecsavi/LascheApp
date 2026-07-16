@@ -1,3 +1,4 @@
+
 namespace LascheApp.Padeye
 {
     public static class PadeyeBasicChecker

@@ -26,7 +26,19 @@ namespace LascheApp.Padeye
         public double GammaM0 { get; set; } = 1.0;
 
         public double CheekPlateThickness_mm { get; set; }
+
+        // User request from checkbox.
+        public bool IncludeCheekPlatesInBearingRequested { get; set; }
+
+        // Effective value used in checks.
+        // This may be false even if requested, if Rch is too small.
         public bool IncludeCheekPlatesInBearing { get; set; }
+
+        public double CheekPlateRadiusRch_mm { get; set; }
+        public bool CheekPlateBearingGeometryOk { get; set; } = true;
+        public double CheekPlateBearingRequiredE_MethodA_mm { get; set; }
+        public double CheekPlateBearingRequiredE_MethodB_mm { get; set; }
+        public double CheekPlateBearingRequiredE_mm { get; set; }
 
         public double TotalBearingThickness_mm =>
             IncludeCheekPlatesInBearing
@@ -168,7 +180,18 @@ namespace LascheApp.Padeye
                         });
                     }
                 }
-
+                if (Input.IncludeCheekPlatesInBearingRequested &&
+                 !Input.IncludeCheekPlatesInBearing)
+                {
+                    items.Add(new CheckItem
+                    {
+                        Name = "Cheek plates are not considered for bearing resistance because Rch < e_min.",
+                        Utilization = 0.0,
+                        IsOk = false,
+                        ShowUtilization = false,
+                        IsWarning = true
+                    });
+                }
                 return items;
             }
         }

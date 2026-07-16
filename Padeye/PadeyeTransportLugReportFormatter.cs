@@ -281,7 +281,6 @@ namespace LascheApp.Padeye
             sb.AppendLine($"\tF_Ed,ser = {Fmt2(basic.F_Ed_ser_kN)} kN");
             sb.AppendLine($"\tfy = {Fmt1(basic.MaterialFy_Nmm2)} N/mm²");
             sb.AppendLine($"\tgammaM0 = {Fmt2(basic.GammaM0)}");
-
             if (basic.IncludeCheekPlatesInBearing)
             {
                 sb.AppendLine($"\ttpl = {Fmt1(basic.PlateThickness_mm)} mm");
@@ -291,7 +290,23 @@ namespace LascheApp.Padeye
             else
             {
                 sb.AppendLine($"\ttpl = {Fmt1(basic.PlateThickness_mm)} mm");
+
+                if (basic.CheekPlateThickness_mm > 0.0)
+                    sb.AppendLine($"\ttch = {Fmt1(basic.CheekPlateThickness_mm)} mm");
+
                 sb.AppendLine($"\tt = tpl = {Fmt1(basic.TotalBearingThickness_mm)} mm");
+            }
+
+            if (basic.IncludeCheekPlatesInBearingRequested &&
+                !basic.IncludeCheekPlatesInBearing)
+            {
+                sb.AppendLine(
+                    $"\tCheek plates requested for bearing resistance, but not included: " +
+                    $"Rch = {Fmt1(basic.CheekPlateRadiusRch_mm)} mm < required e for inclusion " +
+                    $"= min(e_A,incl = {Fmt1(basic.CheekPlateBearingRequiredE_MethodA_mm)} mm, " +
+                    $"e_B = {Fmt1(basic.CheekPlateBearingRequiredE_MethodB_mm)} mm) " +
+                    $"= {Fmt1(basic.CheekPlateBearingRequiredE_mm)} mm.");
+                sb.AppendLine("\tBearing resistance is calculated with tpl only.");
             }
 
             sb.AppendLine($"\td0 = {Fmt1(basic.HoleDiameter_mm)} mm");
@@ -547,21 +562,30 @@ namespace LascheApp.Padeye
             if (!result.CheekPlateWeldCheckActive)
                 return;
 
-            string deltaText = Math.Abs(input.Alpha_deg) > 1e-9
-                ? " * delta"
-                : "";
+            string deltaNote = Math.Abs(input.Alpha_deg) > 1e-9
+                ? " (out-of-plane load factor)"
+                : " (straight tension)";
 
             sb.AppendLine("\tCheek plate weld");
             sb.AppendLine("\t----------------");
             sb.AppendLine($"\t\tFd = F_Ed * cos(alpha) = {Fmt2(result.Fd_kN)} kN");
+            sb.AppendLine($"\t\talpha = {Fmt1(input.Alpha_deg)}°");
             sb.AppendLine($"\t\ttch = {Fmt1(input.CheekPlateThickness_mm)} mm");
             sb.AppendLine($"\t\tt = tpl + 2 * tch = {Fmt1(input.TotalThickness_mm)} mm");
             sb.AppendLine($"\t\tDCH = 2 * Rch = {Fmt1(result.Dch_mm)} mm");
             sb.AppendLine($"\t\ta = {Fmt1(input.WeldA_mm)} mm");
-            sb.AppendLine($"\t\tdelta = {Fmt3(result.Delta)}");
-            sb.AppendLine($"\t\tsigma_Ed,w = Fd * tch / (1.5 * t * DCH * a){deltaText} = {Fmt1(result.SigmaEd3_Nmm2)} N/mm²");
-            sb.AppendLine($"\t\tfvwd = fu / (sqrt(3) * betaW * gammaM2) = {Fmt1(result.Fvwd_Nmm2)} N/mm²");
-            sb.AppendLine($"\t\tCheck sigma_Ed,w <= fvwd: {Ok(result.CheekPlateWeldOk)}  η = {FmtEta(result.CheekPlateWeldUtilization)}");
+            sb.AppendLine($"\t\tdelta = {Fmt3(result.Delta)}{deltaNote}");
+            sb.AppendLine();
+
+            sb.AppendLine("\t\tDemand according to DNV-OS-H205 B.2.6:");
+            sb.AppendLine($"\t\tsigma_Ed,w = Fd * tch / (1.5 * t * DCH * a) * delta = {Fmt1(result.SigmaEd3_Nmm2)} N/mm²");
+            sb.AppendLine();
+
+            sb.AppendLine("\t\tWeld resistance according to EN 1993-1-8:");
+            sb.AppendLine($"\t\tfvw,Rd = fu / (sqrt(3) * betaW * gammaM2) = {Fmt1(result.Fvwd_Nmm2)} N/mm²");
+            sb.AppendLine();
+
+            sb.AppendLine($"\t\tCheck sigma_Ed,w <= fvw,Rd: {Ok(result.CheekPlateWeldOk)}  η = {FmtEta(result.CheekPlateWeldUtilization)}");
             sb.AppendLine();
         }
 
@@ -636,10 +660,11 @@ namespace LascheApp.Padeye
         private static string FormatGeometrySummaryLine(CheckItem item)
         {
             string status;
-           
+
             if (item.IsOk)
                 status = "OK";
             else if (
+                item.IsWarning ||
                 item.Name.Contains("clearance", StringComparison.OrdinalIgnoreCase) ||
                 item.Name.Contains("recommendation", StringComparison.OrdinalIgnoreCase))
                 status = "WARNING";

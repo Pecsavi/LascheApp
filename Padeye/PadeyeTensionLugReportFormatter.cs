@@ -427,10 +427,16 @@ namespace LascheApp.Padeye
             else
                 sb.AppendLine("\t\tdelta = 1.000 (straight tension)");
 
+            sb.AppendLine("\t\tDemand according to DNV-OS-H205 B.2.6:");
             sb.AppendLine($"\t\tsigma_Ed,w = Fd * tch / (1.5 * t * DCH * a) * delta = {Fmt1(result.SigmaEd3_Nmm2)} N/mm²");
-            sb.AppendLine($"\t\tfvwd = fu / (sqrt(3) * betaW * gammaM2) = {Fmt1(result.Fvwd_Nmm2)} N/mm²");
-            sb.AppendLine($"\t\tCheck sigma_Ed,w <= fvwd: {Ok(result.CheekPlateWeldOk)}  η = {FmtEta(result.CheekPlateWeldUtilization)}");
             sb.AppendLine();
+
+            sb.AppendLine("\t\tWeld resistance according to EN 1993-1-8:");
+            sb.AppendLine($"\t\tfvw,Rd = fu / (sqrt(3) * betaW * gammaM2) = {Fmt1(result.Fvwd_Nmm2)} N/mm²");
+            sb.AppendLine();
+
+            sb.AppendLine($"\t\tCheck sigma_Ed,w <= fvw,Rd: {Ok(result.CheekPlateWeldOk)}  η = {FmtEta(result.CheekPlateWeldUtilization)}");
+            sb.AppendLine(); 
         }
         private static void AppendPinOverall(
             StringBuilder sb,
