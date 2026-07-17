@@ -26,9 +26,6 @@ namespace LascheApp.Padeye
             if (input.PinDiameter_mm <= 0)
                 result.Errors.Add("Pin diameter d must be greater than 0.");
 
-            if (input.HoleDiameter_mm < input.PinDiameter_mm)
-                result.Errors.Add("Hole diameter d0 must be greater than or equal to pin diameter d.");
-
             if (input.Fy_Nmm2 <= 0)
                 result.Errors.Add("fy must be greater than 0.");
 
@@ -67,17 +64,23 @@ namespace LascheApp.Padeye
             double holePinDifference_mm =
                 input.HoleDiameter_mm - input.PinDiameter_mm;
 
-            double sigmaHEd_Nmm2 =
-                0.591 *
-                Math.Sqrt(
-                    input.E_Nmm2 *
-                    fEdSer_N *
-                    holePinDifference_mm /
-                    (
-                        input.PinDiameter_mm *
-                        input.PinDiameter_mm *
-                        input.PlateThickness_mm
-                    ));
+            result.PinHoleGeometryOk = holePinDifference_mm > 0.0;
+
+            double sigmaHEd_Nmm2 = 0.0;
+            if (result.PinHoleGeometryOk)
+            {
+                sigmaHEd_Nmm2 =
+                    0.591 *
+                    Math.Sqrt(
+                        input.E_Nmm2 *
+                        fEdSer_N *
+                        holePinDifference_mm /
+                        (
+                            input.PinDiameter_mm *
+                            input.PinDiameter_mm *
+                            input.PlateThickness_mm
+                        ));
+            }
 
             double fhRd_Nmm2 =
                 2.5 *
@@ -97,6 +100,7 @@ namespace LascheApp.Padeye
                 fEdSer_N <= fbRdSer_N;
 
             result.HolePinStressOk =
+                result.PinHoleGeometryOk &&
                 sigmaHEd_Nmm2 <= fhRd_Nmm2;
 
             result.BearingDesignUtilization =
@@ -106,7 +110,9 @@ namespace LascheApp.Padeye
                 fEdSer_N / fbRdSer_N;
 
             result.HolePinStressUtilization =
-                sigmaHEd_Nmm2 / fhRd_Nmm2;
+                result.PinHoleGeometryOk
+                    ? sigmaHEd_Nmm2 / fhRd_Nmm2
+                    : 0.0;
 
             return result;
         }

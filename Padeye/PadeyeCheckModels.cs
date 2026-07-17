@@ -39,7 +39,8 @@ namespace LascheApp.Padeye
         public double GammaM2 { get; set; } = 1.25;
 
         public double CheekPlateThickness_mm { get; set; }
-        public double Rpl_mm { get; set; }
+        // Distance from pin/hole centre to the lug end: e.
+        public double EndDistanceE_mm { get; set; }
         public double Rch_mm { get; set; }
         public double CheekPlateWeldA_mm { get; set; }
 

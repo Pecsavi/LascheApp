@@ -6,6 +6,8 @@ using System.Linq;
 using System.IO;
 using System;
 using System.Windows.Forms;
+using System.Drawing.Drawing2D;
+using System.Drawing.Printing;
 
 namespace LascheApp
 {
@@ -15,10 +17,409 @@ namespace LascheApp
         private ShackleDatabase? _shackleDatabase;
         private PadeyeCheckResult? _lastPadeyeResult;
         private PinCheckResult? _lastPinResult;
+        private readonly TextBox _txtProjectNumber = new();
+        private readonly TextBox _txtVerificationSubject = new();
+        private readonly ComboBox _cmbLanguage = new();
+        private readonly GroupBox _projectGroup = new();
+        private readonly Label _projectLabel = new();
+        private readonly Label _subjectLabel = new();
+        private readonly Label _languageLabel = new();
+        private readonly Button _printButton = new();
+        private readonly TabPage _guideTab = new();
+        private readonly Panel _geometryGuide = new();
+        private readonly PrintDocument _reportPrintDocument = new();
+        private string[] _printLines = Array.Empty<string>();
+        private int _nextPrintLine;
+        private string _lastEnglishReport = "";
         public Form1()
         {
             InitializeComponent();
+            ConfigureProjectAndReportUi();
+        }
 
+        private void ConfigureProjectAndReportUi()
+        {
+            const int offsetY = 84;
+            foreach (Control control in Controls.Cast<Control>().ToArray())
+                control.Top += offsetY;
+
+            ClientSize = new Size(ClientSize.Width, ClientSize.Height + offsetY);
+            MinimumSize = new Size(1092, 890);
+            Text = "Lug verification";
+
+            _projectGroup.Text = "Project information";
+            _projectGroup.Location = new Point(23, 12);
+            _projectGroup.Size = new Size(1034, 72);
+            _projectGroup.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            _projectLabel.Text = "Project number";
+            _projectLabel.AutoSize = true;
+            _projectLabel.Location = new Point(14, 31);
+            _txtProjectNumber.Location = new Point(112, 27);
+            _txtProjectNumber.Size = new Size(180, 23);
+            _txtProjectNumber.PlaceholderText = "e.g. S-1099";
+            _subjectLabel.Text = "Subject of verification";
+            _subjectLabel.AutoSize = true;
+            _subjectLabel.Location = new Point(322, 31);
+            _txtVerificationSubject.Location = new Point(458, 27);
+            _txtVerificationSubject.Size = new Size(330, 23);
+            _txtVerificationSubject.PlaceholderText = "e.g. Gantry 1 – Gantry 2 connection";
+            _languageLabel.Text = "Language";
+            _languageLabel.AutoSize = true;
+            _languageLabel.Location = new Point(810, 31);
+            _cmbLanguage.DropDownStyle = ComboBoxStyle.DropDownList;
+            _cmbLanguage.Items.AddRange(new object[] { "English", "Deutsch" });
+            _cmbLanguage.Location = new Point(875, 27);
+            _cmbLanguage.Size = new Size(133, 23);
+            _cmbLanguage.SelectedIndexChanged += Language_SelectedIndexChanged;
+            _projectGroup.Controls.AddRange(new Control[]
+            {
+                _projectLabel, _txtProjectNumber, _subjectLabel, _txtVerificationSubject,
+                _languageLabel, _cmbLanguage
+            });
+            Controls.Add(_projectGroup);
+            _projectGroup.BringToFront();
+
+            _printButton.Text = "Print report…";
+            _printButton.Location = new Point(350, 6);
+            _printButton.Size = new Size(120, 23);
+            _printButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            _printButton.Click += PrintReport_Click;
+            toolTip1.SetToolTip(_printButton, "Open print preview for the current calculation report");
+
+            Panel reportToolbar = new()
+            {
+                Dock = DockStyle.Fill,
+                BackColor = SystemColors.Control
+            };
+            reportToolbar.Controls.Add(_printButton);
+
+            TableLayoutPanel reportLayout = new()
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                Padding = Padding.Empty,
+                Margin = Padding.Empty
+            };
+            reportLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+            reportLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35f));
+            reportLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+            txtBasicCheckResult.Dock = DockStyle.Fill;
+            tabReport.Controls.Clear();
+            reportLayout.Controls.Add(reportToolbar, 0, 0);
+            reportLayout.Controls.Add(txtBasicCheckResult, 0, 1);
+            tabReport.Controls.Add(reportLayout);
+
+            _guideTab.Text = "Geometry guide";
+            _guideTab.Padding = new Padding(8);
+            Label guideHint = new()
+            {
+                Text = "Schematic only – dimensions are defined by the input fields.",
+                Dock = DockStyle.Bottom,
+                Height = 28,
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = Color.DimGray
+            };
+            _geometryGuide.Dock = DockStyle.Fill;
+            _geometryGuide.BackColor = Color.White;
+            _geometryGuide.Paint += GeometryGuide_Paint;
+            _guideTab.Controls.Add(_geometryGuide);
+            _guideTab.Controls.Add(guideHint);
+            tabResults.TabPages.Insert(1, _guideTab);
+            cmbLugType.SelectedIndexChanged += (_, _) => _geometryGuide.Invalidate();
+
+            _reportPrintDocument.DocumentName = "Lug verification report";
+            _reportPrintDocument.BeginPrint += (_, _) =>
+            {
+                _printLines = txtBasicCheckResult.Lines;
+                _nextPrintLine = 0;
+            };
+            _reportPrintDocument.PrintPage += ReportPrintDocument_PrintPage;
+            _cmbLanguage.SelectedIndex = 0;
+        }
+
+        private void PrintReport_Click(object? sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtBasicCheckResult.Text))
+            {
+                MessageBox.Show("Run the verification before printing.", "No report", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using PrintPreviewDialog preview = new()
+            {
+                Document = _reportPrintDocument,
+                Width = 1100,
+                Height = 800
+            };
+            preview.ShowDialog(this);
+        }
+
+        private bool IsGerman => _cmbLanguage.SelectedIndex == 1;
+
+        private void Language_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            ApplyLanguage();
+
+            // Recreate both Summary and Report in the selected language.
+            if (_lastPadeyeResult != null)
+                btnCheckBasicPadeye.PerformClick();
+        }
+
+        private void ApplyLanguage()
+        {
+            bool de = IsGerman;
+            Text = de ? "Laschennachweis" : "Lug verification";
+            _projectGroup.Text = de ? "Projektangaben" : "Project information";
+            _projectLabel.Text = de ? "Projektnummer" : "Project number";
+            _subjectLabel.Text = de ? "Gegenstand der Prüfung" : "Subject of verification";
+            _languageLabel.Text = de ? "Sprache" : "Language";
+            _printButton.Text = de ? "Bericht drucken…" : "Print report…";
+
+            grpLoads.Text = de ? "Lasten / Werkstoff" : "Loads / material";
+            grpLugGeometry.Text = de ? "Laschengeometrie" : "Lug geometry";
+            grpTransportLug.Text = de ? "Transportlasche / Schäkel / DNV" : "Transport Lug / Shackle / DNV";
+            grpTensionLug.Text = de ? "Zuglasche / Bolzen" : "Tension Lug / Pin";
+            groupBox5.Text = de ? "Ergebnis" : "Result";
+            btnCheckBasicPadeye.Text = de ? "Lasche prüfen" : "Verify lug";
+            btnSelectShackleByLoad.Text = de ? "Schäkel nach Last wählen" : "Select shackle by load";
+            chkReplaceablePin.Text = de ? "Nachweise: austauschbarer Bolzen" : "Replaceable pin checks";
+            chkIncludeCheekPlatesInBearing.Text = de
+                ? "Verstärkungsbleche im Tragwiderstand.*"
+                : "Cheek plates considered in the calculation.*";
+            richTextBox1.Text = de
+                ? "*Endgültiges Bohren nach dem Schweißen wird vorausgesetzt!"
+                : "*Final drilling after welding is assumed!";
+
+            label8.Text = de ? "Laschentyp" : "Lug type";
+            label6.Text = de ? "Laschenwerkstoff" : "Lug material";
+            label10.Text = de ? "Bolzenwerkstoff" : "Pin material";
+            label9.Text = de ? "Bolzendurchmesser d [mm]" : "Pin diameter d [mm]";
+            lblOuterLugThicknessT2.Text = de ? "Außenlasche t2 [mm]" : "Outer lug t2 [mm]";
+            lblGapS.Text = de ? "Spalt s [mm]" : "Gap s [mm]";
+
+            // German engineering terms are considerably longer. Keep a
+            // dedicated German layout so labels never run into input fields.
+            cmbMaterials.Left = de ? 135 : 100;
+            cmbMaterials.Width = de ? 111 : 111;
+            cmbPinMaterials.Left = de ? 135 : 105;
+            cmbPinMaterials.Width = de ? 115 : 101;
+
+            txtTensionPinDiameter_mm.Left = de ? 190 : 141;
+            txtOuterLugThicknessT2_mm.Left = de ? 190 : 141;
+            txtGapS_mm.Left = de ? 190 : 141;
+
+            lblPinFy.Left = de ? 280 : 254;
+            lblPinFu.Left = de ? 375 : 328;
+
+            btnSelectShackleByLoad.Width = de ? 210 : 177;
+
+            chkReplaceablePin.Left = de ? 265 : 311;
+            chkReplaceablePin.AutoSize = true;
+            chkIncludeCheekPlatesInBearing.Left = de ? 190 : 203;
+            chkIncludeCheekPlatesInBearing.AutoSize = true;
+
+            _subjectLabel.Left = 322;
+            _txtVerificationSubject.Left = de ? 475 : 458;
+            _txtVerificationSubject.Width = de ? 313 : 330;
+
+            tabSummary.Text = de ? "Übersicht" : "Summary";
+            _guideTab.Text = de ? "Geometriehilfe" : "Geometry guide";
+            tabReport.Text = de ? "Bericht" : "Report";
+
+            if (cmbLugType.DataSource != null)
+            {
+                LugType selectedType = GetSelectedLugType();
+                cmbLugType.DataSource = new List<KeyValuePair<LugType, string>>
+                {
+                    new(LugType.TransportLug, de ? "Transportlasche" : "Transport Lug"),
+                    new(LugType.TensionLug, de ? "Zuglasche" : "Tension Lug")
+                };
+                cmbLugType.DisplayMember = "Value";
+                cmbLugType.ValueMember = "Key";
+                cmbLugType.SelectedValue = selectedType;
+            }
+
+            if (dgvCheckSummary.Columns.Count >= 4)
+            {
+                dgvCheckSummary.Columns["Group"].HeaderText = de ? "Gruppe" : "Group";
+                dgvCheckSummary.Columns["Check"].HeaderText = de ? "Nachweis" : "Check";
+                dgvCheckSummary.Columns["Status"].HeaderText = de ? "Status" : "Status";
+            }
+        }
+
+        private string LocalizeReport(string englishReport)
+        {
+            _lastEnglishReport = englishReport;
+            return IsGerman ? TranslateToGerman(englishReport) : englishReport;
+        }
+
+        private string LocalizeUiText(string englishText)
+        {
+            if (!IsGerman)
+                return englishText;
+
+            return englishText switch
+            {
+                "Geometry" => "Geometrie",
+                "Shackle" => "Schäkel",
+                "Bearing" => "Lochleibung",
+                "Cheek plates" => "Verstärkungsbleche",
+                "Pin" => "Bolzen",
+                "General" => "Allgemein",
+                _ => TranslateToGerman(englishText)
+            };
+        }
+
+        private static string TranslateToGerman(string text)
+        {
+            (string English, string German)[] replacements =
+            {
+                ("Transport Lug verification", "Nachweis der Transportlasche"),
+                ("Tension Lug verification", "Nachweis der Zuglasche"),
+                ("Project information", "Projektangaben"),
+                ("Project:", "Projekt:"), ("Subject:", "Prüfgegenstand:"),
+                ("Prepared by:", "Erstellt von:"), ("Date:", "Datum:"),
+                ("Overall result:", "Gesamtergebnis:"),
+                ("Max utilization:", "Maximale Ausnutzung:"),
+                ("Governing utilization:", "Maßgebende Ausnutzung:"),
+                ("Governing check:", "Maßgebender Nachweis:"),
+                ("Failed check(s):", "Nicht erfüllte Nachweise:"),
+                ("Input data", "Eingabedaten"), ("Materials", "Werkstoffe"),
+                ("Loads", "Lasten"), ("Geometry", "Geometrie"),
+                ("Lug:", "Lasche:"), ("Pin:", "Bolzen:"), ("Shackle:", "Schäkel:"),
+                ("requested for resistance; applicability is verified separately", "für den Tragwiderstand vorgesehen; Anwendbarkeit wird separat geprüft"),
+                ("considered in geometry only, not in resistance", "nur geometrisch, nicht im Tragwiderstand berücksichtigt"),
+                ("Replaceable pin checks: active", "Nachweise für austauschbaren Bolzen: aktiv"),
+                ("Replaceable pin checks: not active", "Nachweise für austauschbaren Bolzen: nicht aktiv"),
+                ("Check summary", "Nachweisübersicht"),
+                ("Geometry checks", "Geometrische Nachweise"),
+                ("Utilization checks", "Ausnutzungsnachweise"),
+                ("Calculation", "Berechnung"), ("Lug result:", "Ergebnis Lasche:"),
+                ("Pin result:", "Ergebnis Bolzen:"),
+                ("Minimum distances from load", "Mindestabstände aus Belastung"),
+                ("Required overall geometry", "Erforderliche Gesamtgeometrie"),
+                ("Provided e", "Vorhanden e"), ("Provided b", "Vorhanden b"),
+                ("Method A result:", "Ergebnis Methode A:"),
+                ("Method B result:", "Ergebnis Methode B:"),
+                ("Method A", "Methode A"), ("Method B", "Methode B"),
+                ("Shackle WLL", "Schäkel-WLL"),
+                ("Hole diameter clearance recommendation", "Empfehlung zum Lochspiel"),
+                ("Hole clearance recommendation", "Empfehlung zum Lochspiel"),
+                ("Shackle pin diameter", "Schäkelbolzendurchmesser"),
+                ("Provided hole diameter", "Vorhandener Lochdurchmesser"),
+                ("Clearance allowance", "Zulässiges Lochspiel"),
+                ("Recommended range:", "Empfohlener Bereich:"),
+                ("Dpin + clearance", "Dpin + Lochspiel"),
+                ("Hole clearance", "Lochspiel"),
+                ("EC geometry check", "EC-Geometrienachweis"),
+                ("Pin diameter recommendation for significant angled pull", "Bolzendurchmesser-Empfehlung bei Schrägzug"),
+                ("Shackle B1 thickness recommendation", "Empfehlung zur Laschendicke aus Schäkelmaß B1"),
+                ("Pin-hole bearing design", "Lochleibungsnachweis"),
+                ("Replaceable pin service bearing", "Gebrauchslochleibung des austauschbaren Bolzens"),
+                ("Replaceable pin contact stress", "Kontaktspannung des austauschbaren Bolzens"),
+                ("Bearing at angled pull (according to DNV standard)", "Flächenpressung bei Schrägzug nach DNV"),
+                ("tear-out at angled pull (according to DNV standard)", "Ausreißen bei Schrägzug nach DNV"),
+                ("Cheek plates are not considered for bearing resistance", "Verstärkungsbleche werden im Tragwiderstand nicht berücksichtigt"),
+                ("Service bearing (Replaceable pin)", "Lochleibung im Gebrauchszustand (austauschbarer Bolzen)"),
+                ("Contact stress (Replaceable pin)", "Kontaktspannung (austauschbarer Bolzen)"),
+                ("Cheek plate weld", "Schweißnaht der Verstärkungsbleche"),
+                ("Bearing pressure - only for angled pull", "Flächenpressung bei Schrägzug"),
+                ("Tear out - only for angled pull", "Ausreißen bei Schrägzug"),
+                ("Section values", "Querschnittswerte"),
+                ("Pin shear + bending interaction", "Interaktion aus Bolzenschub und -biegung"),
+                ("Replaceable pin service bending", "Bolzenbiegung im Gebrauchszustand"),
+                ("Pin shear", "Bolzenschub"), ("Pin bending", "Bolzenbiegung"),
+                ("Pin-hole geometry", "Bolzen-Loch-Geometrie"),
+                ("Recommendation fulfilled:", "Empfehlung erfüllt:"),
+                ("Recommended:", "Empfohlen:"),
+                ("This is a recommendation only and does not govern the overall result.", "Dies ist nur eine Empfehlung und beeinflusst das Gesamtergebnis nicht."),
+                ("NOT CALCULATED", "NICHT BERECHNET"),
+                ("WARNING", "WARNUNG"), ("NOT OK", "NICHT ERFÜLLT"),
+                ("Check ", "Prüfung "), (" result:", " Ergebnis:")
+            };
+
+            foreach ((string english, string german) in replacements)
+                text = text.Replace(english, german, StringComparison.OrdinalIgnoreCase);
+
+            return text;
+        }
+
+        private void ReportPrintDocument_PrintPage(object? sender, PrintPageEventArgs e)
+        {
+            if (e.Graphics is null)
+                return;
+
+            using Font font = new("Consolas", 9f);
+            float lineHeight = font.GetHeight(e.Graphics);
+            int linesPerPage = Math.Max(1, (int)(e.MarginBounds.Height / lineHeight));
+            int printed = 0;
+            while (_nextPrintLine < _printLines.Length && printed < linesPerPage)
+            {
+                e.Graphics.DrawString(_printLines[_nextPrintLine], font, Brushes.Black,
+                    e.MarginBounds.Left, e.MarginBounds.Top + printed * lineHeight);
+                _nextPrintLine++;
+                printed++;
+            }
+            e.HasMorePages = _nextPrintLine < _printLines.Length;
+        }
+
+        private void GeometryGuide_Paint(object? sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle area = _geometryGuide.ClientRectangle;
+            if (area.Width < 100 || area.Height < 100) return;
+
+            using Pen outline = new(Color.FromArgb(45, 75, 105), 3f);
+            using Pen dimension = new(Color.FromArgb(185, 70, 55), 1.5f) { CustomEndCap = new AdjustableArrowCap(4, 5), StartCap = LineCap.ArrowAnchor };
+            using Pen load = new(Color.FromArgb(35, 135, 85), 4f) { EndCap = LineCap.ArrowAnchor };
+            using Brush plate = new SolidBrush(Color.FromArgb(225, 235, 244));
+            using Font labelFont = new("Segoe UI", 10f, FontStyle.Bold);
+            using Font titleFont = new("Segoe UI", 12f, FontStyle.Bold);
+
+            int cx = area.Width / 2;
+            int top = 85;
+            int holeR = Math.Min(48, area.Width / 9);
+            Rectangle lug = new(cx - 120, top + holeR, 240, Math.Max(210, area.Height - 205));
+            g.FillRectangle(plate, lug);
+            g.DrawRectangle(outline, lug);
+            g.FillEllipse(plate, cx - 120, top - 72, 240, 240);
+            g.DrawArc(outline, cx - 120, top - 72, 240, 240, 180, 180);
+            g.FillEllipse(Brushes.White, cx - holeR, top + 48 - holeR, holeR * 2, holeR * 2);
+            g.DrawEllipse(outline, cx - holeR, top + 48 - holeR, holeR * 2, holeR * 2);
+            g.DrawString(GetSelectedLugType() == LugType.TransportLug ? "TRANSPORT LUG" : "TENSION LUG", titleFont, Brushes.Black, 16, 15);
+
+            DrawDimension(g, dimension, labelFont, cx - 120, lug.Bottom + 18, cx + 120, lug.Bottom + 18, "b");
+            DrawDimension(g, dimension, labelFont, cx - holeR, top + 48, cx + holeR, top + 48, "d0");
+            DrawDimension(g, dimension, labelFont, cx + 145, top + 48, cx + 145, lug.Bottom, "e");
+            g.DrawLine(load, cx, top - 55, cx, top - 5);
+            g.DrawString("FEd", labelFont, Brushes.SeaGreen, cx + 10, top - 52);
+
+            if (GetSelectedLugType() == LugType.TransportLug)
+            {
+                using Pen shackle = new(Color.DarkSlateGray, 7f);
+                g.DrawArc(shackle, cx - 78, top - 5, 156, 115, 190, 160);
+                g.DrawString("Dpin / B1", labelFont, Brushes.DarkSlateGray, cx + 75, top + 12);
+                g.DrawString("α = out-of-plane pull angle", labelFont, Brushes.Black, 16, 45);
+            }
+            else
+            {
+                using Pen pin = new(Color.DarkSlateGray, 12f);
+                g.DrawLine(pin, cx - 105, top + 48, cx + 105, top + 48);
+                g.DrawString("pin d", labelFont, Brushes.DarkSlateGray, cx + 112, top + 36);
+                g.DrawString("t2 = outer lug thickness     s = gap", labelFont, Brushes.Black, 16, 45);
+            }
+
+            g.DrawString("tpl = main plate thickness", labelFont, Brushes.Black, 16, area.Height - 52);
+            g.DrawString("tch / Rch / a_weld = cheek plate data", labelFont, Brushes.Black, 220, area.Height - 52);
+        }
+
+        private static void DrawDimension(Graphics g, Pen pen, Font font, int x1, int y1, int x2, int y2, string text)
+        {
+            g.DrawLine(pen, x1, y1, x2, y2);
+            SizeF size = g.MeasureString(text, font);
+            g.DrawString(text, font, Brushes.Firebrick, (x1 + x2 - size.Width) / 2f, (y1 + y2 - size.Height) / 2f);
         }
         private MaterialGrade? GetSelectedMaterial()
         {
@@ -58,6 +459,7 @@ namespace LascheApp
 
             UpdateLugTypeUi();
             ConfigureSummaryGrid();
+            ApplyLanguage();
         }
 
         private void UpdateLugTypeUi()
@@ -136,19 +538,20 @@ namespace LascheApp
                     item.IsOk
                         ? "OK"
                         : item.IsWarning
-                            ? "WARNING"
-                            : "NOT OK";
+                            ? (IsGerman ? "WARNUNG" : "WARNING")
+                            : (IsGerman ? "NICHT ERFÜLLT" : "NOT OK");
 
                 string eta =
                     item.ShowUtilization
                         ? item.Utilization.ToString("0.000")
                         : "";
 
-                dgvCheckSummary.Rows.Add(
-                    group,
-                    item.Name,
+                int rowIndex = dgvCheckSummary.Rows.Add(
+                    LocalizeUiText(group),
+                    LocalizeUiText(item.Name),
                     status,
                     eta);
+                dgvCheckSummary.Rows[rowIndex].Tag = item.Name;
             }
         }
 
@@ -471,6 +874,7 @@ namespace LascheApp
                     txtBasicCheckResult.Text = "Invalid input: pin diameter d [mm]";
                     return;
                 }
+
                 if (!TryReadDouble(txtOuterLugThicknessT2_mm.Text, out double outerLugThicknessT2_mm))
                 {
                     txtBasicCheckResult.Text = "Invalid input: outer lug thickness t2 [mm]";
@@ -649,20 +1053,18 @@ namespace LascheApp
                         : tensionPadeyeResult.GoverningCheckName;
 
                 txtBasicCheckResult.Text =
-                txtBasicCheckResult.Text =
-                    PadeyeTensionLugReportFormatter.Format(
+                    LocalizeReport(PadeyeTensionLugReportFormatter.Format(
                         tensionPadeyeResult,
                         pinResult,
                     new PadeyeTensionLugReportInfo
                     {
-                        Project = "S-1099",
-                        Gantry = "NL1",
-                        Connection = "Gantry 1 - Gantry 2",
+                        Project = _txtProjectNumber.Text.Trim(),
+                        Subject = _txtVerificationSubject.Text.Trim(),
                         PreparedBy = Environment.UserName,
                         Date = DateTime.Today,
                         PlateMaterial = material.Name,
                         PinMaterial = pinMaterial.Name
-                    });
+                    }));
 
                 _lastPadeyeResult = tensionPadeyeResult;
                 _lastPinResult = pinResult;
@@ -703,8 +1105,6 @@ namespace LascheApp
                 txtBasicCheckResult.Text = cheekThicknessError;
                 return;
             }
-
-            double rpl_mm = endDistanceE_mm;
 
             if (!TryReadOptionalDoubleControl("txtRch_mm", 0.0, out double rch_mm, out string rchError))
             {
@@ -754,7 +1154,7 @@ namespace LascheApp
                 GammaM2 = 1.25,
 
                 CheekPlateThickness_mm = cheekPlateThickness_mm,
-                Rpl_mm = rpl_mm,
+                EndDistanceE_mm = endDistanceE_mm,
                 Rch_mm = rch_mm,
                 CheekPlateWeldA_mm = cheekPlateWeldA_mm,
 
@@ -765,18 +1165,17 @@ namespace LascheApp
                 PadeyeChecker.Check(padeyeInput);
 
             txtBasicCheckResult.Text =
-                PadeyeTransportLugReportFormatter.Format(
+                LocalizeReport(PadeyeTransportLugReportFormatter.Format(
                     padeyeResult,
                     new PadeyeTransportLugReportInfo
                     {
-                        Project = "S-1099",
-                        Gantry = "NL1",
-                        Connection = "Gantry 1 - Gantry 2",
+                        Project = _txtProjectNumber.Text.Trim(),
+                        Subject = _txtVerificationSubject.Text.Trim(),
                         PreparedBy = Environment.UserName,
                         Date = DateTime.Today,
                         PlateMaterial = material.Name,
                         ShackleName = GetSelectedShackle()?.Name ?? ""
-                    });
+                    }));
             
             _lastPadeyeResult = padeyeResult;
             _lastPinResult = null;
@@ -899,14 +1298,18 @@ namespace LascheApp
             DataGridViewRow row = dgvCheckSummary.SelectedRows[0];
 
             string checkName =
-                row.Cells["Check"].Value?.ToString() ?? "";
+                row.Tag as string ?? row.Cells["Check"].Value?.ToString() ?? "";
 
             txtSelectedCheckDetail.Text =
-                GetSelectedCheckDetail(checkName);
+                LocalizeUiText(GetSelectedCheckDetail(checkName));
         }
         private string GetSelectedCheckDetail(string checkName)
         {
-            string report = txtBasicCheckResult.Text;
+            // Section markers are stable in the original English report.
+            // The extracted detail is translated only when it is displayed.
+            string report = string.IsNullOrWhiteSpace(_lastEnglishReport)
+                ? txtBasicCheckResult.Text
+                : _lastEnglishReport;
 
             if (string.IsNullOrWhiteSpace(report))
                 return "";
@@ -915,11 +1318,54 @@ namespace LascheApp
                 return ExtractReportSection(report, "Shackle WLL");
 
             if (checkName.Contains("clearance", StringComparison.OrdinalIgnoreCase) ||
-                checkName.Contains("Hole diameter", StringComparison.OrdinalIgnoreCase))
+                checkName.Contains("Hole diameter", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("Lochspiel", StringComparison.OrdinalIgnoreCase))
+            {
+                PadeyeBasicCheckResult? basicResult = _lastPadeyeResult?.BasicResult;
+                if (basicResult != null)
+                {
+                    PadeyeBasicCheckInput input = basicResult.Input;
+                    return
+                        "Hole clearance recommendation" + Environment.NewLine +
+                        "-----------------------------" + Environment.NewLine +
+                        $"Shackle pin diameter Dpin = {input.ShackleDpin_mm:0.0} mm" + Environment.NewLine +
+                        $"Provided hole diameter d0 = {input.HoleDiameter_mm:0.0} mm" + Environment.NewLine +
+                        $"Clearance allowance = {input.PinClearance_mm:0.0} mm" + Environment.NewLine + Environment.NewLine +
+                        "Recommended range:" + Environment.NewLine +
+                        "Dpin < d0 <= Dpin + clearance" + Environment.NewLine +
+                        $"{input.ShackleDpin_mm:0.0} mm < {input.HoleDiameter_mm:0.0} mm <= " +
+                        $"{input.ShackleDpin_mm:0.0} mm + {input.PinClearance_mm:0.0} mm = " +
+                        $"{basicResult.RecommendedHoleDiameterMax_mm:0.0} mm" + Environment.NewLine + Environment.NewLine +
+                        $"Recommendation fulfilled: {(basicResult.HoleDiameterRecommendationOk ? "OK" : "NOT OK")}";
+                }
+
                 return ExtractReportSection(report, "Hole clearance");
+            }
 
             if (checkName.Contains("B1", StringComparison.OrdinalIgnoreCase))
                 return ExtractReportSection(report, "Shackle B1 thickness recommendation");
+
+            if (checkName.Contains("Pin-hole geometry", StringComparison.OrdinalIgnoreCase))
+            {
+                PadeyeBearingInput? bearingInput = _lastPadeyeResult?.BearingResult.Input;
+
+                if (bearingInput != null)
+                {
+                    bool ok = bearingInput.PinDiameter_mm < bearingInput.HoleDiameter_mm;
+                    return
+                        $"Pin-hole geometry: {(ok ? "OK" : "NOT OK")}" + Environment.NewLine +
+                        "-------------------------" + Environment.NewLine +
+                        $"Pin diameter d = {bearingInput.PinDiameter_mm:0.0} mm" + Environment.NewLine +
+                        $"Hole diameter d0 = {bearingInput.HoleDiameter_mm:0.0} mm" + Environment.NewLine +
+                        $"Check d < d0: {(ok ? "OK" : "NOT OK")}" +
+                        (ok
+                            ? ""
+                            : Environment.NewLine + Environment.NewLine +
+                              "The replaceable-pin contact stress cannot be calculated for this geometry.");
+                }
+
+                return ExtractReportSection(report, "Pin-hole bearing design");
+            }
 
             if (checkName.Contains("EC geometry", StringComparison.OrdinalIgnoreCase))
                 return ExtractReportRange(
@@ -940,12 +1386,33 @@ namespace LascheApp
             if (checkName.Contains("Cheek plate weld", StringComparison.OrdinalIgnoreCase))
                 return ExtractReportSection(report, "Cheek plate weld");
 
-            if (checkName.Contains("angled pull", StringComparison.OrdinalIgnoreCase) ||
-                checkName.Contains("DNV", StringComparison.OrdinalIgnoreCase))
-                return ExtractReportSection(report, "Bearing pressure - only for angled pull");
+            // Match the specific DNV checks before the general angled-pull
+            // condition. All three check names contain "angled pull".
+            if (checkName.Contains("Pin diameter recommendation", StringComparison.OrdinalIgnoreCase))
+            {
+                PadeyeDnvOutOfPlaneResult? dnv = _lastPadeyeResult?.DnvOutOfPlaneResult;
+                if (dnv != null)
+                {
+                    return
+                        "Pin diameter recommendation for significant angled pull" + Environment.NewLine +
+                        "---------------------------------------------------------" + Environment.NewLine +
+                        $"Dpin / d0 = {dnv.DpinToHoleRatio:0.000}" + Environment.NewLine +
+                        "Recommended: Dpin / d0 >= 0.940" + Environment.NewLine +
+                        $"Recommendation fulfilled: {(dnv.PinDiameterRecommendationOk ? "OK" : "NOT OK")}" +
+                        Environment.NewLine + Environment.NewLine +
+                        "This is a recommendation only and does not govern the overall result.";
+                }
+
+                return ExtractReportSection(report, "Pin diameter recommendation");
+            }
 
             if (checkName.Contains("tear-out", StringComparison.OrdinalIgnoreCase))
                 return ExtractReportSection(report, "Tear out - only for angled pull");
+
+            if (checkName.Contains("Bearing at angled pull", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("angled pull", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("DNV", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Bearing pressure - only for angled pull");
 
             if (checkName.Contains("Pin shear + bending", StringComparison.OrdinalIgnoreCase))
                 return ExtractReportSection(report, "Pin shear + bending interaction");
@@ -991,6 +1458,8 @@ namespace LascheApp
         "Bearing pressure - only for angled pull",
         "Tear out - only for angled pull",
 
+        "2.2. Pin",
+        "Pin result:",
         "Section values",
         "Pin shear",
         "Pin bending",
@@ -1000,7 +1469,7 @@ namespace LascheApp
 
             int calculationStart = GetCalculationStartIndex(report);
 
-            int start = FindFirstMarkerIndex(
+            int start = FindFirstSectionHeadingIndex(
                 report,
                 startMarkers,
                 calculationStart);
@@ -1012,16 +1481,78 @@ namespace LascheApp
 
             foreach (string marker in sectionMarkers)
             {
-                int index = report.IndexOf(
+                int index = FindSectionHeadingIndex(
+                    report,
                     marker,
-                    start + 1,
-                    StringComparison.OrdinalIgnoreCase);
+                    start + 1);
 
                 if (index > start && index < end)
                     end = index;
             }
 
             return report.Substring(start, end - start).Trim();
+        }
+
+        private int FindFirstSectionHeadingIndex(
+            string report,
+            string[] markers,
+            int startIndex)
+        {
+            int result = -1;
+
+            foreach (string marker in markers)
+            {
+                int index = FindSectionHeadingIndex(report, marker, startIndex);
+
+                if (index >= 0 && (result < 0 || index < result))
+                    result = index;
+            }
+
+            return result;
+        }
+
+        private int FindSectionHeadingIndex(
+            string report,
+            string marker,
+            int startIndex)
+        {
+            int lineStart = Math.Max(0, startIndex);
+
+            // If startIndex is inside a line, begin with the next complete line.
+            if (lineStart > 0 && report[lineStart - 1] != '\n')
+            {
+                int nextLine = report.IndexOf('\n', lineStart);
+                if (nextLine < 0)
+                    return -1;
+
+                lineStart = nextLine + 1;
+            }
+
+            while (lineStart < report.Length)
+            {
+                int lineEnd = report.IndexOf('\n', lineStart);
+                if (lineEnd < 0)
+                    lineEnd = report.Length;
+
+                int textStart = lineStart;
+                while (textStart < lineEnd &&
+                       (report[textStart] == ' ' || report[textStart] == '\t' || report[textStart] == '\r'))
+                {
+                    textStart++;
+                }
+
+                int lineLength = lineEnd - textStart;
+                if (lineLength >= marker.Length &&
+                    report.AsSpan(textStart, marker.Length)
+                        .Equals(marker.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return textStart;
+                }
+
+                lineStart = lineEnd + 1;
+            }
+
+            return -1;
         }
 
         private string ExtractReportRange(

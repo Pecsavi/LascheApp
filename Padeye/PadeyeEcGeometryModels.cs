@@ -95,15 +95,17 @@ namespace LascheApp.Padeye
                 {
                     new CheckItem
                     {
-                        Name = "EC geometry Method A - edge distance a",
-                        Utilization = EdgeDistanceA_Utilization,
-                        IsOk = EdgeDistanceA_Ok
+                        Name = "EC geometry Method A - end distance e",
+                        Utilization = 0.0,
+                        IsOk = EdgeDistanceA_Ok,
+                        ShowUtilization = false
                     },
                     new CheckItem
                     {
-                        Name = "EC geometry Method A - side distance c",
-                        Utilization = SideDistanceC_Utilization,
-                        IsOk = SideDistanceC_Ok
+                        Name = "EC geometry Method A - plate width b",
+                        Utilization = 0.0,
+                        IsOk = SideDistanceC_Ok,
+                        ShowUtilization = false
                     }
                 };
             }
@@ -118,59 +120,46 @@ namespace LascheApp.Padeye
                     new CheckItem
                     {
                         Name = "EC geometry Method B - minimum thickness",
-                        Utilization = ThicknessMoglichkeitB_Utilization,
-                        IsOk = ThicknessMoglichkeitB_Ok
+                        Utilization = 0.0,
+                        IsOk = ThicknessMoglichkeitB_Ok,
+                        ShowUtilization = false
                     },
                     new CheckItem
                     {
                         Name = "EC geometry Method B - maximum hole diameter",
-                        Utilization = HoleDiameterMoglichkeitB_Utilization,
-                        IsOk = HoleDiameterMoglichkeitB_Ok
+                        Utilization = 0.0,
+                        IsOk = HoleDiameterMoglichkeitB_Ok,
+                        ShowUtilization = false
                     },
                     new CheckItem
                     {
                         Name = "EC geometry Method B - edge distance e",
-                        Utilization = EdgeDistanceMoglichkeitB_Utilization,
-                        IsOk = EdgeDistanceMoglichkeitB_Ok
+                        Utilization = 0.0,
+                        IsOk = EdgeDistanceMoglichkeitB_Ok,
+                        ShowUtilization = false
                     },
                     new CheckItem
                     {
                         Name = "EC geometry Method B - plate width b",
-                        Utilization = PlateWidthMoglichkeitB_Utilization,
-                        IsOk = PlateWidthMoglichkeitB_Ok
+                        Utilization = 0.0,
+                        IsOk = PlateWidthMoglichkeitB_Ok,
+                        ShowUtilization = false
                     }
                 };
             }
         }
 
-        public double MoglichkeitA_MaxUtilization =>
-            MoglichkeitA_CheckItems
-                .Where(i => i.ShowUtilization)
-                .Max(i => i.Utilization);
+        public double MoglichkeitA_MaxUtilization => 0.0;
 
-        public double MoglichkeitB_MaxUtilization =>
-            MoglichkeitB_CheckItems
-                .Where(i => i.ShowUtilization)
-                .Max(i => i.Utilization);
+        public double MoglichkeitB_MaxUtilization => 0.0;
 
-        public double MaxUtilization =>
-            Math.Min(
-                MoglichkeitA_MaxUtilization,
-                MoglichkeitB_MaxUtilization);
+        public double MaxUtilization => 0.0;
 
         public string GoverningCheckName
         {
             get
             {
-                List<CheckItem> governingList =
-                    MoglichkeitA_MaxUtilization <= MoglichkeitB_MaxUtilization
-                        ? MoglichkeitA_CheckItems
-                        : MoglichkeitB_CheckItems;
-
-                return governingList
-                    .Where(i => i.ShowUtilization)
-                    .OrderByDescending(i => i.Utilization)
-                    .FirstOrDefault()?.Name ?? "";
+                return "";
             }
         }
 

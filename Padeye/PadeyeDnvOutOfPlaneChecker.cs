@@ -30,7 +30,7 @@ namespace LascheApp.Padeye
                 result.Errors.Add("Dpin must be greater than 0.");
 
             if (input.HoleDiameter_mm <= 0)
-                result.Errors.Add("Hole diameter DH must be greater than 0.");
+                result.Errors.Add("Hole diameter d0 must be greater than 0.");
 
             if (input.MainPlateThickness_mm <= 0)
                 result.Errors.Add("Main plate thickness tpl must be greater than 0.");
@@ -55,11 +55,11 @@ namespace LascheApp.Padeye
 
             if (result.OutOfPlaneChecksActive)
             {
-                if (input.Rpl_mm <= 0)
+                if (input.EndDistanceE_mm <= 0)
                     result.Errors.Add("e must be greater than 0 for DNV tear-out check.");
 
-                if (2.0 * input.Rpl_mm <= input.HoleDiameter_mm)
-                    result.Errors.Add("2 * e must be greater than DH for DNV tear-out check.");
+                if (2.0 * input.EndDistanceE_mm <= input.HoleDiameter_mm)
+                    result.Errors.Add("2 * e must be greater than d0 for DNV tear-out check.");
             }
 
             if (result.CheekPlateWeldCheckActive)
@@ -102,10 +102,10 @@ namespace LascheApp.Padeye
             result.BetaEffective = betaEffective;
             result.SigmaRd_Nmm2 = input.Fy_Nmm2 / input.GammaM;
 
-            if (input.Rpl_mm > 0)
+            if (input.EndDistanceE_mm > 0)
             {
                 result.Rpad_mm =
-                    (input.Rpl_mm * input.MainPlateThickness_mm +
+                    (input.EndDistanceE_mm * input.MainPlateThickness_mm +
                      2.0 * input.Rch_mm * input.CheekPlateThickness_mm) /
                     t;
             }
@@ -159,7 +159,7 @@ namespace LascheApp.Padeye
 
                 result.SigmaEd2_Nmm2 =
                     1.7 * fd_N /
-                    ((2.0 * input.Rpl_mm - input.HoleDiameter_mm) * t);
+                    ((2.0 * input.EndDistanceE_mm - input.HoleDiameter_mm) * t);
 
                 result.TearOutOk = result.SigmaEd2_Nmm2 <= result.SigmaRd_Nmm2;
                 result.TearOutUtilization = result.SigmaEd2_Nmm2 / result.SigmaRd_Nmm2;

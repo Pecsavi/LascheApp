@@ -8,8 +8,7 @@ namespace LascheApp.Padeye
     public class PadeyeTransportLugReportInfo
     {
         public string Project { get; set; } = "";
-        public string Gantry { get; set; } = "";
-        public string Connection { get; set; } = "";
+        public string Subject { get; set; } = "";
         public string PreparedBy { get; set; } = "";
         public DateTime Date { get; set; } = DateTime.Today;
 
@@ -48,8 +47,7 @@ namespace LascheApp.Padeye
             sb.AppendLine("===================");
             sb.AppendLine();
             sb.AppendLine($"Project:       {info.Project}");
-            sb.AppendLine($"Gantry:        {info.Gantry}");
-            sb.AppendLine($"Connection:    {info.Connection}");
+            sb.AppendLine($"Subject:       {info.Subject}");
             sb.AppendLine($"Prepared by:   {info.PreparedBy}");
             sb.AppendLine($"Date:          {info.Date:yyyy-MM-dd}");
         }
@@ -123,6 +121,9 @@ namespace LascheApp.Padeye
                 if (!bearing.BearingDesignOk)
                     failedChecks.Add("Pin-hole bearing design not fulfilled");
 
+                if (!bearing.PinHoleGeometryOk)
+                    failedChecks.Add("Pin-hole geometry not fulfilled: pin diameter d must be smaller than hole diameter d0");
+
                 if (bearing.Input.IsReplaceablePin && !bearing.BearingServiceOk)
                     failedChecks.Add("Replaceable pin service bearing not fulfilled");
 
@@ -165,31 +166,56 @@ namespace LascheApp.Padeye
             PadeyeTransportLugReportInfo info)
         {
             PadeyeBasicCheckInput basic = result.BasicResult.Input;
+            PadeyeEcGeometryInput geometry = result.EcGeometryResult.Input;
             PadeyeBearingInput bearing = result.BearingResult.Input;
             PadeyeDnvOutOfPlaneInput dnv = result.DnvOutOfPlaneResult.Input;
+            double e_mm = geometry.EdgeDistanceA_mm + geometry.HoleDiameter_mm / 2.0;
 
-            sb.AppendLine("Basic input data");
-            sb.AppendLine("----------------");
-            sb.AppendLine($"Plate material: {info.PlateMaterial}");
-            sb.AppendLine($"Shackle:        {info.ShackleName}");
+            sb.AppendLine("Input data");
+            sb.AppendLine("==========");
             sb.AppendLine();
+            sb.AppendLine("Materials");
+            sb.AppendLine("---------");
+            sb.AppendLine($"E = {Fmt1(dnv.E_Nmm2)} N/mm²");
+            sb.AppendLine($"- Lug: {info.PlateMaterial} (fy = {Fmt1(basic.MaterialFy_Nmm2)} N/mm²; fu = {Fmt1(dnv.Fu_Nmm2)} N/mm²; betaW = {Fmt3(dnv.BetaW)})");
+            sb.AppendLine($"- Shackle: {info.ShackleName}");
+            sb.AppendLine();
+
+            sb.AppendLine("Loads");
+            sb.AppendLine("-----");
             sb.AppendLine($"FEd,ser = {Fmt2(basic.F_Ed_ser_kN)} kN");
             sb.AppendLine($"FEd     = {Fmt2(basic.F_Ed_kN)} kN");
             sb.AppendLine();
+
+            sb.AppendLine("Geometry");
+            sb.AppendLine("--------");
             sb.AppendLine($"tpl = {Fmt1(basic.PlateThickness_mm)} mm");
+            if (basic.CheekPlateThickness_mm > 0.0)
+            {
+                string cheekPlateNote = basic.IncludeCheekPlatesInBearingRequested
+                    ? "requested for resistance; applicability is verified separately"
+                    : "considered in geometry only, not in resistance";
+                sb.AppendLine($"tch = {Fmt1(basic.CheekPlateThickness_mm)} mm ({cheekPlateNote})");
+            }
+            sb.AppendLine(basic.IncludeCheekPlatesInBearing
+                ? $"t = tpl + 2 * tch = {Fmt1(basic.TotalBearingThickness_mm)} mm"
+                : $"t = tpl = {Fmt1(basic.TotalBearingThickness_mm)} mm");
+            sb.AppendLine($"e = {Fmt1(e_mm)} mm");
+            sb.AppendLine($"b = {Fmt1(basic.PlateWidth_mm)} mm");
+            if (basic.CheekPlateThickness_mm > 0.0)
+            {
+                sb.AppendLine($"Rch = {Fmt1(dnv.Rch_mm)} mm");
+                sb.AppendLine($"a_weld = {Fmt1(dnv.WeldA_mm)} mm");
+            }
             sb.AppendLine($"d0 = {Fmt1(basic.HoleDiameter_mm)} mm");
+            sb.AppendLine();
+            sb.AppendLine($"WLL = {Fmt2(basic.ShackleWLL_kN)} kN");
             sb.AppendLine($"Dpin = {Fmt1(basic.ShackleDpin_mm)} mm");
             sb.AppendLine($"B1 = {Fmt1(basic.ShackleB1_mm)} mm");
             sb.AppendLine($"H_DNV = {Fmt1(basic.ShackleH_DNV_mm)} mm");
-
-            if (result.DnvOutOfPlaneResult.IsActive)
-            {
-                sb.AppendLine();
-                sb.AppendLine($"alpha = {Fmt1(dnv.Alpha_deg)}°");
-                sb.AppendLine($"beta = {Fmt3(dnv.Beta)}");
-                sb.AppendLine($"tch = {Fmt1(dnv.CheekPlateThickness_mm)} mm");
-            }
-
+            sb.AppendLine();
+            sb.AppendLine($"alpha = {Fmt1(dnv.Alpha_deg)}°");
+            sb.AppendLine($"beta = {Fmt3(dnv.Beta)}");
             sb.AppendLine();
             sb.AppendLine($"Replaceable pin checks: {(bearing.IsReplaceablePin ? "active" : "not active")}");
             sb.AppendLine();
@@ -249,8 +275,6 @@ namespace LascheApp.Padeye
             sb.AppendLine();
 
             AppendLugOverall(sb, result);
-            AppendLugInput(sb, result);
-            
             AppendBasicPadeyeChecks(
     sb,
     result.BasicResult,
@@ -320,7 +344,7 @@ namespace LascheApp.Padeye
             {
                 sb.AppendLine($"\talpha = {Fmt1(dnv.Alpha_deg)}°");
                 sb.AppendLine($"\tbeta = {Fmt3(dnv.Beta)}");
-                sb.AppendLine($"\tRpl = {Fmt1(dnv.Rpl_mm)} mm");
+                sb.AppendLine($"\te = {Fmt1(dnv.EndDistanceE_mm)} mm");
                 sb.AppendLine($"\tRch = {Fmt1(dnv.Rch_mm)} mm");
                 sb.AppendLine($"\ta_weld = {Fmt1(dnv.WeldA_mm)} mm");
             }
@@ -360,8 +384,8 @@ namespace LascheApp.Padeye
             {
                 sb.AppendLine("\tPin diameter recommendation for significant angled pull");
                 sb.AppendLine("\t-------------------------------------------------------");
-                sb.AppendLine($"\tDpin / DH = {Fmt3(dnvResult.DpinToHoleRatio)}");
-                sb.AppendLine("\tRecommended according to DNV-OS-H205: Dpin / DH >= 0.94");
+                sb.AppendLine($"\tDpin / d0 = {Fmt3(dnvResult.DpinToHoleRatio)}");
+                sb.AppendLine("\tRecommended according to DNV-OS-H205: Dpin / d0 >= 0.94");
                 sb.AppendLine($"\tRecommendation fulfilled: {Ok(dnvResult.PinDiameterRecommendationOk)}");
                 sb.AppendLine("\tThis is a recommendation only and does not govern the overall result.");
                 sb.AppendLine();
@@ -403,8 +427,6 @@ namespace LascheApp.Padeye
                 return;
             }
 
-            double fEd_N = input.F_Ed_kN * 1000.0;
-
             double e_mm =
                 input.EdgeDistanceA_mm +
                 input.HoleDiameter_mm / 2.0;
@@ -421,85 +443,45 @@ namespace LascheApp.Padeye
                 2.0 * result.RequiredSideDistanceC_mm +
                 input.HoleDiameter_mm;
 
-            double t_mm = input.EffectiveThickness_mm;
-            double fRdMethodB_kN = result.ForceResistance_MoglichkeitB_kN;
-            double methodBForceUtilization = result.ForceMoglichkeitB_Utilization;
-
             sb.AppendLine("\tMethod A");
-            sb.AppendLine("\t-------------");
-            sb.AppendLine($"\t\tResult Method A: {Ok(result.MoglichkeitA_Ok)}");
-            sb.AppendLine($"\t\tMax utilization A: η = {FmtEta(result.MoglichkeitA_MaxUtilization)}");
+            sb.AppendLine("\t--------");
             sb.AppendLine();
-            sb.AppendLine($"\t\tF_Ed = {Fmt2(input.F_Ed_kN)} kN");
-            sb.AppendLine($"\t\tfy = {Fmt1(input.Fy_Nmm2)} N/mm²");
-            sb.AppendLine($"\t\tgammaM0 = {Fmt2(input.GammaM0)}");
-            if (input.IncludeCheekPlatesInBearing)
-            {
-                sb.AppendLine($"\t\ttpl = {Fmt1(input.PlateThickness_mm)} mm");
-                sb.AppendLine($"\t\ttch = {Fmt1(input.CheekPlateThickness_mm)} mm");
-                sb.AppendLine($"\t\tt = tpl + 2 * tch = {Fmt1(t_mm)} mm");
-            }
-            else
-            {
-                sb.AppendLine($"\t\ttpl = {Fmt1(input.PlateThickness_mm)} mm");
-                sb.AppendLine($"\t\tt = tpl = {Fmt1(t_mm)} mm");
-            }
-            sb.AppendLine($"\t\td0 = {Fmt1(input.HoleDiameter_mm)} mm");
+            sb.AppendLine("\t\t1. Minimum distances from load");
+            sb.AppendLine("\t\t--------------------------------");
+            sb.AppendLine($"\t\tamin = F_Ed * gammaM0 / (2 * t * fy) + 2 * d0 / 3 = {Fmt1(result.RequiredEdgeDistanceA_mm)} mm");
+            sb.AppendLine($"\t\tcmin = F_Ed * gammaM0 / (2 * t * fy) + d0 / 3 = {Fmt1(result.RequiredSideDistanceC_mm)} mm");
             sb.AppendLine();
-            sb.AppendLine($"\t\te = {Fmt1(e_mm)} mm");
-            sb.AppendLine($"\t\ta = e - d0 / 2 = {Fmt1(input.EdgeDistanceA_mm)} mm");
-            sb.AppendLine($"\t\tRequired a = F_Ed * gammaM0 / (2 * t * fy) + 2*d0/3 = {Fmt1(result.RequiredEdgeDistanceA_mm)} mm");
-            sb.AppendLine($"\t\tRequired e = required a + d0 / 2 = {Fmt1(requiredE_mm)} mm");
-            sb.AppendLine($"\t\tCheck e >= required e: {Ok(result.EdgeDistanceA_Ok)}  η = {FmtEta(result.EdgeDistanceA_Utilization)}");
+            sb.AppendLine("\t\t2. Required overall geometry");
+            sb.AppendLine("\t\t------------------------------");
+            sb.AppendLine($"\t\temin = amin + d0 / 2 = {Fmt1(requiredE_mm)} mm");
+            sb.AppendLine($"\t\tbmin = 2 * cmin + d0 = {Fmt1(requiredB_mm)} mm");
             sb.AppendLine();
-            sb.AppendLine($"\t\tb = {Fmt1(b_mm)} mm");
-            sb.AppendLine($"\t\tc = (b - d0) / 2 = {Fmt1(input.SideDistanceC_mm)} mm");
-            sb.AppendLine($"\t\tRequired c = F_Ed * gammaM0 / (2 * t * fy) + d0/3 = {Fmt1(result.RequiredSideDistanceC_mm)} mm");
-            sb.AppendLine($"\t\tRequired b = 2 * required c + d0 = {Fmt1(requiredB_mm)} mm");
-            sb.AppendLine($"\t\tCheck b >= required b: {Ok(result.SideDistanceC_Ok)}  η = {FmtEta(result.SideDistanceC_Utilization)}");
+            sb.AppendLine($"\t\tProvided e = {Fmt1(e_mm)} mm");
+            sb.AppendLine($"\t\tCheck e >= emin: {Ok(result.EdgeDistanceA_Ok)}");
+            sb.AppendLine($"\t\tProvided b = {Fmt1(b_mm)} mm");
+            sb.AppendLine($"\t\tCheck b >= bmin: {Ok(result.SideDistanceC_Ok)}");
+            sb.AppendLine();
+            sb.AppendLine($"\t\tMethod A result: {Ok(result.MoglichkeitA_Ok)}");
             sb.AppendLine();
 
             sb.AppendLine("\tMethod B");
             sb.AppendLine("\t--------");
-            sb.AppendLine($"\t\tResult Method B: {Ok(result.MoglichkeitB_Ok)}");
-            sb.AppendLine($"\t\tMax utilization B: η = {FmtEta(result.MoglichkeitB_MaxUtilization)}");
-            sb.AppendLine();
-
-            sb.AppendLine($"\t\tF_Ed = {Fmt2(input.F_Ed_kN)} kN");
-            sb.AppendLine($"\t\tfy = {Fmt1(input.Fy_Nmm2)} N/mm²");
-            sb.AppendLine($"\t\tgammaM0 = {Fmt2(input.GammaM0)}");
-
-            if (input.IncludeCheekPlatesInBearing)
-            {
-                sb.AppendLine($"\t\ttpl = {Fmt1(input.PlateThickness_mm)} mm");
-                sb.AppendLine($"\t\ttch = {Fmt1(input.CheekPlateThickness_mm)} mm");
-                sb.AppendLine($"\t\tt = tpl + 2 * tch = {Fmt1(t_mm)} mm");
-            }
-            else
-            {
-                sb.AppendLine($"\t\ttpl = {Fmt1(input.PlateThickness_mm)} mm");
-                sb.AppendLine($"\t\tt = tpl = {Fmt1(t_mm)} mm");
-            }
-
-            sb.AppendLine($"\t\td0 = {Fmt1(input.HoleDiameter_mm)} mm");
-            sb.AppendLine($"\t\te = {Fmt1(e_mm)} mm");
-            sb.AppendLine($"\t\tb = {Fmt1(b_mm)} mm");
+            sb.AppendLine($"\t\td0,max = 2.5 * t = {Fmt1(result.MaxHoleDiameter_MoglichkeitB_mm)} mm");
+            sb.AppendLine($"\t\tCheck d0 <= 2.5 * t: {Ok(result.HoleDiameterMoglichkeitB_Ok)}");
             sb.AppendLine();
 
             sb.AppendLine($"\t\ttmin = 0.7 * sqrt(F_Ed * gammaM0 / fy) = {Fmt1(result.RequiredThickness_MoglichkeitB_mm)} mm");
-            sb.AppendLine($"\t\tCheck t >= tmin: {Ok(result.ThicknessMoglichkeitB_Ok)}  η = {FmtEta(result.ThicknessMoglichkeitB_Utilization)}");
-            sb.AppendLine();
-
-            sb.AppendLine($"\t\td0,max = 2.5 * t = {Fmt1(result.MaxHoleDiameter_MoglichkeitB_mm)} mm");
-            sb.AppendLine($"\t\tCheck d0 <= d0,max: {Ok(result.HoleDiameterMoglichkeitB_Ok)}  η = {FmtEta(result.HoleDiameterMoglichkeitB_Utilization)}");
+            sb.AppendLine($"\t\tCheck t >= tmin: {Ok(result.ThicknessMoglichkeitB_Ok)}");
             sb.AppendLine();
 
             sb.AppendLine($"\t\temin = 1.6 * d0 = {Fmt1(result.RequiredEdgeDistance_MoglichkeitB_mm)} mm");
-            sb.AppendLine($"\t\tCheck e >= emin: {Ok(result.EdgeDistanceMoglichkeitB_Ok)}  η = {FmtEta(result.EdgeDistanceMoglichkeitB_Utilization)}");
+            sb.AppendLine($"\t\tCheck e >= emin: {Ok(result.EdgeDistanceMoglichkeitB_Ok)}");
             sb.AppendLine();
 
             sb.AppendLine($"\t\tbmin = 2.5 * d0 = {Fmt1(result.RequiredPlateWidth_MoglichkeitB_mm)} mm");
-            sb.AppendLine($"\t\tCheck b >= bmin: {Ok(result.PlateWidthMoglichkeitB_Ok)}  η = {FmtEta(result.PlateWidthMoglichkeitB_Utilization)}");
+            sb.AppendLine($"\t\tCheck b >= bmin: {Ok(result.PlateWidthMoglichkeitB_Ok)}");
+            sb.AppendLine();
+            sb.AppendLine($"\t\tMethod B result: {Ok(result.MoglichkeitB_Ok)}");
             sb.AppendLine();
 
         }
@@ -518,7 +500,8 @@ namespace LascheApp.Padeye
 
             sb.AppendLine("\tPin-hole bearing design");
             sb.AppendLine("\t-----------------------");
-            sb.AppendLine($"\t\tFb,Ed = {Fmt2(input.F_Ed_kN)} kN");
+            sb.AppendLine($"\t\tGeometry check d < d0: {Ok(result.PinHoleGeometryOk)}");
+            sb.AppendLine();
             sb.AppendLine($"\t\tFb,Rd = 1.5 * t * d * fy / gammaM0 = {Fmt2(result.FbRd_kN)} kN");
             sb.AppendLine($"\t\tCheck Fb,Ed <= Fb,Rd: {Ok(result.BearingDesignOk)}  η = {FmtEta(result.BearingDesignUtilization)}");
             sb.AppendLine();
@@ -532,15 +515,22 @@ namespace LascheApp.Padeye
                 sb.AppendLine($"\t\tCheck Fb,Ed,ser <= Fb,Rd,ser: {Ok(result.BearingServiceOk)}  η = {FmtEta(result.BearingServiceUtilization)}");
                 sb.AppendLine();
 
-                sb.AppendLine("\tContact stress (Replaceable pin)");
-                sb.AppendLine("\t--------------------------------");
-                sb.AppendLine($"\t\td0 = {Fmt1(input.HoleDiameter_mm)} mm");
-                sb.AppendLine($"\t\td = {Fmt1(input.PinDiameter_mm)} mm");
-                sb.AppendLine($"\t\tE = {Fmt1(input.E_Nmm2)} N/mm²");
-                sb.AppendLine($"\t\tsigma_h,Ed = 0.591 * sqrt(E * Fb,Ed,ser * (d0 - d) / (d² * t)) = {Fmt1(result.SigmaHEd_Nmm2)} N/mm²");
-                sb.AppendLine($"\t\tfh,Rd = 2.5 * fy / gammaM6,ser = {Fmt1(result.FhRd_Nmm2)} N/mm²");
-                sb.AppendLine($"\t\tCheck sigma_h,Ed <= fh,Rd: {Ok(result.HolePinStressOk)}  η = {FmtEta(result.HolePinStressUtilization)}");
-                sb.AppendLine();
+                if (result.PinHoleGeometryOk)
+                {
+                    sb.AppendLine("\tContact stress (Replaceable pin)");
+                    sb.AppendLine("\t--------------------------------");
+                    sb.AppendLine($"\t\tsigma_h,Ed = 0.591 * sqrt(E * Fb,Ed,ser * (d0 - d) / (d² * t)) = {Fmt1(result.SigmaHEd_Nmm2)} N/mm²");
+                    sb.AppendLine($"\t\tfh,Rd = 2.5 * fy / gammaM6,ser = {Fmt1(result.FhRd_Nmm2)} N/mm²");
+                    sb.AppendLine($"\t\tCheck sigma_h,Ed <= fh,Rd: {Ok(result.HolePinStressOk)}  η = {FmtEta(result.HolePinStressUtilization)}");
+                    sb.AppendLine();
+                }
+                else
+                {
+                    sb.AppendLine("\tContact stress (Replaceable pin)");
+                    sb.AppendLine("\t--------------------------------");
+                    sb.AppendLine("\t\tNOT CALCULATED: pin diameter d must be smaller than hole diameter d0.");
+                    sb.AppendLine();
+                }
             }
         }
 
@@ -599,12 +589,12 @@ namespace LascheApp.Padeye
             PadeyeDnvOutOfPlaneInput input = result.Input;
 
             string branch = result.DpinToHoleRatio < 0.96
-                ? "Dpin / DH < 0.96"
-                : "Dpin / DH >= 0.96";
+                ? "Dpin / d0 < 0.96"
+                : "Dpin / d0 >= 0.96";
 
             string sigmaEd1Formula = result.BearingFormulaWithClearance
-                ? "sigma_Ed,1 = 0.18 * sqrt(Fd * (1 / Dpin - 1 / DH) * E * beta,eff / t)"
-                : "sigma_Ed,1 = 0.036 * sqrt(Fd * E * beta,eff / (DH * t))";
+                ? "sigma_Ed,1 = 0.18 * sqrt(Fd * (1 / Dpin - 1 / d0) * E * beta,eff / t)"
+                : "sigma_Ed,1 = 0.036 * sqrt(Fd * E * beta,eff / (d0 * t))";
 
             sb.AppendLine("\tBearing pressure - only for angled pull");
             sb.AppendLine("\t---------------------------------------");
@@ -615,7 +605,7 @@ namespace LascheApp.Padeye
             sb.AppendLine($"\t\th = {Fmt1(input.H_DNV_mm)} mm");
             sb.AppendLine($"\t\tMe = Fdl * h = {Fmt2(result.Me_kNm)} kNm");
             sb.AppendLine();
-            sb.AppendLine($"\t\tDpin / DH = {Fmt3(result.DpinToHoleRatio)}");
+            sb.AppendLine($"\t\tDpin / d0 = {Fmt3(result.DpinToHoleRatio)}");
             sb.AppendLine($"\t\tFormula branch: {branch}");
             sb.AppendLine($"\t\tdelta = 4 * tan(alpha) * h / t + 1 = {Fmt3(result.Delta)}");
             sb.AppendLine($"\t\tbeta,eff = {(result.Delta >= 1.3 ? "beta * (delta - 0.3)" : "beta")} = {Fmt3(result.BetaEffective)}");
@@ -627,10 +617,10 @@ namespace LascheApp.Padeye
 
             sb.AppendLine("\tTear out - only for angled pull");
             sb.AppendLine("\t-------------------------------");
-            sb.AppendLine($"\t\te = {Fmt1(input.Rpl_mm)} mm");
-            sb.AppendLine($"\t\tDH = {Fmt1(input.HoleDiameter_mm)} mm");
+            sb.AppendLine($"\t\te = {Fmt1(input.EndDistanceE_mm)} mm");
+            sb.AppendLine($"\t\td0 = {Fmt1(input.HoleDiameter_mm)} mm");
             sb.AppendLine($"\t\tt = {Fmt1(input.TotalThickness_mm)} mm");
-            sb.AppendLine($"\t\tsigma_Ed,2 = 1.7 * Fd / ((2 * e - DH) * t) = {Fmt1(result.SigmaEd2_Nmm2)} N/mm²");
+            sb.AppendLine($"\t\tsigma_Ed,2 = 1.7 * Fd / ((2 * e - d0) * t) = {Fmt1(result.SigmaEd2_Nmm2)} N/mm²");
             sb.AppendLine($"\t\tCheck sigma_Ed,2 <= sigma_Rd: {Ok(result.TearOutOk)}  η = {FmtEta(result.TearOutUtilization)}");
             sb.AppendLine();
         }

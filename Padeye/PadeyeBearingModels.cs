@@ -37,12 +37,14 @@ namespace LascheApp.Padeye
         public bool BearingDesignOk { get; set; }
         public bool BearingServiceOk { get; set; }
         public bool HolePinStressOk { get; set; }
+        public bool PinHoleGeometryOk { get; set; }
 
         public double BearingDesignUtilization { get; set; }
         public double BearingServiceUtilization { get; set; }
         public double HolePinStressUtilization { get; set; }
         public bool IsOk =>
             !HasErrors &&
+            PinHoleGeometryOk &&
             BearingDesignOk &&
             (
                 !Input.IsReplaceablePin ||
@@ -57,6 +59,15 @@ namespace LascheApp.Padeye
             {
                 List<CheckItem> items = new List<CheckItem>
                 {
+                    new CheckItem
+                    {
+                        Name = PinHoleGeometryOk
+                            ? "Pin-hole geometry OK: d < d0"
+                            : "Pin-hole geometry NOT OK: pin diameter d must be smaller than hole diameter d0",
+                        Utilization = 0.0,
+                        IsOk = PinHoleGeometryOk,
+                        ShowUtilization = false
+                    },
                     new CheckItem
                     {
                         Name = "Pin-hole bearing design",
@@ -74,12 +85,15 @@ namespace LascheApp.Padeye
                         IsOk = BearingServiceOk
                     });
 
-                    items.Add(new CheckItem
+                    if (PinHoleGeometryOk)
                     {
-                        Name = "Replaceable pin contact stress",
-                        Utilization = HolePinStressUtilization,
-                        IsOk = HolePinStressOk
-                    });
+                        items.Add(new CheckItem
+                        {
+                            Name = "Replaceable pin contact stress",
+                            Utilization = HolePinStressUtilization,
+                            IsOk = HolePinStressOk
+                        });
+                    }
                 }
 
                 return items;

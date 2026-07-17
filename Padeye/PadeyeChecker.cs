@@ -80,7 +80,7 @@ namespace LascheApp.Padeye
                 HoleDiameter_mm = input.HoleDiameter_mm,
                 MainPlateThickness_mm = input.PlateThickness_mm,
                 CheekPlateThickness_mm = cheekPlateThicknessForResistance_mm,
-                Rpl_mm = input.Rpl_mm,
+                EndDistanceE_mm = input.EndDistanceE_mm,
                 Rch_mm = input.Rch_mm,
                 WeldA_mm = input.CheekPlateWeldA_mm,
                 Fy_Nmm2 = input.Fy_Nmm2,
@@ -179,4 +179,3 @@ namespace LascheApp.Padeye
         }
     }
 }
- 

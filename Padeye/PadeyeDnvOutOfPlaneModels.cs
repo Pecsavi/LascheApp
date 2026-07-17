@@ -17,7 +17,7 @@ namespace LascheApp.Padeye
         public double CheekPlateThickness_mm { get; set; }
         public double TotalThickness_mm => MainPlateThickness_mm + 2.0 * CheekPlateThickness_mm;
 
-        public double Rpl_mm { get; set; }
+        public double EndDistanceE_mm { get; set; }
         public double Rch_mm { get; set; }
         public double WeldA_mm { get; set; }
 
@@ -90,8 +90,8 @@ namespace LascheApp.Padeye
                     items.Add(new CheckItem
                     {
                         Name = PinDiameterRecommendationOk
-                        ? "Pin diameter recommendation for significant angled pull fulfilled: Dpin / DH >= 0.94"
-                        : "Pin diameter recommendation for significant angled pull NOT fulfilled: Dpin / DH >= 0.94",
+                        ? "Pin diameter recommendation for significant angled pull fulfilled: Dpin / d0 >= 0.94"
+                        : "Pin diameter recommendation for significant angled pull NOT fulfilled: Dpin / d0 >= 0.94",
                         Utilization = PinDiameterRecommendationUtilization,
                         IsOk = PinDiameterRecommendationOk,
                         ShowUtilization = false

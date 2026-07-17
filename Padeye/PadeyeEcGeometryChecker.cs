@@ -67,11 +67,10 @@ namespace LascheApp.Padeye
             result.SideDistanceC_Ok =
                 input.SideDistanceC_mm >= result.RequiredSideDistanceC_mm;
 
-            result.EdgeDistanceA_Utilization =
-                result.RequiredEdgeDistanceA_mm / input.EdgeDistanceA_mm;
-
-            result.SideDistanceC_Utilization =
-                result.RequiredSideDistanceC_mm / input.SideDistanceC_mm;
+            // EC geometry is a dimensional pass/fail check, not a resistance
+            // utilization check. Keep utilization at zero by design.
+            result.EdgeDistanceA_Utilization = 0.0;
+            result.SideDistanceC_Utilization = 0.0;
             
             double e_mm =
                 input.EdgeDistanceA_mm +
@@ -113,17 +112,10 @@ namespace LascheApp.Padeye
             result.PlateWidthMoglichkeitB_Ok =
                 b_mm >= result.RequiredPlateWidth_MoglichkeitB_mm;
 
-            result.ForceMoglichkeitB_Utilization =
-                result.RequiredThickness_MoglichkeitB_mm / t_mm;
-
-            result.HoleDiameterMoglichkeitB_Utilization =
-                input.HoleDiameter_mm / result.MaxHoleDiameter_MoglichkeitB_mm;
-
-            result.EdgeDistanceMoglichkeitB_Utilization =
-                result.RequiredEdgeDistance_MoglichkeitB_mm / e_mm;
-
-            result.PlateWidthMoglichkeitB_Utilization =
-                result.RequiredPlateWidth_MoglichkeitB_mm / b_mm;
+            result.ForceMoglichkeitB_Utilization = 0.0;
+            result.HoleDiameterMoglichkeitB_Utilization = 0.0;
+            result.EdgeDistanceMoglichkeitB_Utilization = 0.0;
+            result.PlateWidthMoglichkeitB_Utilization = 0.0;
 
             return result;
             
