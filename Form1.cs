@@ -13,6 +13,8 @@ namespace LascheApp
     {
         private MaterialDatabase? _materialDatabase;
         private ShackleDatabase? _shackleDatabase;
+        private PadeyeCheckResult? _lastPadeyeResult;
+        private PinCheckResult? _lastPinResult;
         public Form1()
         {
             InitializeComponent();
@@ -55,6 +57,7 @@ namespace LascheApp
             UpdateSelectedPinMaterialInfo();
 
             UpdateLugTypeUi();
+            ConfigureSummaryGrid();
         }
 
         private void UpdateLugTypeUi()
@@ -91,6 +94,141 @@ namespace LascheApp
             grpTransportLug.Visible = isTransportLug;
             grpTensionLug.Visible = isTensionLug;
 
+        }
+
+        private void ConfigureSummaryGrid()
+        {
+            dgvCheckSummary.Columns.Clear();
+
+            dgvCheckSummary.AllowUserToAddRows = false;
+            dgvCheckSummary.AllowUserToDeleteRows = false;
+            dgvCheckSummary.ReadOnly = true;
+            dgvCheckSummary.RowHeadersVisible = false;
+            dgvCheckSummary.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvCheckSummary.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            dgvCheckSummary.Columns.Add("Group", "Group");
+            dgvCheckSummary.Columns.Add("Check", "Check");
+            dgvCheckSummary.Columns.Add("Status", "Status");
+            dgvCheckSummary.Columns.Add("Eta", "η");
+
+            dgvCheckSummary.Columns["Group"].FillWeight = 20;
+            dgvCheckSummary.Columns["Check"].FillWeight = 55;
+            dgvCheckSummary.Columns["Status"].FillWeight = 15;
+            dgvCheckSummary.Columns["Eta"].FillWeight = 10;
+            dgvCheckSummary.SelectionChanged += dgvCheckSummary_SelectionChanged;
+
+        }
+
+        private void FillCheckSummary(
+            PadeyeCheckResult lugResult,
+            PinCheckResult? pinResult = null)
+        {
+            dgvCheckSummary.Rows.Clear();
+
+            List<CheckItem> items = GetUiCheckItems(lugResult, pinResult);
+
+            foreach (CheckItem item in items)
+            {
+                string group = GetCheckGroup(item.Name);
+
+                string status =
+                    item.IsOk
+                        ? "OK"
+                        : item.IsWarning
+                            ? "WARNING"
+                            : "NOT OK";
+
+                string eta =
+                    item.ShowUtilization
+                        ? item.Utilization.ToString("0.000")
+                        : "";
+
+                dgvCheckSummary.Rows.Add(
+                    group,
+                    item.Name,
+                    status,
+                    eta);
+            }
+        }
+
+        private List<CheckItem> GetUiCheckItems(
+            PadeyeCheckResult lugResult,
+            PinCheckResult? pinResult)
+        {
+            List<CheckItem> items = new();
+
+            if (!lugResult.BasicResult.HasErrors)
+                items.AddRange(lugResult.BasicResult.CheckItems);
+
+            if (!lugResult.EcGeometryResult.HasErrors)
+                items.AddRange(lugResult.EcGeometryResult.SummaryCheckItems);
+
+            if (!lugResult.BearingResult.HasErrors)
+                items.AddRange(lugResult.BearingResult.CheckItems);
+
+            if (!lugResult.DnvOutOfPlaneResult.HasErrors &&
+                lugResult.DnvOutOfPlaneResult.IsActive)
+            {
+                items.AddRange(lugResult.DnvOutOfPlaneResult.CheckItems);
+            }
+
+            if (pinResult != null && !pinResult.HasErrors)
+                items.AddRange(pinResult.CheckItems);
+            if (dgvCheckSummary.Rows.Count > 0)
+            {
+                dgvCheckSummary.Rows[0].Selected = true;
+                ShowSelectedCheckDetail();
+            }
+
+            return items
+                .OrderBy(i => GetCheckGroupSortIndex(GetCheckGroup(i.Name)))
+                .ThenByDescending(i => i.ShowUtilization ? i.Utilization : -1.0)
+                .ToList();
+            
+        }
+
+        private string GetCheckGroup(string checkName)
+        {
+            if (checkName.Contains("WLL", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("Shackle", StringComparison.OrdinalIgnoreCase))
+                return "Shackle";
+
+            if (checkName.Contains("geometry", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("Hole diameter", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("clearance", StringComparison.OrdinalIgnoreCase))
+                return "Geometry";
+
+            if (checkName.Contains("bearing", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("contact stress", StringComparison.OrdinalIgnoreCase))
+                return "Bearing";
+
+            if (checkName.Contains("Cheek", StringComparison.OrdinalIgnoreCase))
+                return "Cheek plates";
+
+            if (checkName.Contains("DNV", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("angled pull", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("tear-out", StringComparison.OrdinalIgnoreCase))
+                return "DNV";
+
+            if (checkName.Contains("Pin", StringComparison.OrdinalIgnoreCase))
+                return "Pin";
+
+            return "General";
+        }
+
+        private int GetCheckGroupSortIndex(string group)
+        {
+            return group switch
+            {
+                "Geometry" => 1,
+                "Shackle" => 2,
+                "Bearing" => 3,
+                "Cheek plates" => 4,
+                "DNV" => 5,
+                "Pin" => 6,
+                _ => 99
+            };
         }
         private void UpdateSelectedPinMaterialInfo()
         {
@@ -132,7 +270,8 @@ namespace LascheApp
             cmbPinMaterials.DataSource = null;
 
             cmbPinMaterials.DataSource = _materialDatabase.Materials
-                .OrderBy(m => m.Name)
+                .OrderByDescending(m => string.IsNullOrEmpty(m.Name) ? '\0' : m.Name[0])
+                .ThenBy(m => m.Name)
                 .ToList();
 
             cmbPinMaterials.DisplayMember = "Name";
@@ -252,6 +391,7 @@ namespace LascheApp
         private void btnCheckBasicPadeye_Click(object sender, EventArgs e)
         {
             txtBasicCheckResult.Clear();
+            dgvCheckSummary.Rows.Clear();
 
             if (!TryReadDouble(txtLoad_kN.Text, out double fEd_kN))
             {
@@ -261,7 +401,7 @@ namespace LascheApp
 
             if (!TryReadDouble(txtLoadSer_kN.Text, out double fEdSer_kN))
             {
-                txtBasicCheckResult.Text = "Invalid input: F_Ed,ser [kN]";
+                txtBasicCheckResult.Text = "Invalid input: F_sher [kN]";
                 return;
             }
 
@@ -509,19 +649,27 @@ namespace LascheApp
                         : tensionPadeyeResult.GoverningCheckName;
 
                 txtBasicCheckResult.Text =
-                PadeyeTensionLugReportFormatter.Format(
-                    tensionPadeyeResult,
-                    pinResult,
-                new PadeyeTensionLugReportInfo
-                {
-                    Project = "S-1099",
-                    Gantry = "NL1",
-                    Connection = "Gantry 1 - Gantry 2",
-                    PreparedBy = Environment.UserName,
-                    Date = DateTime.Today,
-                    PlateMaterial = material.Name,
-                    PinMaterial = pinMaterial.Name
-                });
+                txtBasicCheckResult.Text =
+                    PadeyeTensionLugReportFormatter.Format(
+                        tensionPadeyeResult,
+                        pinResult,
+                    new PadeyeTensionLugReportInfo
+                    {
+                        Project = "S-1099",
+                        Gantry = "NL1",
+                        Connection = "Gantry 1 - Gantry 2",
+                        PreparedBy = Environment.UserName,
+                        Date = DateTime.Today,
+                        PlateMaterial = material.Name,
+                        PinMaterial = pinMaterial.Name
+                    });
+
+                _lastPadeyeResult = tensionPadeyeResult;
+                _lastPinResult = pinResult;
+
+                FillCheckSummary(tensionPadeyeResult, pinResult);
+                tabResults.SelectedTab = tabSummary;
+
                 return;
             }
 
@@ -629,6 +777,12 @@ namespace LascheApp
                         PlateMaterial = material.Name,
                         ShackleName = GetSelectedShackle()?.Name ?? ""
                     });
+            
+            _lastPadeyeResult = padeyeResult;
+            _lastPinResult = null;
+
+            FillCheckSummary(padeyeResult);
+            tabResults.SelectedTab = tabSummary;
 
         }
         private LugType GetSelectedLugType()
@@ -661,7 +815,7 @@ namespace LascheApp
 
             if (!TryReadDouble(txtLoadSer_kN.Text, out double fEdSer_kN))
             {
-                MessageBox.Show("Invalid input: F_Ed,ser [kN]");
+                MessageBox.Show("Invalid input: F_sher [kN]");
                 return;
             }
 
@@ -687,7 +841,8 @@ namespace LascheApp
             cmbMaterials.DataSource = null;
 
             cmbMaterials.DataSource = _materialDatabase.Materials
-                .OrderBy(m => m.Name)
+                .OrderByDescending(m => string.IsNullOrEmpty(m.Name) ? '\0' : m.Name[0])
+                .ThenBy(m => m.Name)
                 .ToList();
 
             cmbMaterials.DisplayMember = "Name";
@@ -730,7 +885,222 @@ namespace LascheApp
                 lblMaterialBetaW.Text = $"BetaW: {material.BetaW:0.00}";
             }
         }
+        private void ShowSelectedCheckDetail()
+        {
+            if (txtSelectedCheckDetail == null)
+                return;
 
+            if (dgvCheckSummary.SelectedRows.Count == 0)
+            {
+                txtSelectedCheckDetail.Clear();
+                return;
+            }
+
+            DataGridViewRow row = dgvCheckSummary.SelectedRows[0];
+
+            string checkName =
+                row.Cells["Check"].Value?.ToString() ?? "";
+
+            txtSelectedCheckDetail.Text =
+                GetSelectedCheckDetail(checkName);
+        }
+        private string GetSelectedCheckDetail(string checkName)
+        {
+            string report = txtBasicCheckResult.Text;
+
+            if (string.IsNullOrWhiteSpace(report))
+                return "";
+
+            if (checkName.Contains("WLL", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Shackle WLL");
+
+            if (checkName.Contains("clearance", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("Hole diameter", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Hole clearance");
+
+            if (checkName.Contains("B1", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Shackle B1 thickness recommendation");
+
+            if (checkName.Contains("EC geometry", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportRange(
+                    report,
+                    new[] { "Method A", "Möglichkeit A" },
+                    new[] { "Pin-hole bearing design" });
+
+            if (checkName.Contains("bearing design", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("Pin-hole bearing", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Pin-hole bearing design");
+
+            if (checkName.Contains("service bearing", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Service bearing");
+
+            if (checkName.Contains("contact stress", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Contact stress");
+
+            if (checkName.Contains("Cheek plate weld", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Cheek plate weld");
+
+            if (checkName.Contains("angled pull", StringComparison.OrdinalIgnoreCase) ||
+                checkName.Contains("DNV", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Bearing pressure - only for angled pull");
+
+            if (checkName.Contains("tear-out", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Tear out - only for angled pull");
+
+            if (checkName.Contains("Pin shear + bending", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Pin shear + bending interaction");
+
+            if (checkName.Contains("Pin shear", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Pin shear");
+
+            if (checkName.Contains("Pin bending", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Pin bending");
+
+            if (checkName.Contains("service bending", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportSection(report, "Replaceable pin service bending");
+
+            return checkName;
+        }
+        private string ExtractReportSection(string report, string startMarker)
+        {
+            return ExtractReportSection(
+                report,
+                new[] { startMarker });
+        }
+
+        private string ExtractReportSection(string report, string[] startMarkers)
+        {
+            string[] sectionMarkers =
+            {
+        "Shackle WLL",
+        "Hole clearance",
+        "Pin diameter recommendation",
+        "Shackle B1 thickness recommendation",
+
+        "Method A",
+        "Möglichkeit A",
+        "Method B",
+        "Möglichkeit B",
+
+        "Pin-hole bearing design",
+        "Service bearing",
+        "Contact stress",
+
+        "Cheek plate weld",
+
+        "Bearing pressure - only for angled pull",
+        "Tear out - only for angled pull",
+
+        "Section values",
+        "Pin shear",
+        "Pin bending",
+        "Pin shear + bending interaction",
+        "Replaceable pin service bending"
+    };
+
+            int calculationStart = GetCalculationStartIndex(report);
+
+            int start = FindFirstMarkerIndex(
+                report,
+                startMarkers,
+                calculationStart);
+
+            if (start < 0)
+                return "Detail section not found in calculation report.";
+
+            int end = report.Length;
+
+            foreach (string marker in sectionMarkers)
+            {
+                int index = report.IndexOf(
+                    marker,
+                    start + 1,
+                    StringComparison.OrdinalIgnoreCase);
+
+                if (index > start && index < end)
+                    end = index;
+            }
+
+            return report.Substring(start, end - start).Trim();
+        }
+
+        private string ExtractReportRange(
+            string report,
+            string startMarker,
+            string endMarker)
+        {
+            return ExtractReportRange(
+                report,
+                new[] { startMarker },
+                new[] { endMarker });
+        }
+
+        private string ExtractReportRange(
+            string report,
+            string[] startMarkers,
+            string[] endMarkers)
+        {
+            int calculationStart = GetCalculationStartIndex(report);
+
+            int start = FindFirstMarkerIndex(
+                report,
+                startMarkers,
+                calculationStart);
+
+            if (start < 0)
+                return "Detail section not found in calculation report.";
+
+            int end = FindFirstMarkerIndex(
+                report,
+                endMarkers,
+                start + 1);
+
+            if (end < 0)
+                end = report.Length;
+
+            return report.Substring(start, end - start).Trim();
+        }
+
+        private int GetCalculationStartIndex(string report)
+        {
+            int index = report.IndexOf(
+                "2. Calculation",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (index >= 0)
+                return index;
+
+            index = report.IndexOf(
+                "Calculation",
+                StringComparison.OrdinalIgnoreCase);
+
+            return index >= 0 ? index : 0;
+        }
+
+        private int FindFirstMarkerIndex(
+            string report,
+            string[] markers,
+            int startIndex)
+        {
+            int result = -1;
+
+            foreach (string marker in markers)
+            {
+                int index = report.IndexOf(
+                    marker,
+                    startIndex,
+                    StringComparison.OrdinalIgnoreCase);
+
+                if (index >= 0 && (result < 0 || index < result))
+                    result = index;
+            }
+
+            return result;
+        }
+        private void dgvCheckSummary_SelectionChanged(object? sender, EventArgs e)
+        {
+            ShowSelectedCheckDetail();
+        }
         private void cmbMaterials_SelectedIndexChanged(object sender, EventArgs e)
         {
             UpdateSelectedMaterialInfo();
@@ -755,6 +1125,23 @@ namespace LascheApp
         {
             UpdateLugTypeUi();
         }
-               
+
+        private void btnLoadGuidance_Click(object sender, EventArgs e)
+        {
+            string message =
+                "Recommended load input" + Environment.NewLine +
+                Environment.NewLine +
+                "F_char = characteristic rope force from the structural model" + Environment.NewLine +
+                Environment.NewLine +
+                "F_sher = 1.50 * F_char" + Environment.NewLine +
+                "F_Ed = 2.00 * F_sher";
+
+            MessageBox.Show(
+                message,
+                "Load input recommendation",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+
+        }
     }
 }

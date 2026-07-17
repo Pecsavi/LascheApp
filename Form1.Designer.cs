@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             cmbShackles = new ComboBox();
             lblShackleWll = new Label();
             lblShackleDpin = new Label();
@@ -79,15 +80,33 @@
             lblOuterLugThicknessT2 = new Label();
             txtOuterLugThicknessT2_mm = new TextBox();
             grpLoads = new GroupBox();
+            groupBox1 = new GroupBox();
+            btnLoadGuidance = new Button();
             grpLugGeometry = new GroupBox();
             grpTransportLug = new GroupBox();
             grpTensionLug = new GroupBox();
             groupBox5 = new GroupBox();
+            tabResults = new TabControl();
+            tabSummary = new TabPage();
+            splitContainer1 = new SplitContainer();
+            dgvCheckSummary = new DataGridView();
+            txtSelectedCheckDetail = new TextBox();
+            tabReport = new TabPage();
+            toolTip1 = new ToolTip(components);
             grpLoads.SuspendLayout();
+            groupBox1.SuspendLayout();
             grpLugGeometry.SuspendLayout();
             grpTransportLug.SuspendLayout();
             grpTensionLug.SuspendLayout();
             groupBox5.SuspendLayout();
+            tabResults.SuspendLayout();
+            tabSummary.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
+            splitContainer1.Panel1.SuspendLayout();
+            splitContainer1.Panel2.SuspendLayout();
+            splitContainer1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvCheckSummary).BeginInit();
+            tabReport.SuspendLayout();
             SuspendLayout();
             // 
             // cmbShackles
@@ -146,9 +165,9 @@
             // 
             // txtLoad_kN
             // 
-            txtLoad_kN.Location = new Point(100, 120);
+            txtLoad_kN.Location = new Point(94, 53);
             txtLoad_kN.Name = "txtLoad_kN";
-            txtLoad_kN.Size = new Size(100, 23);
+            txtLoad_kN.Size = new Size(65, 23);
             txtLoad_kN.TabIndex = 5;
             txtLoad_kN.Text = "1400";
             // 
@@ -173,11 +192,11 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(14, 124);
+            label1.Location = new Point(5, 57);
             label1.Name = "label1";
-            label1.Size = new Size(57, 15);
+            label1.Size = new Size(62, 15);
             label1.TabIndex = 3;
-            label1.Text = "F_Ed [kN]";
+            label1.Text = "F_Ed [kN]*";
             // 
             // label2
             // 
@@ -209,13 +228,15 @@
             // 
             // txtBasicCheckResult
             // 
-            txtBasicCheckResult.Location = new Point(15, 61);
+            txtBasicCheckResult.Dock = DockStyle.Top;
+            txtBasicCheckResult.Location = new Point(3, 3);
             txtBasicCheckResult.Multiline = true;
             txtBasicCheckResult.Name = "txtBasicCheckResult";
             txtBasicCheckResult.ReadOnly = true;
-            txtBasicCheckResult.ScrollBars = ScrollBars.Vertical;
-            txtBasicCheckResult.Size = new Size(477, 814);
+            txtBasicCheckResult.ScrollBars = ScrollBars.Both;
+            txtBasicCheckResult.Size = new Size(479, 618);
             txtBasicCheckResult.TabIndex = 8;
+            txtBasicCheckResult.WordWrap = false;
             // 
             // btnSelectShackleByLoad
             // 
@@ -239,7 +260,7 @@
             // lblMaterialBetaW
             // 
             lblMaterialBetaW.AutoSize = true;
-            lblMaterialBetaW.Location = new Point(336, 115);
+            lblMaterialBetaW.Location = new Point(366, 75);
             lblMaterialBetaW.Name = "lblMaterialBetaW";
             lblMaterialBetaW.Size = new Size(52, 15);
             lblMaterialBetaW.TabIndex = 12;
@@ -248,7 +269,7 @@
             // lblMaterialE
             // 
             lblMaterialE.AutoSize = true;
-            lblMaterialE.Location = new Point(240, 115);
+            lblMaterialE.Location = new Point(270, 75);
             lblMaterialE.Name = "lblMaterialE";
             lblMaterialE.Size = new Size(27, 15);
             lblMaterialE.TabIndex = 13;
@@ -257,7 +278,7 @@
             // lblMaterialFu
             // 
             lblMaterialFu.AutoSize = true;
-            lblMaterialFu.Location = new Point(336, 79);
+            lblMaterialFu.Location = new Point(366, 39);
             lblMaterialFu.Name = "lblMaterialFu";
             lblMaterialFu.Size = new Size(31, 15);
             lblMaterialFu.TabIndex = 11;
@@ -266,7 +287,7 @@
             // lblMaterialFy
             // 
             lblMaterialFy.AutoSize = true;
-            lblMaterialFy.Location = new Point(240, 79);
+            lblMaterialFy.Location = new Point(270, 39);
             lblMaterialFy.Name = "lblMaterialFy";
             lblMaterialFy.Size = new Size(30, 15);
             lblMaterialFy.TabIndex = 10;
@@ -308,27 +329,27 @@
             // 
             // txtLoadSer_kN
             // 
-            txtLoadSer_kN.Location = new Point(100, 159);
+            txtLoadSer_kN.Location = new Point(94, 21);
             txtLoadSer_kN.Name = "txtLoadSer_kN";
-            txtLoadSer_kN.Size = new Size(100, 23);
+            txtLoadSer_kN.Size = new Size(65, 23);
             txtLoadSer_kN.TabIndex = 21;
             txtLoadSer_kN.Text = "700";
             // 
             // label7
             // 
             label7.AutoSize = true;
-            label7.Location = new Point(14, 163);
+            label7.Location = new Point(5, 25);
             label7.Name = "label7";
-            label7.Size = new Size(75, 15);
+            label7.Size = new Size(71, 15);
             label7.TabIndex = 20;
-            label7.Text = "F_Ed,ser [kN]";
+            label7.Text = "F_sher [kN]*";
             // 
             // chkReplaceablePin
             // 
             chkReplaceablePin.AutoSize = true;
             chkReplaceablePin.Checked = true;
             chkReplaceablePin.CheckState = CheckState.Checked;
-            chkReplaceablePin.Location = new Point(14, 201);
+            chkReplaceablePin.Location = new Point(311, 179);
             chkReplaceablePin.Name = "chkReplaceablePin";
             chkReplaceablePin.Size = new Size(148, 19);
             chkReplaceablePin.TabIndex = 22;
@@ -495,9 +516,9 @@
             richTextBox1.BorderStyle = BorderStyle.None;
             richTextBox1.Location = new Point(209, 50);
             richTextBox1.Name = "richTextBox1";
-            richTextBox1.Size = new Size(221, 42);
+            richTextBox1.Size = new Size(262, 25);
             richTextBox1.TabIndex = 45;
-            richTextBox1.Text = "* Only valid if cheek plates are welded before final drilling/reaming of the hole.";
+            richTextBox1.Text = "*Final drilling after welding is assumed!";
             // 
             // label6
             // 
@@ -544,6 +565,7 @@
             // 
             // grpLoads
             // 
+            grpLoads.Controls.Add(groupBox1);
             grpLoads.Controls.Add(chkReplaceablePin);
             grpLoads.Controls.Add(cmbLugType);
             grpLoads.Controls.Add(label8);
@@ -553,16 +575,36 @@
             grpLoads.Controls.Add(lblMaterialFu);
             grpLoads.Controls.Add(lblMaterialE);
             grpLoads.Controls.Add(lblMaterialBetaW);
-            grpLoads.Controls.Add(label1);
-            grpLoads.Controls.Add(txtLoad_kN);
-            grpLoads.Controls.Add(label7);
-            grpLoads.Controls.Add(txtLoadSer_kN);
             grpLoads.Location = new Point(23, 23);
             grpLoads.Name = "grpLoads";
-            grpLoads.Size = new Size(489, 226);
+            grpLoads.Size = new Size(489, 213);
             grpLoads.TabIndex = 51;
             grpLoads.TabStop = false;
             grpLoads.Text = "Loads / material";
+            // 
+            // groupBox1
+            // 
+            groupBox1.Controls.Add(label7);
+            groupBox1.Controls.Add(btnLoadGuidance);
+            groupBox1.Controls.Add(txtLoadSer_kN);
+            groupBox1.Controls.Add(txtLoad_kN);
+            groupBox1.Controls.Add(label1);
+            groupBox1.Location = new Point(14, 116);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Size = new Size(241, 82);
+            groupBox1.TabIndex = 48;
+            groupBox1.TabStop = false;
+            // 
+            // btnLoadGuidance
+            // 
+            btnLoadGuidance.Location = new Point(209, 14);
+            btnLoadGuidance.Name = "btnLoadGuidance";
+            btnLoadGuidance.Size = new Size(26, 26);
+            btnLoadGuidance.TabIndex = 47;
+            btnLoadGuidance.Text = "*?";
+            toolTip1.SetToolTip(btnLoadGuidance, "Load input recommendation");
+            btnLoadGuidance.UseVisualStyleBackColor = true;
+            btnLoadGuidance.Click += btnLoadGuidance_Click;
             // 
             // grpLugGeometry
             // 
@@ -628,20 +670,99 @@
             // 
             // groupBox5
             // 
+            groupBox5.Controls.Add(tabResults);
             groupBox5.Controls.Add(btnCheckBasicPadeye);
-            groupBox5.Controls.Add(txtBasicCheckResult);
             groupBox5.Location = new Point(543, 23);
             groupBox5.Name = "groupBox5";
-            groupBox5.Size = new Size(514, 881);
+            groupBox5.Size = new Size(514, 726);
             groupBox5.TabIndex = 55;
             groupBox5.TabStop = false;
             groupBox5.Text = "Result";
+            // 
+            // tabResults
+            // 
+            tabResults.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tabResults.Controls.Add(tabSummary);
+            tabResults.Controls.Add(tabReport);
+            tabResults.Location = new Point(15, 71);
+            tabResults.Name = "tabResults";
+            tabResults.SelectedIndex = 0;
+            tabResults.Size = new Size(493, 649);
+            tabResults.TabIndex = 9;
+            // 
+            // tabSummary
+            // 
+            tabSummary.Controls.Add(splitContainer1);
+            tabSummary.Location = new Point(4, 24);
+            tabSummary.Name = "tabSummary";
+            tabSummary.Padding = new Padding(3);
+            tabSummary.Size = new Size(485, 621);
+            tabSummary.TabIndex = 0;
+            tabSummary.Text = "Summary";
+            tabSummary.UseVisualStyleBackColor = true;
+            // 
+            // splitContainer1
+            // 
+            splitContainer1.Dock = DockStyle.Fill;
+            splitContainer1.Location = new Point(3, 3);
+            splitContainer1.Name = "splitContainer1";
+            splitContainer1.Orientation = Orientation.Horizontal;
+            // 
+            // splitContainer1.Panel1
+            // 
+            splitContainer1.Panel1.Controls.Add(dgvCheckSummary);
+            // 
+            // splitContainer1.Panel2
+            // 
+            splitContainer1.Panel2.AccessibleDescription = "txtSelectedCheckDetail";
+            splitContainer1.Panel2.Controls.Add(txtSelectedCheckDetail);
+            splitContainer1.Size = new Size(479, 615);
+            splitContainer1.SplitterDistance = 319;
+            splitContainer1.TabIndex = 0;
+            // 
+            // dgvCheckSummary
+            // 
+            dgvCheckSummary.AllowUserToAddRows = false;
+            dgvCheckSummary.AllowUserToDeleteRows = false;
+            dgvCheckSummary.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvCheckSummary.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvCheckSummary.Dock = DockStyle.Fill;
+            dgvCheckSummary.Location = new Point(0, 0);
+            dgvCheckSummary.Name = "dgvCheckSummary";
+            dgvCheckSummary.ReadOnly = true;
+            dgvCheckSummary.RowHeadersVisible = false;
+            dgvCheckSummary.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvCheckSummary.Size = new Size(479, 319);
+            dgvCheckSummary.TabIndex = 0;
+            // 
+            // txtSelectedCheckDetail
+            // 
+            txtSelectedCheckDetail.Dock = DockStyle.Fill;
+            txtSelectedCheckDetail.Location = new Point(0, 0);
+            txtSelectedCheckDetail.Multiline = true;
+            txtSelectedCheckDetail.Name = "txtSelectedCheckDetail";
+            txtSelectedCheckDetail.ReadOnly = true;
+            txtSelectedCheckDetail.ScrollBars = ScrollBars.Both;
+            txtSelectedCheckDetail.Size = new Size(479, 292);
+            txtSelectedCheckDetail.TabIndex = 0;
+            txtSelectedCheckDetail.WordWrap = false;
+            // 
+            // tabReport
+            // 
+            tabReport.Controls.Add(txtBasicCheckResult);
+            tabReport.Location = new Point(4, 24);
+            tabReport.Name = "tabReport";
+            tabReport.Padding = new Padding(3);
+            tabReport.Size = new Size(485, 621);
+            tabReport.TabIndex = 3;
+            tabReport.Text = "Report";
+            tabReport.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1076, 929);
+            ClientSize = new Size(1076, 761);
             Controls.Add(grpTransportLug);
             Controls.Add(groupBox5);
             Controls.Add(grpTensionLug);
@@ -652,6 +773,8 @@
             Load += Form1_Load;
             grpLoads.ResumeLayout(false);
             grpLoads.PerformLayout();
+            groupBox1.ResumeLayout(false);
+            groupBox1.PerformLayout();
             grpLugGeometry.ResumeLayout(false);
             grpLugGeometry.PerformLayout();
             grpTransportLug.ResumeLayout(false);
@@ -659,7 +782,16 @@
             grpTensionLug.ResumeLayout(false);
             grpTensionLug.PerformLayout();
             groupBox5.ResumeLayout(false);
-            groupBox5.PerformLayout();
+            tabResults.ResumeLayout(false);
+            tabSummary.ResumeLayout(false);
+            splitContainer1.Panel1.ResumeLayout(false);
+            splitContainer1.Panel2.ResumeLayout(false);
+            splitContainer1.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
+            splitContainer1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dgvCheckSummary).EndInit();
+            tabReport.ResumeLayout(false);
+            tabReport.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -720,5 +852,14 @@
         private GroupBox grpTransportLug;
         private GroupBox grpTensionLug;
         private GroupBox groupBox5;
+        private Button btnLoadGuidance;
+        private ToolTip toolTip1;
+        private GroupBox groupBox1;
+        private TabControl tabResults;
+        private TabPage tabSummary;
+        private TabPage tabReport;
+        private SplitContainer splitContainer1;
+        private DataGridView dgvCheckSummary;
+        private TextBox txtSelectedCheckDetail;
     }
 }
