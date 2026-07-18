@@ -407,6 +407,16 @@ namespace LascheApp.Padeye
             {
                 sb.AppendLine($"\ttpl = {Fmt1(input.PlateThickness_mm)} mm");
                 sb.AppendLine($"\tt = tpl = {Fmt1(result.ThicknessForB1Check_mm)} mm");
+
+                if (input.IncludeCheekPlatesInBearingRequested &&
+                    !input.IncludeCheekPlatesInBearing)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine("\tWARNING: Cheek plates were requested, but cannot be included in the effective thickness.");
+                    sb.AppendLine($"\tRch = {Fmt1(input.CheekPlateRadiusRch_mm)} mm < required e_min = {Fmt1(input.CheekPlateBearingRequiredE_mm)} mm");
+                    sb.AppendLine("\tTherefore the B1 thickness recommendation is checked with t = tpl only.");
+                }
+
                 sb.AppendLine($"\tRecommended t = 0.75 * B1 = {Fmt1(result.RequiredThickness_mm)} mm");
                 sb.AppendLine($"\tCheck t >= 0.75 * B1: {Ok(result.ThicknessOk)}");
             }
@@ -661,7 +671,7 @@ namespace LascheApp.Padeye
             else
                 status = "NOT OK";
 
-            return $"{status,-15} {item.Name}";
+            return $"{status}\t{item.Name}";
         }
         private static string Eta(double value)
         {
@@ -670,7 +680,7 @@ namespace LascheApp.Padeye
         private static string FormatUtilizationSummaryLine(CheckItem item)
         {
             string status = item.IsOk ? "OK" : "NOT OK";
-            return $"{status,-7} η = {FmtEta(item.Utilization)}  {item.Name}";
+            return $"{status}\tη = {FmtEta(item.Utilization)}  {item.Name}";
         }
 
         private static string Ok(bool ok)

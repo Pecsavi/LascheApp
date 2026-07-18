@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             cmbShackles = new ComboBox();
             lblShackleWll = new Label();
             lblShackleDpin = new Label();
@@ -92,7 +93,13 @@
             dgvCheckSummary = new DataGridView();
             txtSelectedCheckDetail = new TextBox();
             tabReport = new TabPage();
+            button1 = new Button();
             toolTip1 = new ToolTip(components);
+            pictureBox3 = new PictureBox();
+            pictureBox2 = new PictureBox();
+            pictureBox1 = new PictureBox();
+            label11 = new Label();
+            label12 = new Label();
             grpLoads.SuspendLayout();
             groupBox1.SuspendLayout();
             grpLugGeometry.SuspendLayout();
@@ -107,6 +114,9 @@
             splitContainer1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvCheckSummary).BeginInit();
             tabReport.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             SuspendLayout();
             // 
             // cmbShackles
@@ -169,7 +179,6 @@
             txtLoad_kN.Name = "txtLoad_kN";
             txtLoad_kN.Size = new Size(65, 23);
             txtLoad_kN.TabIndex = 5;
-            txtLoad_kN.Text = "1400";
             // 
             // txtPlateThickness_mm
             // 
@@ -177,7 +186,6 @@
             txtPlateThickness_mm.Name = "txtPlateThickness_mm";
             txtPlateThickness_mm.Size = new Size(69, 23);
             txtPlateThickness_mm.TabIndex = 6;
-            txtPlateThickness_mm.Text = "60";
             txtPlateThickness_mm.TextChanged += txtPlateThickness_mm_TextChanged;
             // 
             // txtHoleDiameter_mm
@@ -187,7 +195,6 @@
             txtHoleDiameter_mm.Name = "txtHoleDiameter_mm";
             txtHoleDiameter_mm.Size = new Size(69, 23);
             txtHoleDiameter_mm.TabIndex = 7;
-            txtHoleDiameter_mm.Text = "32";
             // 
             // label1
             // 
@@ -228,13 +235,13 @@
             // 
             // txtBasicCheckResult
             // 
-            txtBasicCheckResult.Dock = DockStyle.Top;
-            txtBasicCheckResult.Location = new Point(3, 3);
+            txtBasicCheckResult.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            txtBasicCheckResult.Location = new Point(3, 35);
             txtBasicCheckResult.Multiline = true;
             txtBasicCheckResult.Name = "txtBasicCheckResult";
             txtBasicCheckResult.ReadOnly = true;
             txtBasicCheckResult.ScrollBars = ScrollBars.Both;
-            txtBasicCheckResult.Size = new Size(479, 618);
+            txtBasicCheckResult.Size = new Size(479, 589);
             txtBasicCheckResult.TabIndex = 8;
             txtBasicCheckResult.WordWrap = false;
             // 
@@ -299,7 +306,6 @@
             txtPlateWidth_mm.Name = "txtPlateWidth_mm";
             txtPlateWidth_mm.Size = new Size(69, 23);
             txtPlateWidth_mm.TabIndex = 14;
-            txtPlateWidth_mm.Text = "100";
             // 
             // label4
             // 
@@ -325,7 +331,6 @@
             txtEdgeDistanceA_mm.Name = "txtEdgeDistanceA_mm";
             txtEdgeDistanceA_mm.Size = new Size(69, 23);
             txtEdgeDistanceA_mm.TabIndex = 18;
-            txtEdgeDistanceA_mm.Text = "60";
             // 
             // txtLoadSer_kN
             // 
@@ -333,7 +338,6 @@
             txtLoadSer_kN.Name = "txtLoadSer_kN";
             txtLoadSer_kN.Size = new Size(65, 23);
             txtLoadSer_kN.TabIndex = 21;
-            txtLoadSer_kN.Text = "700";
             // 
             // label7
             // 
@@ -380,7 +384,6 @@
             txtTensionPinDiameter_mm.Name = "txtTensionPinDiameter_mm";
             txtTensionPinDiameter_mm.Size = new Size(65, 23);
             txtTensionPinDiameter_mm.TabIndex = 25;
-            txtTensionPinDiameter_mm.Text = "32";
             txtTensionPinDiameter_mm.TextChanged += txtTensionPinDiameter_mm_TextChanged;
             // 
             // label9
@@ -435,7 +438,6 @@
             txtDnvOutOfPlaneAngle_deg.Name = "txtDnvOutOfPlaneAngle_deg";
             txtDnvOutOfPlaneAngle_deg.Size = new Size(93, 23);
             txtDnvOutOfPlaneAngle_deg.TabIndex = 35;
-            txtDnvOutOfPlaneAngle_deg.Text = "10";
             // 
             // label13
             // 
@@ -453,7 +455,6 @@
             txtCheekPlateThickness_mm.Name = "txtCheekPlateThickness_mm";
             txtCheekPlateThickness_mm.Size = new Size(69, 23);
             txtCheekPlateThickness_mm.TabIndex = 39;
-            txtCheekPlateThickness_mm.Text = "10";
             // 
             // label15
             // 
@@ -471,7 +472,6 @@
             txtRch_mm.Name = "txtRch_mm";
             txtRch_mm.Size = new Size(69, 23);
             txtRch_mm.TabIndex = 41;
-            txtRch_mm.Text = "50";
             // 
             // label16
             // 
@@ -489,7 +489,6 @@
             txtCheekPlateWeldA_mm.Name = "txtCheekPlateWeldA_mm";
             txtCheekPlateWeldA_mm.Size = new Size(69, 23);
             txtCheekPlateWeldA_mm.TabIndex = 43;
-            txtCheekPlateWeldA_mm.Text = "10";
             // 
             // label17
             // 
@@ -544,7 +543,6 @@
             txtGapS_mm.Name = "txtGapS_mm";
             txtGapS_mm.Size = new Size(65, 23);
             txtGapS_mm.TabIndex = 47;
-            txtGapS_mm.Text = "5";
             // 
             // lblOuterLugThicknessT2
             // 
@@ -561,7 +559,6 @@
             txtOuterLugThicknessT2_mm.Name = "txtOuterLugThicknessT2_mm";
             txtOuterLugThicknessT2_mm.Size = new Size(65, 23);
             txtOuterLugThicknessT2_mm.TabIndex = 49;
-            txtOuterLugThicknessT2_mm.Text = "40";
             // 
             // grpLoads
             // 
@@ -575,9 +572,9 @@
             grpLoads.Controls.Add(lblMaterialFu);
             grpLoads.Controls.Add(lblMaterialE);
             grpLoads.Controls.Add(lblMaterialBetaW);
-            grpLoads.Location = new Point(23, 23);
+            grpLoads.Location = new Point(12, 45);
             grpLoads.Name = "grpLoads";
-            grpLoads.Size = new Size(489, 213);
+            grpLoads.Size = new Size(495, 213);
             grpLoads.TabIndex = 51;
             grpLoads.TabStop = false;
             grpLoads.Text = "Loads / material";
@@ -624,9 +621,9 @@
             grpLugGeometry.Controls.Add(txtRch_mm);
             grpLugGeometry.Controls.Add(label15);
             grpLugGeometry.Controls.Add(label16);
-            grpLugGeometry.Location = new Point(23, 269);
+            grpLugGeometry.Location = new Point(12, 287);
             grpLugGeometry.Name = "grpLugGeometry";
-            grpLugGeometry.Size = new Size(489, 205);
+            grpLugGeometry.Size = new Size(495, 210);
             grpLugGeometry.TabIndex = 52;
             grpLugGeometry.TabStop = false;
             grpLugGeometry.Text = "Lug geometry";
@@ -642,9 +639,9 @@
             grpTransportLug.Controls.Add(lblShackleB1);
             grpTransportLug.Controls.Add(lblShackleHDnv);
             grpTransportLug.Controls.Add(lblShackleInfo);
-            grpTransportLug.Location = new Point(23, 494);
+            grpTransportLug.Location = new Point(12, 510);
             grpTransportLug.Name = "grpTransportLug";
-            grpTransportLug.Size = new Size(487, 255);
+            grpTransportLug.Size = new Size(495, 255);
             grpTransportLug.TabIndex = 53;
             grpTransportLug.TabStop = false;
             grpTransportLug.Text = "Transport Lug / Shackle / DNV";
@@ -661,9 +658,9 @@
             grpTensionLug.Controls.Add(txtTensionPinDiameter_mm);
             grpTensionLug.Controls.Add(lblGapS);
             grpTensionLug.Controls.Add(txtGapS_mm);
-            grpTensionLug.Location = new Point(23, 494);
+            grpTensionLug.Location = new Point(12, 510);
             grpTensionLug.Name = "grpTensionLug";
-            grpTensionLug.Size = new Size(489, 195);
+            grpTensionLug.Size = new Size(495, 254);
             grpTensionLug.TabIndex = 54;
             grpTensionLug.TabStop = false;
             grpTensionLug.Text = "Tension Lug / Pin";
@@ -672,9 +669,9 @@
             // 
             groupBox5.Controls.Add(tabResults);
             groupBox5.Controls.Add(btnCheckBasicPadeye);
-            groupBox5.Location = new Point(543, 23);
+            groupBox5.Location = new Point(1048, 23);
             groupBox5.Name = "groupBox5";
-            groupBox5.Size = new Size(514, 726);
+            groupBox5.Size = new Size(514, 742);
             groupBox5.TabIndex = 55;
             groupBox5.TabStop = false;
             groupBox5.Text = "Result";
@@ -687,7 +684,7 @@
             tabResults.Location = new Point(15, 71);
             tabResults.Name = "tabResults";
             tabResults.SelectedIndex = 0;
-            tabResults.Size = new Size(493, 649);
+            tabResults.Size = new Size(493, 665);
             tabResults.TabIndex = 9;
             // 
             // tabSummary
@@ -696,7 +693,7 @@
             tabSummary.Location = new Point(4, 24);
             tabSummary.Name = "tabSummary";
             tabSummary.Padding = new Padding(3);
-            tabSummary.Size = new Size(485, 621);
+            tabSummary.Size = new Size(485, 637);
             tabSummary.TabIndex = 0;
             tabSummary.Text = "Summary";
             tabSummary.UseVisualStyleBackColor = true;
@@ -716,8 +713,8 @@
             // 
             splitContainer1.Panel2.AccessibleDescription = "txtSelectedCheckDetail";
             splitContainer1.Panel2.Controls.Add(txtSelectedCheckDetail);
-            splitContainer1.Size = new Size(479, 615);
-            splitContainer1.SplitterDistance = 319;
+            splitContainer1.Size = new Size(479, 631);
+            splitContainer1.SplitterDistance = 327;
             splitContainer1.TabIndex = 0;
             // 
             // dgvCheckSummary
@@ -732,7 +729,7 @@
             dgvCheckSummary.ReadOnly = true;
             dgvCheckSummary.RowHeadersVisible = false;
             dgvCheckSummary.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvCheckSummary.Size = new Size(479, 319);
+            dgvCheckSummary.Size = new Size(479, 327);
             dgvCheckSummary.TabIndex = 0;
             // 
             // txtSelectedCheckDetail
@@ -743,31 +740,96 @@
             txtSelectedCheckDetail.Name = "txtSelectedCheckDetail";
             txtSelectedCheckDetail.ReadOnly = true;
             txtSelectedCheckDetail.ScrollBars = ScrollBars.Both;
-            txtSelectedCheckDetail.Size = new Size(479, 292);
+            txtSelectedCheckDetail.Size = new Size(479, 300);
             txtSelectedCheckDetail.TabIndex = 0;
             txtSelectedCheckDetail.WordWrap = false;
             // 
             // tabReport
             // 
+            tabReport.Controls.Add(button1);
             tabReport.Controls.Add(txtBasicCheckResult);
             tabReport.Location = new Point(4, 24);
             tabReport.Name = "tabReport";
             tabReport.Padding = new Padding(3);
-            tabReport.Size = new Size(485, 621);
+            tabReport.Size = new Size(485, 637);
             tabReport.TabIndex = 3;
             tabReport.Text = "Report";
             tabReport.UseVisualStyleBackColor = true;
+            // 
+            // button1
+            // 
+            button1.Dock = DockStyle.Top;
+            button1.Location = new Point(3, 3);
+            button1.Name = "button1";
+            button1.Size = new Size(479, 30);
+            button1.TabIndex = 9;
+            button1.Text = "Print Report";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += PrintReport_Click;
+            // 
+            // pictureBox3
+            // 
+            pictureBox3.Image = (Image)resources.GetObject("pictureBox3.Image");
+            pictureBox3.Location = new Point(530, 522);
+            pictureBox3.Name = "pictureBox3";
+            pictureBox3.Size = new Size(487, 237);
+            pictureBox3.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox3.TabIndex = 2;
+            pictureBox3.TabStop = false;
+            // 
+            // pictureBox2
+            // 
+            pictureBox2.Image = Properties.Resources.Lasche_Schackle;
+            pictureBox2.Location = new Point(530, 45);
+            pictureBox2.Name = "pictureBox2";
+            pictureBox2.Size = new Size(487, 227);
+            pictureBox2.SizeMode = PictureBoxSizeMode.StretchImage;
+            pictureBox2.TabIndex = 1;
+            pictureBox2.TabStop = false;
+            // 
+            // pictureBox1
+            // 
+            pictureBox1.Image = (Image)resources.GetObject("pictureBox1.Image");
+            pictureBox1.Location = new Point(530, 275);
+            pictureBox1.Name = "pictureBox1";
+            pictureBox1.Size = new Size(487, 241);
+            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+            pictureBox1.TabIndex = 0;
+            pictureBox1.TabStop = false;
+            // 
+            // label11
+            // 
+            label11.AutoSize = true;
+            label11.Location = new Point(12, 23);
+            label11.Name = "label11";
+            label11.Size = new Size(38, 15);
+            label11.TabIndex = 56;
+            label11.Text = "Input:";
+            // 
+            // label12
+            // 
+            label12.AutoSize = true;
+            label12.Location = new Point(530, 23);
+            label12.Name = "label12";
+            label12.Size = new Size(95, 15);
+            label12.TabIndex = 57;
+            label12.Text = "Geometry guide:";
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1076, 761);
-            Controls.Add(grpTransportLug);
-            Controls.Add(groupBox5);
+            ClientSize = new Size(1577, 778);
+            Controls.Add(label12);
+            Controls.Add(label11);
+            Controls.Add(pictureBox3);
             Controls.Add(grpTensionLug);
-            Controls.Add(grpLugGeometry);
+            Controls.Add(grpTransportLug);
+            Controls.Add(pictureBox1);
+            Controls.Add(pictureBox2);
             Controls.Add(grpLoads);
+            Controls.Add(grpLugGeometry);
+            Controls.Add(groupBox5);
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;
@@ -792,7 +854,11 @@
             ((System.ComponentModel.ISupportInitialize)dgvCheckSummary).EndInit();
             tabReport.ResumeLayout(false);
             tabReport.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox3).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox2).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -861,5 +927,11 @@
         private SplitContainer splitContainer1;
         private DataGridView dgvCheckSummary;
         private TextBox txtSelectedCheckDetail;
+        private Button button1;
+        private PictureBox pictureBox1;
+        private PictureBox pictureBox2;
+        private PictureBox pictureBox3;
+        private Label label11;
+        private Label label12;
     }
 }

@@ -111,12 +111,31 @@ namespace LascheApp.Padeye
             PadeyeDnvOutOfPlaneResult dnvOutOfPlaneResult = PadeyeDnvOutOfPlaneChecker.Check(dnvOutOfPlaneInput);
             PadeyeBearingResult bearingResult = PadeyeBearingChecker.Check(bearingInput);
 
+            OuterLugCheckResult outerLugResult = OuterLugChecker.Check(new OuterLugCheckInput
+            {
+                IsActive = input.LugType == LugType.TensionLug && input.OuterLugThicknessT2_mm > 0.0,
+                F_Ed_kN = input.F_Ed_kN / 2.0,
+                F_Ed_ser_kN = input.F_Ed_ser_kN / 2.0,
+                ThicknessT2_mm = input.OuterLugThicknessT2_mm,
+                PlateWidth_mm = input.PlateWidth_mm,
+                EndDistanceE_mm = input.EndDistanceE_mm,
+                HoleDiameter_mm = input.HoleDiameter_mm,
+                PinDiameter_mm = input.ShackleDpin_mm,
+                Fy_Nmm2 = input.OuterLugFy_Nmm2,
+                Fu_Nmm2 = input.OuterLugFu_Nmm2,
+                E_Nmm2 = input.E_Nmm2,
+                GammaM0 = input.GammaM0,
+                GammaM6_ser = input.GammaM6_ser,
+                IsReplaceablePin = input.IsReplaceablePin
+            });
+
             return new PadeyeCheckResult
             {
                 BasicResult = basicResult,
                 EcGeometryResult = ecGeometryResult,
                 DnvOutOfPlaneResult = dnvOutOfPlaneResult,
-                BearingResult = bearingResult
+                BearingResult = bearingResult,
+                OuterLugResult = outerLugResult
             };
         }
   

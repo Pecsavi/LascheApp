@@ -24,17 +24,29 @@ namespace LascheApp
         private readonly Label _projectLabel = new();
         private readonly Label _subjectLabel = new();
         private readonly Label _languageLabel = new();
-        private readonly Button _printButton = new();
         private readonly TabPage _guideTab = new();
         private readonly Panel _geometryGuide = new();
         private readonly PrintDocument _reportPrintDocument = new();
         private string[] _printLines = Array.Empty<string>();
         private int _nextPrintLine;
+        private Bitmap? _printGeometryImage;
+        private bool _printGeometryInserted;
         private string _lastEnglishReport = "";
+        private bool _updatingRchLimit;
         public Form1()
         {
             InitializeComponent();
+            UseProjectGuideResources();
             ConfigureProjectAndReportUi();
+        }
+
+        private void UseProjectGuideResources()
+        {
+            // Use the named project resources instead of the Designer-local
+            // Form1.resx copies, so replacing a guide image remains stable.
+            pictureBox2.Image = Properties.Resources.Lasche_Schackle;
+            pictureBox1.Image = Properties.Resources.Shackle___Tension_Lug;
+            pictureBox3.Image = Properties.Resources.Cheek_plate;
         }
 
         private void ConfigureProjectAndReportUi()
@@ -49,7 +61,7 @@ namespace LascheApp
 
             _projectGroup.Text = "Project information";
             _projectGroup.Location = new Point(23, 12);
-            _projectGroup.Size = new Size(1034, 72);
+            _projectGroup.Size = new Size(ClientSize.Width - _projectGroup.Left - 15, 72);
             _projectGroup.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             _projectLabel.Text = "Project number";
             _projectLabel.AutoSize = true;
@@ -79,36 +91,7 @@ namespace LascheApp
             Controls.Add(_projectGroup);
             _projectGroup.BringToFront();
 
-            _printButton.Text = "Print report…";
-            _printButton.Location = new Point(350, 6);
-            _printButton.Size = new Size(120, 23);
-            _printButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            _printButton.Click += PrintReport_Click;
-            toolTip1.SetToolTip(_printButton, "Open print preview for the current calculation report");
-
-            Panel reportToolbar = new()
-            {
-                Dock = DockStyle.Fill,
-                BackColor = SystemColors.Control
-            };
-            reportToolbar.Controls.Add(_printButton);
-
-            TableLayoutPanel reportLayout = new()
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 2,
-                Padding = Padding.Empty,
-                Margin = Padding.Empty
-            };
-            reportLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-            reportLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35f));
-            reportLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
             txtBasicCheckResult.Dock = DockStyle.Fill;
-            tabReport.Controls.Clear();
-            reportLayout.Controls.Add(reportToolbar, 0, 0);
-            reportLayout.Controls.Add(txtBasicCheckResult, 0, 1);
-            tabReport.Controls.Add(reportLayout);
 
             _guideTab.Text = "Geometry guide";
             _guideTab.Padding = new Padding(8);
@@ -127,14 +110,35 @@ namespace LascheApp
             _guideTab.Controls.Add(guideHint);
             tabResults.TabPages.Insert(1, _guideTab);
             cmbLugType.SelectedIndexChanged += (_, _) => _geometryGuide.Invalidate();
+            foreach (TextBox geometryInput in new[]
+            {
+                txtPlateThickness_mm, txtCheekPlateThickness_mm, txtHoleDiameter_mm,
+                txtPlateWidth_mm, txtEdgeDistanceA_mm, txtTensionPinDiameter_mm, txtRch_mm
+            })
+            {
+                geometryInput.TextChanged += (_, _) => _geometryGuide.Invalidate();
+            }
+            txtRch_mm.TextChanged += (_, _) => ApplyRchLimit();
+            txtEdgeDistanceA_mm.TextChanged += (_, _) => ApplyRchLimit();
+            cmbShackles.SelectedIndexChanged += (_, _) => _geometryGuide.Invalidate();
 
             _reportPrintDocument.DocumentName = "Lug verification report";
             _reportPrintDocument.BeginPrint += (_, _) =>
             {
-                _printLines = txtBasicCheckResult.Lines;
+                _printLines = txtBasicCheckResult.Lines
+                    .Select(PrepareLineForPrint)
+                    .ToArray();
                 _nextPrintLine = 0;
+                _printGeometryInserted = false;
+                _printGeometryImage?.Dispose();
+                _printGeometryImage = CreateGeometryGuidePrintImage();
             };
             _reportPrintDocument.PrintPage += ReportPrintDocument_PrintPage;
+            _reportPrintDocument.EndPrint += (_, _) =>
+            {
+                _printGeometryImage?.Dispose();
+                _printGeometryImage = null;
+            };
             _cmbLanguage.SelectedIndex = 0;
         }
 
@@ -150,9 +154,78 @@ namespace LascheApp
             {
                 Document = _reportPrintDocument,
                 Width = 1100,
-                Height = 800
+                Height = 800,
+                KeyPreview = true
             };
+            ConfigurePreviewNavigation(preview);
             preview.ShowDialog(this);
+        }
+
+        private static string PrepareLineForPrint(string line)
+        {
+            // The report uses one leading tab for its screen hierarchy. On
+            // paper that first level is unnecessary and wastes page width.
+            if (line.StartsWith('\t'))
+                line = line[1..];
+
+            string[] checklistStatuses = { "OK\t", "WARNING\t", "NOT OK\t", "WARNUNG\t", "NICHT ERFÜLLT\t" };
+            foreach (string status in checklistStatuses)
+            {
+                if (line.StartsWith(status, StringComparison.OrdinalIgnoreCase))
+                {
+                    int separatorIndex = status.Length - 1;
+                    line = line[..separatorIndex] + '\u001f' + line[(separatorIndex + 1)..];
+                    break;
+                }
+            }
+
+            return line.Replace("\t", "    ");
+        }
+
+        private static void ConfigurePreviewNavigation(PrintPreviewDialog dialog)
+        {
+            PrintPreviewControl? previewControl = FindPreviewControl(dialog);
+            if (previewControl == null)
+                return;
+
+            previewControl.UseAntiAlias = true;
+            previewControl.TabStop = true;
+
+            dialog.KeyDown += (_, e) =>
+            {
+                if (e.KeyCode is Keys.Down or Keys.PageDown or Keys.Right)
+                {
+                    previewControl.StartPage++;
+                    e.Handled = true;
+                }
+                else if (e.KeyCode is Keys.Up or Keys.PageUp or Keys.Left)
+                {
+                    previewControl.StartPage = Math.Max(0, previewControl.StartPage - 1);
+                    e.Handled = true;
+                }
+            };
+
+            previewControl.MouseWheel += (_, e) =>
+            {
+                previewControl.StartPage = e.Delta < 0
+                    ? previewControl.StartPage + 1
+                    : Math.Max(0, previewControl.StartPage - 1);
+            };
+        }
+
+        private static PrintPreviewControl? FindPreviewControl(Control parent)
+        {
+            foreach (Control child in parent.Controls)
+            {
+                if (child is PrintPreviewControl previewControl)
+                    return previewControl;
+
+                PrintPreviewControl? nested = FindPreviewControl(child);
+                if (nested != null)
+                    return nested;
+            }
+
+            return null;
         }
 
         private bool IsGerman => _cmbLanguage.SelectedIndex == 1;
@@ -174,7 +247,7 @@ namespace LascheApp
             _projectLabel.Text = de ? "Projektnummer" : "Project number";
             _subjectLabel.Text = de ? "Gegenstand der Prüfung" : "Subject of verification";
             _languageLabel.Text = de ? "Sprache" : "Language";
-            _printButton.Text = de ? "Bericht drucken…" : "Print report…";
+            button1.Text = de ? "Bericht drucken" : "Print report";
 
             grpLoads.Text = de ? "Lasten / Werkstoff" : "Loads / material";
             grpLugGeometry.Text = de ? "Laschengeometrie" : "Lug geometry";
@@ -190,6 +263,7 @@ namespace LascheApp
             richTextBox1.Text = de
                 ? "*Endgültiges Bohren nach dem Schweißen wird vorausgesetzt!"
                 : "*Final drilling after welding is assumed!";
+            richTextBox1.Height = de ? 44 : 25;
 
             label8.Text = de ? "Laschentyp" : "Lug type";
             label6.Text = de ? "Laschenwerkstoff" : "Lug material";
@@ -224,7 +298,7 @@ namespace LascheApp
             _txtVerificationSubject.Width = de ? 313 : 330;
 
             tabSummary.Text = de ? "Übersicht" : "Summary";
-            _guideTab.Text = de ? "Geometriehilfe" : "Geometry guide";
+            _guideTab.Text = de ? "Sichtprüfung" : "Visual check";
             tabReport.Text = de ? "Bericht" : "Report";
 
             if (cmbLugType.DataSource != null)
@@ -264,6 +338,7 @@ namespace LascheApp
                 "Geometry" => "Geometrie",
                 "Shackle" => "Schäkel",
                 "Bearing" => "Lochleibung",
+                "Lug t2" => "Außenlaschen t2",
                 "Cheek plates" => "Verstärkungsbleche",
                 "Pin" => "Bolzen",
                 "General" => "Allgemein",
@@ -285,6 +360,16 @@ namespace LascheApp
                 ("Governing utilization:", "Maßgebende Ausnutzung:"),
                 ("Governing check:", "Maßgebender Nachweis:"),
                 ("Failed check(s):", "Nicht erfüllte Nachweise:"),
+                ("Pin-hole geometry not fulfilled: pin diameter d must be smaller than hole diameter d0", "Bolzen-Loch-Geometrie nicht erfüllt: Bolzendurchmesser d muss kleiner als Lochdurchmesser d0 sein"),
+                ("Contact stress of the replaceable pin not fulfilled", "Kontaktspannungsnachweis des austauschbaren Bolzens nicht erfüllt"),
+                ("DNV bearing pressure for angled pull not fulfilled", "DNV-Flächenpressungsnachweis bei Schrägzug nicht erfüllt"),
+                ("Tear-out by angled pull according to DNV standard not fulfilled", "Ausreißnachweis bei Schrägzug nach DNV nicht erfüllt"),
+                ("EC geometry check not fulfilled: neither Method A nor Method B is OK", "EC-Geometrienachweis nicht erfüllt: weder Methode A noch Methode B ist erfüllt"),
+                ("Shackle WLL not sufficient", "Schäkel-WLL nicht ausreichend"),
+                ("Cheek plate thickness limit not fulfilled", "Grenze der Verstärkungsblechdicke nicht erfüllt"),
+                ("Cheek plates were requested, but cannot be included in the effective thickness.", "Die Berücksichtigung der Verstärkungsbleche wurde angefordert, ist für die wirksame Dicke jedoch nicht zulässig."),
+                ("required e_min", "erforderlich e_min"),
+                ("Therefore the B1 thickness recommendation is checked with t = tpl only.", "Daher wird die B1-Dickenempfehlung nur mit t = tpl geprüft."),
                 ("Input data", "Eingabedaten"), ("Materials", "Werkstoffe"),
                 ("Loads", "Lasten"), ("Geometry", "Geometrie"),
                 ("Lug:", "Lasche:"), ("Pin:", "Bolzen:"), ("Shackle:", "Schäkel:"),
@@ -297,6 +382,22 @@ namespace LascheApp
                 ("Utilization checks", "Ausnutzungsnachweise"),
                 ("Calculation", "Berechnung"), ("Lug result:", "Ergebnis Lasche:"),
                 ("Pin result:", "Ergebnis Bolzen:"),
+                ("Outer lug plates t2", "Außenlaschen t2"),
+                ("Outer lug plate", "Außenlasche"),
+                ("Lug t2 geometry", "Geometrie der Außenlaschen t2"),
+                ("increase t2 to at least", "t2 erhöhen auf mindestens"),
+                ("Geometry - Method B checked first", "Geometrie – Methode B zuerst geprüft"),
+                ("Geometry - Method A alternative", "Geometrie – Alternative Methode A"),
+                ("Selected geometry method:", "Gewählte Geometriemethode:"),
+                ("Required minimum", "Erforderliches Minimum"),
+                ("one outer plate", "eine Außenlasche"),
+                ("Lug t2 check", "Nachweis der Außenlaschen t2"),
+                ("Required t2 from bearing checks", "Erforderliches t2 aus den Lochleibungsnachweisen"),
+                ("Required t2, rounded up to 10 mm", "Erforderliches t2, auf 10 mm aufgerundet"),
+                ("Geometry sizing is not continued because a bearing check is", "Die Geometriemessung wird nicht fortgesetzt, da ein Lochleibungsnachweis"),
+                ("Geometry - Method B thickness conditions", "Geometrie – Dickenbedingungen der Methode B"),
+                ("Method B selected", "Methode B gewählt"),
+                ("Method B is not fulfilled; Method A selected", "Methode B nicht erfüllt; Methode A gewählt"),
                 ("Minimum distances from load", "Mindestabstände aus Belastung"),
                 ("Required overall geometry", "Erforderliche Gesamtgeometrie"),
                 ("Provided e", "Vorhanden e"), ("Provided b", "Vorhanden b"),
@@ -334,6 +435,9 @@ namespace LascheApp
                 ("Recommendation fulfilled:", "Empfehlung erfüllt:"),
                 ("Recommended:", "Empfohlen:"),
                 ("This is a recommendation only and does not govern the overall result.", "Dies ist nur eine Empfehlung und beeinflusst das Gesamtergebnis nicht."),
+                ("according to DNV standard", "nach DNV"),
+                ("not fulfilled", "nicht erfüllt"),
+                ("not sufficient", "nicht ausreichend"),
                 ("NOT CALCULATED", "NICHT BERECHNET"),
                 ("WARNING", "WARNUNG"), ("NOT OK", "NICHT ERFÜLLT"),
                 ("Check ", "Prüfung "), (" result:", " Ergebnis:")
@@ -352,74 +456,294 @@ namespace LascheApp
 
             using Font font = new("Consolas", 9f);
             float lineHeight = font.GetHeight(e.Graphics);
-            int linesPerPage = Math.Max(1, (int)(e.MarginBounds.Height / lineHeight));
-            int printed = 0;
-            while (_nextPrintLine < _printLines.Length && printed < linesPerPage)
+            float y = e.MarginBounds.Top;
+            float pageBottom = e.MarginBounds.Bottom;
+            using StringFormat format = new(StringFormatFlags.LineLimit)
             {
-                e.Graphics.DrawString(_printLines[_nextPrintLine], font, Brushes.Black,
-                    e.MarginBounds.Left, e.MarginBounds.Top + printed * lineHeight);
+                Trimming = StringTrimming.Word
+            };
+
+            while (_nextPrintLine < _printLines.Length)
+            {
+                string line = _printLines[_nextPrintLine];
+
+                if (!_printGeometryInserted &&
+                    _printGeometryImage != null &&
+                    IsCalculationHeading(line))
+                {
+                    float imageScale = Math.Min(
+                        (float)e.MarginBounds.Width / _printGeometryImage.Width,
+                        (e.MarginBounds.Height / 3f) / _printGeometryImage.Height);
+                    float imageWidth = _printGeometryImage.Width * imageScale;
+                    float imageHeight = _printGeometryImage.Height * imageScale;
+
+                    if (y + imageHeight > pageBottom && y > e.MarginBounds.Top)
+                    {
+                        e.HasMorePages = true;
+                        return;
+                    }
+
+                    float imageX = e.MarginBounds.Left + (e.MarginBounds.Width - imageWidth) / 2f;
+                    e.Graphics.DrawImage(
+                        _printGeometryImage,
+                        new RectangleF(imageX, y, imageWidth, imageHeight));
+                    y += imageHeight + lineHeight;
+                    _printGeometryInserted = true;
+                }
+
+                int checklistSeparator = line.IndexOf('\u001f');
+                bool isChecklistLine = checklistSeparator >= 0;
+                string status = isChecklistLine ? line[..checklistSeparator] : "";
+                string printableText = isChecklistLine ? line[(checklistSeparator + 1)..] : line;
+                float hangingIndent = isChecklistLine
+                    ? e.Graphics.MeasureString(
+                        IsGerman ? "NICHT ERFÜLLT  " : "WARNING  ",
+                        font).Width
+                    : 0f;
+                int availableWidth = Math.Max(1, e.MarginBounds.Width - (int)Math.Ceiling(hangingIndent));
+                float requiredHeight = string.IsNullOrEmpty(printableText)
+                    ? lineHeight
+                    : Math.Max(
+                        lineHeight,
+                        e.Graphics.MeasureString(
+                            printableText,
+                            font,
+                            availableWidth,
+                            format).Height);
+
+                if (y + requiredHeight > pageBottom && y > e.MarginBounds.Top)
+                    break;
+
+                if (!string.IsNullOrEmpty(printableText))
+                {
+                    if (isChecklistLine)
+                    {
+                        e.Graphics.DrawString(
+                            status,
+                            font,
+                            Brushes.Black,
+                            e.MarginBounds.Left,
+                            y);
+                    }
+
+                    RectangleF layout = new(
+                        e.MarginBounds.Left + hangingIndent,
+                        y,
+                        availableWidth,
+                        requiredHeight);
+                    e.Graphics.DrawString(printableText, font, Brushes.Black, layout, format);
+                }
+
                 _nextPrintLine++;
-                printed++;
+                y += requiredHeight;
             }
+
             e.HasMorePages = _nextPrintLine < _printLines.Length;
+        }
+
+        private static bool IsCalculationHeading(string line)
+        {
+            string heading = line.TrimStart();
+            return heading.StartsWith("2. Calculation", StringComparison.OrdinalIgnoreCase) ||
+                   heading.StartsWith("2. Berechnung", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private Bitmap CreateGeometryGuidePrintImage()
+        {
+            int width = Math.Max(320, _geometryGuide.ClientSize.Width);
+            int height = Math.Max(360, _geometryGuide.ClientSize.Height);
+            Bitmap image = new(width, height);
+
+            using Graphics graphics = Graphics.FromImage(image);
+            graphics.Clear(Color.White);
+            try
+            {
+                DrawGeometryGuide(graphics, new Rectangle(0, 0, width, height));
+            }
+            catch (Exception)
+            {
+                graphics.Clear(Color.White);
+            }
+
+            return image;
         }
 
         private void GeometryGuide_Paint(object? sender, PaintEventArgs e)
         {
-            Graphics g = e.Graphics;
+            e.Graphics.Clear(Color.White);
+
+            try
+            {
+                DrawGeometryGuide(e.Graphics);
+            }
+            catch (Exception)
+            {
+                // Input fields are updated character by character. During editing the
+                // temporary geometry can be impossible to scale or draw. Keep the UI
+                // responsive and show an empty guide until the input is valid again.
+                e.Graphics.Clear(Color.White);
+            }
+        }
+
+        private void DrawGeometryGuide(Graphics g, Rectangle? targetArea = null)
+        {
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            Rectangle area = _geometryGuide.ClientRectangle;
-            if (area.Width < 100 || area.Height < 100) return;
+            Rectangle area = targetArea ?? _geometryGuide.ClientRectangle;
+            if (area.Width < 320 || area.Height < 360)
+                return;
 
-            using Pen outline = new(Color.FromArgb(45, 75, 105), 3f);
-            using Pen dimension = new(Color.FromArgb(185, 70, 55), 1.5f) { CustomEndCap = new AdjustableArrowCap(4, 5), StartCap = LineCap.ArrowAnchor };
-            using Pen load = new(Color.FromArgb(35, 135, 85), 4f) { EndCap = LineCap.ArrowAnchor };
-            using Brush plate = new SolidBrush(Color.FromArgb(225, 235, 244));
-            using Font labelFont = new("Segoe UI", 10f, FontStyle.Bold);
-            using Font titleFont = new("Segoe UI", 12f, FontStyle.Bold);
+            double Read(TextBox box, double fallback) =>
+                TryReadDouble(box.Text, out double value) && value > 0.0 ? value : fallback;
 
-            int cx = area.Width / 2;
-            int top = 85;
-            int holeR = Math.Min(48, area.Width / 9);
-            Rectangle lug = new(cx - 120, top + holeR, 240, Math.Max(210, area.Height - 205));
-            g.FillRectangle(plate, lug);
-            g.DrawRectangle(outline, lug);
-            g.FillEllipse(plate, cx - 120, top - 72, 240, 240);
-            g.DrawArc(outline, cx - 120, top - 72, 240, 240, 180, 180);
-            g.FillEllipse(Brushes.White, cx - holeR, top + 48 - holeR, holeR * 2, holeR * 2);
-            g.DrawEllipse(outline, cx - holeR, top + 48 - holeR, holeR * 2, holeR * 2);
-            g.DrawString(GetSelectedLugType() == LugType.TransportLug ? "TRANSPORT LUG" : "TENSION LUG", titleFont, Brushes.Black, 16, 15);
+            double tpl = Read(txtPlateThickness_mm, 60.0);
+            double tch = Read(txtCheekPlateThickness_mm, 0.0);
+            double d0 = Read(txtHoleDiameter_mm, 85.0);
+            double b = Read(txtPlateWidth_mm, 220.0);
+            double endDistance = Read(txtEdgeDistanceA_mm, 150.0);
+            double rch = Read(txtRch_mm, d0 * 0.75);
+            double alpha = TryReadDouble(txtDnvOutOfPlaneAngle_deg.Text, out double alphaValue)
+                ? Math.Clamp(alphaValue, 0.0, 89.0)
+                : 0.0;
+            double pinDiameter = GetSelectedLugType() == LugType.TransportLug
+                ? GetSelectedShackle()?.Dpin_mm ?? d0 * 0.95
+                : Read(txtTensionPinDiameter_mm, d0 * 0.95);
 
-            DrawDimension(g, dimension, labelFont, cx - 120, lug.Bottom + 18, cx + 120, lug.Bottom + 18, "b");
-            DrawDimension(g, dimension, labelFont, cx - holeR, top + 48, cx + holeR, top + 48, "d0");
-            DrawDimension(g, dimension, labelFont, cx + 145, top + 48, cx + 145, lug.Bottom, "e");
-            g.DrawLine(load, cx, top - 55, cx, top - 5);
-            g.DrawString("FEd", labelFont, Brushes.SeaGreen, cx + 10, top - 52);
-
-            if (GetSelectedLugType() == LugType.TransportLug)
+            using Pen outline = new(Color.FromArgb(45, 75, 105), 2.5f);
+            using Pen pinPen = new(Color.FromArgb(65, 65, 65), 2f);
+            using Pen cheekPen = new(Color.FromArgb(40, 135, 185), 2f) { DashStyle = DashStyle.Dash };
+            using Pen dimension = new(Color.FromArgb(185, 70, 55), 1.4f)
             {
-                using Pen shackle = new(Color.DarkSlateGray, 7f);
-                g.DrawArc(shackle, cx - 78, top - 5, 156, 115, 190, 160);
-                g.DrawString("Dpin / B1", labelFont, Brushes.DarkSlateGray, cx + 75, top + 12);
-                g.DrawString("α = out-of-plane pull angle", labelFont, Brushes.Black, 16, 45);
-            }
-            else
+                StartCap = LineCap.ArrowAnchor,
+                EndCap = LineCap.ArrowAnchor
+            };
+            using Brush plateBrush = new SolidBrush(Color.FromArgb(225, 235, 244));
+            using Brush cheekBrush = new SolidBrush(Color.FromArgb(80, 120, 195, 225));
+            using Font labelFont = new("Segoe UI", 9f, FontStyle.Bold);
+            using Font titleFont = new("Segoe UI", 11f, FontStyle.Bold);
+
+            string topTitle = IsGerman ? "DRAUFSICHT" : "TOP VIEW";
+            string sectionTitle = IsGerman ? "SCHNITT AM BOLZEN" : "SECTION AT PIN";
+            g.DrawString(topTitle, titleFont, Brushes.Black, 14, 10);
+
+            int shapeLeft = 58;
+            int shapeRight = area.Width - 35;
+            int shapeTop = 55;
+            int shapeHeight = Math.Min(205, (int)(area.Height * 0.43));
+            int shapeBottom = shapeTop + shapeHeight;
+            int radius = shapeHeight / 2;
+            int holeCy = shapeTop + radius;
+            int holeCx = shapeRight - Math.Clamp((int)(endDistance / Math.Max(b, 1.0) * shapeHeight), radius / 2, radius);
+
+            using GraphicsPath lugPath = new();
+            lugPath.AddLine(shapeLeft, shapeTop, shapeRight - radius, shapeTop);
+            lugPath.AddArc(shapeRight - 2 * radius, shapeTop, 2 * radius, shapeHeight, 270, 180);
+            lugPath.AddLine(shapeRight - radius, shapeBottom, shapeLeft, shapeBottom);
+            lugPath.CloseFigure();
+            g.FillPath(plateBrush, lugPath);
+            g.DrawPath(outline, lugPath);
+
+            int holeRadius = Math.Clamp((int)(d0 / Math.Max(b, 1.0) * shapeHeight / 2.0), 18, radius - 14);
+            int pinRadius = Math.Clamp((int)(holeRadius * pinDiameter / Math.Max(d0, 1.0)), 8, holeRadius + 8);
+
+            if (tch > 0.0)
             {
-                using Pen pin = new(Color.DarkSlateGray, 12f);
-                g.DrawLine(pin, cx - 105, top + 48, cx + 105, top + 48);
-                g.DrawString("pin d", labelFont, Brushes.DarkSlateGray, cx + 112, top + 36);
-                g.DrawString("t2 = outer lug thickness     s = gap", labelFont, Brushes.Black, 16, 45);
+                int cheekRadius = Math.Clamp((int)(rch / Math.Max(d0 / 2.0, 1.0) * holeRadius), holeRadius + 10, radius - 5);
+                Rectangle cheekCircle = new(holeCx - cheekRadius, holeCy - cheekRadius, cheekRadius * 2, cheekRadius * 2);
+                g.FillEllipse(cheekBrush, cheekCircle);
+                g.DrawEllipse(cheekPen, cheekCircle);
+                string rchText = $"Rch = {rch:0.0}";
+                float rchTextWidth = g.MeasureString(rchText, labelFont).Width;
+                float rchTextX = Math.Max(4f, holeCx - cheekRadius - rchTextWidth - 5f);
+                g.DrawString(rchText, labelFont, Brushes.SteelBlue, rchTextX, holeCy - 12);
             }
 
-            g.DrawString("tpl = main plate thickness", labelFont, Brushes.Black, 16, area.Height - 52);
-            g.DrawString("tch / Rch / a_weld = cheek plate data", labelFont, Brushes.Black, 220, area.Height - 52);
+            Rectangle hole = new(holeCx - holeRadius, holeCy - holeRadius, holeRadius * 2, holeRadius * 2);
+            Rectangle pin = new(holeCx - pinRadius, holeCy - pinRadius, pinRadius * 2, pinRadius * 2);
+            g.FillEllipse(Brushes.White, hole);
+            g.DrawEllipse(outline, hole);
+            g.FillEllipse(Brushes.LightGray, pin);
+            g.DrawEllipse(pinPen, pin);
+
+            DrawDimension(g, dimension, labelFont, shapeLeft - 18, shapeTop, shapeLeft - 18, shapeBottom, $"b={b:0.0}");
+            DrawDimension(g, dimension, labelFont, holeCx, shapeBottom + 22, shapeRight, shapeBottom + 22, $"e={endDistance:0.0}");
+            DrawDimension(g, dimension, labelFont, holeCx - holeRadius, holeCy - holeRadius - 12, holeCx + holeRadius, holeCy - holeRadius - 12, $"d0={d0:0.0}");
+
+            int sectionTop = shapeBottom + 105;
+            g.DrawString(sectionTitle, titleFont, Brushes.Black, 14, sectionTop);
+            int sectionCy = Math.Min(sectionTop + 120, area.Height - 105);
+            double largestUpperDimension = Math.Max(endDistance, Math.Max(rch, d0 / 2.0));
+            double sectionVerticalScale = Math.Min(
+                0.55,
+                Math.Max(0.1, (sectionCy - sectionTop - 30.0) / Math.Max(largestUpperDimension, 1.0)));
+            int plateHeightAbovePin = Math.Max(20, (int)Math.Round(endDistance * sectionVerticalScale));
+            int plateHeightBelowPin = Math.Min(125, Math.Max(55, area.Height - sectionCy - 38));
+            int tplWidth = Math.Clamp((int)(tpl * 1.15), 45, 105);
+            int tchWidth = tch > 0.0 ? Math.Clamp((int)(tch * 1.15), 10, 38) : 0;
+            int sectionCx = area.Width / 2;
+
+            Rectangle mainPlate = new(
+                sectionCx - tplWidth / 2,
+                sectionCy - plateHeightAbovePin,
+                tplWidth,
+                plateHeightAbovePin + plateHeightBelowPin);
+            g.FillRectangle(plateBrush, mainPlate);
+            g.DrawRectangle(outline, mainPlate);
+
+            if (tch > 0.0)
+            {
+                int cheekHeight = Math.Max(20, (int)Math.Round(2.0 * rch * sectionVerticalScale));
+                Rectangle leftCheek = new(mainPlate.Left - tchWidth, sectionCy - cheekHeight / 2, tchWidth, cheekHeight);
+                Rectangle rightCheek = new(mainPlate.Right, sectionCy - cheekHeight / 2, tchWidth, cheekHeight);
+                g.FillRectangle(cheekBrush, leftCheek);
+                g.FillRectangle(cheekBrush, rightCheek);
+                g.DrawRectangle(cheekPen, leftCheek);
+                g.DrawRectangle(cheekPen, rightCheek);
+                DrawDimension(g, dimension, labelFont, rightCheek.Left, rightCheek.Bottom + 16, rightCheek.Right, rightCheek.Bottom + 16, $"tch={tch:0.0}");
+            }
+
+            int totalThicknessWidth = tplWidth + 2 * tchWidth;
+            int sectionHoleHeight = Math.Max(16, (int)Math.Round(d0 * sectionVerticalScale));
+            Rectangle sectionHole = new(
+                sectionCx - totalThicknessWidth / 2,
+                sectionCy - sectionHoleHeight / 2,
+                totalThicknessWidth,
+                sectionHoleHeight);
+            g.FillRectangle(Brushes.White, sectionHole);
+            g.DrawRectangle(outline, sectionHole);
+
+            using Pen sectionPin = new(Color.DimGray, Math.Max(5f, (float)(pinDiameter / Math.Max(d0, 1.0) * 12f)));
+            g.DrawLine(sectionPin, sectionCx - tplWidth / 2 - tchWidth - 55, sectionCy, sectionCx + tplWidth / 2 + tchWidth + 55, sectionCy);
+            DrawDimension(g, dimension, labelFont, mainPlate.Left, mainPlate.Bottom + 12, mainPlate.Right, mainPlate.Bottom + 12, $"tpl={tpl:0.0}");
+
+            if (alpha > 0.0 && GetSelectedLugType() == LugType.TransportLug)
+            {
+                int arrowLength = 82;
+                double alphaRad = alpha * Math.PI / 180.0;
+                int forceStartX = sectionCx;
+                int forceStartY = sectionCy - 4;
+                int forceEndX = forceStartX + (int)(Math.Sin(alphaRad) * arrowLength);
+                int forceEndY = forceStartY - (int)(Math.Cos(alphaRad) * arrowLength);
+
+                using Pen referencePen = new(Color.Gray, 1.2f) { DashStyle = DashStyle.Dash };
+                using Pen forcePen = new(Color.Black, 4f) { EndCap = LineCap.ArrowAnchor };
+                g.DrawLine(referencePen, forceStartX, forceStartY, forceStartX, forceStartY - arrowLength - 8);
+                g.DrawLine(forcePen, forceStartX, forceStartY, forceEndX, forceEndY);
+                Rectangle arcBox = new(forceStartX - 32, forceStartY - 64, 64, 64);
+                g.DrawArc(outline, arcBox, 270, (float)alpha);
+                g.DrawString($"α={alpha:0.0}°", labelFont, Brushes.Black, forceStartX + 8, forceStartY - 72);
+                g.DrawString("F", titleFont, Brushes.Black, forceEndX + 5, forceEndY - 8);
+            }
         }
 
         private static void DrawDimension(Graphics g, Pen pen, Font font, int x1, int y1, int x2, int y2, string text)
         {
             g.DrawLine(pen, x1, y1, x2, y2);
             SizeF size = g.MeasureString(text, font);
-            g.DrawString(text, font, Brushes.Firebrick, (x1 + x2 - size.Width) / 2f, (y1 + y2 - size.Height) / 2f);
+            float textX = (x1 + x2 - size.Width) / 2f;
+            float textY = (y1 + y2 - size.Height) / 2f;
+            RectangleF mask = new(textX - 3f, textY - 1f, size.Width + 6f, size.Height + 2f);
+            g.FillRectangle(Brushes.White, mask);
+            g.DrawString(text, font, Brushes.Firebrick, textX, textY);
         }
         private MaterialGrade? GetSelectedMaterial()
         {
@@ -570,6 +894,9 @@ namespace LascheApp
             if (!lugResult.BearingResult.HasErrors)
                 items.AddRange(lugResult.BearingResult.CheckItems);
 
+            if (lugResult.OuterLugResult.IsActive)
+                items.AddRange(lugResult.OuterLugResult.CheckItems);
+
             if (!lugResult.DnvOutOfPlaneResult.HasErrors &&
                 lugResult.DnvOutOfPlaneResult.IsActive)
             {
@@ -593,6 +920,9 @@ namespace LascheApp
 
         private string GetCheckGroup(string checkName)
         {
+            if (checkName.Contains("Lug t2", StringComparison.OrdinalIgnoreCase))
+                return "Lug t2";
+
             if (checkName.Contains("WLL", StringComparison.OrdinalIgnoreCase) ||
                 checkName.Contains("Shackle", StringComparison.OrdinalIgnoreCase))
                 return "Shackle";
@@ -627,9 +957,10 @@ namespace LascheApp
                 "Geometry" => 1,
                 "Shackle" => 2,
                 "Bearing" => 3,
-                "Cheek plates" => 4,
-                "DNV" => 5,
-                "Pin" => 6,
+                "Lug t2" => 4,
+                "Cheek plates" => 5,
+                "DNV" => 6,
+                "Pin" => 7,
                 _ => 99
             };
         }
@@ -724,9 +1055,8 @@ namespace LascheApp
 
             lblShackleInfo.Text =
                 $"Nominal size: {shackle.NominalSize} | " +
-                $"d1: {shackle.D1_mm:0.0} mm | " +
-                $"d3: {shackle.D3_mm:0.0} mm | " +
-                $"d4: {shackle.D4_inch}";
+                $"h2: {shackle.H2_mm:0.0} mm | " +
+                $"b2: {shackle.B2_mm:0.0} mm";
         }
         private bool TryGetSelectedShackleGeometry(
             out double dpin_mm,
@@ -763,6 +1093,33 @@ namespace LascheApp
                 out value);
         }
 
+        private void ApplyRchLimit()
+        {
+            if (_updatingRchLimit ||
+                !TryReadDouble(txtEdgeDistanceA_mm.Text, out double endDistanceE_mm) ||
+                !TryReadDouble(txtRch_mm.Text, out double rch_mm))
+            {
+                return;
+            }
+
+            double maximumRch_mm = endDistanceE_mm - 10.0;
+            if (maximumRch_mm < 0.0 || rch_mm <= maximumRch_mm)
+                return;
+
+            _updatingRchLimit = true;
+            try
+            {
+                txtRch_mm.Text = maximumRch_mm.ToString(
+                    "0.###",
+                    System.Globalization.CultureInfo.CurrentCulture);
+                txtRch_mm.SelectionStart = txtRch_mm.TextLength;
+            }
+            finally
+            {
+                _updatingRchLimit = false;
+            }
+        }
+
         private bool TryReadOptionalDoubleControl(
             string controlName,
             double defaultValue,
@@ -793,6 +1150,7 @@ namespace LascheApp
 
         private void btnCheckBasicPadeye_Click(object sender, EventArgs e)
         {
+            ApplyRchLimit();
             txtBasicCheckResult.Clear();
             dgvCheckSummary.Rows.Clear();
 
@@ -944,6 +1302,19 @@ namespace LascheApp
                     return;
                 }
 
+                MaterialPropertiesAtThickness outerLugMaterialProps;
+                try
+                {
+                    // The outer plates use the same material grade as tpl, but the
+                    // strength values must be selected for their own thickness t2.
+                    outerLugMaterialProps = _materialDatabase!.GetProperties(material.Id, outerLugThicknessT2_mm);
+                }
+                catch
+                {
+                    txtBasicCheckResult.Text = "Material properties not available for outer lug thickness t2.";
+                    return;
+                }
+
                 double pinMoment_kNmm =
                     fEd_kN / 8.0 *
                     (outerLugThicknessT2_mm + 4.0 * gapS_mm + 2.0 * innerLugThicknessForPinMoment_mm);
@@ -1009,6 +1380,11 @@ namespace LascheApp
                     PlateThickness_mm = t_mm,
                     PlateWidth_mm = plateWidth_mm,
                     HoleDiameter_mm = holeDiameter_mm,
+                    EndDistanceE_mm = endDistanceE_mm,
+
+                    OuterLugThicknessT2_mm = outerLugThicknessT2_mm,
+                    OuterLugFy_Nmm2 = outerLugMaterialProps.Fy_Nmm2,
+                    OuterLugFu_Nmm2 = outerLugMaterialProps.Fu_Nmm2,
 
                     CheekPlateThickness_mm = tensionCheekPlateThickness_mm,
                     IncludeCheekPlatesInBearing = chkIncludeCheekPlatesInBearing.Checked,
@@ -1373,6 +1749,12 @@ namespace LascheApp
                     new[] { "Method A", "Möglichkeit A" },
                     new[] { "Pin-hole bearing design" });
 
+            if (checkName.Contains("Lug t2", StringComparison.OrdinalIgnoreCase))
+                return ExtractReportRange(
+                    report,
+                    new[] { "Outer lug plates t2" },
+                    new[] { "Cheek plate weld", "2.2. Pin" });
+
             if (checkName.Contains("bearing design", StringComparison.OrdinalIgnoreCase) ||
                 checkName.Contains("Pin-hole bearing", StringComparison.OrdinalIgnoreCase))
                 return ExtractReportSection(report, "Pin-hole bearing design");
@@ -1452,6 +1834,8 @@ namespace LascheApp
         "Pin-hole bearing design",
         "Service bearing",
         "Contact stress",
+
+        "Outer lug plates t2",
 
         "Cheek plate weld",
 

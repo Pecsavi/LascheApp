@@ -25,6 +25,11 @@ namespace LascheApp.Padeye
         public double BetaW { get; set; } = 0.9;
         public double GammaM0 { get; set; } = 1.0;
 
+        // Two outer plates of a tension lug. Each plate carries half the load.
+        public double OuterLugThicknessT2_mm { get; set; }
+        public double OuterLugFy_Nmm2 { get; set; }
+        public double OuterLugFu_Nmm2 { get; set; }
+
         public double ShackleWLL_kN { get; set; }
         public double ShackleDpin_mm { get; set; }
         public double ShackleB1_mm { get; set; }
@@ -60,6 +65,7 @@ namespace LascheApp.Padeye
         public PadeyeOutOfPlaneResult OutOfPlaneResult { get; set; } = new();
         public PadeyeDnvOutOfPlaneResult DnvOutOfPlaneResult { get; set; } = new();
         public PadeyeBearingResult BearingResult { get; set; } = new();
+        public OuterLugCheckResult OuterLugResult { get; set; } = new();
 
         public LugType LugType => BasicResult.Input.LugType;
 
@@ -71,7 +77,8 @@ namespace LascheApp.Padeye
              BasicResult.IsOk &&
              EcGeometryResult.IsOk &&
              (!DnvOutOfPlaneCheckRequired || DnvOutOfPlaneResult.IsOk) &&
-             BearingResult.IsOk;
+             BearingResult.IsOk &&
+             OuterLugResult.IsOk;
 
         public List<CheckItem> GoverningCheckItems
         {
@@ -90,6 +97,9 @@ namespace LascheApp.Padeye
 
                 if (!BearingResult.HasErrors)
                     items.AddRange(BearingResult.CheckItems);
+
+                if (OuterLugResult.IsActive)
+                    items.AddRange(OuterLugResult.CheckItems);
 
                 return items;
             }
