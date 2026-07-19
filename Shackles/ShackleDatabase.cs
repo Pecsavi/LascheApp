@@ -84,6 +84,26 @@ namespace LascheApp.Shackles
             Save();
         }
 
+        public void ReplaceAll(IEnumerable<ShackleData> shackles)
+        {
+            List<ShackleData> replacement = shackles.ToList();
+
+            if (replacement.Any(s => string.IsNullOrWhiteSpace(s.Id)))
+                throw new ArgumentException("Every shackle must have an Id.");
+
+            if (replacement.GroupBy(s => s.Id, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
+                throw new ArgumentException("Shackle Id values must be unique.");
+
+            Shackles = replacement;
+            Save();
+        }
+
+        public void RestoreDefaults()
+        {
+            Shackles = CreateDefaultShackles();
+            Save();
+        }
+
         /// <summary>
         /// Returns the smallest shackle with WLL_kN >= requiredLoad_kN.
         /// </summary>
@@ -304,7 +324,7 @@ namespace LascheApp.Shackles
                 Name = $"HC 2 - {wll_kg / 1000.0:0.###} t",
                 Type = "Bow shackle with pin, nut and cotter pin",
                 Standard = "Hochfeste Schaekel Typ HC 2",
-                Comment = "Catalogue data. Weight and article number are not included.",
+                Comment = "Catalogue data.",
 
                 NominalSize = nominalSize,
                 WLL_kg = wll_kg,

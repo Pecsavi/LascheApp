@@ -23,7 +23,14 @@ namespace LascheApp
         private readonly GroupBox _projectGroup = new();
         private readonly Label _projectLabel = new();
         private readonly Label _subjectLabel = new();
-        private readonly Label _languageLabel = new();
+        private readonly Button _settingsButton = new();
+        private readonly ContextMenuStrip _settingsMenu = new();
+        private readonly ToolStripMenuItem _languageMenuItem = new();
+        private readonly ToolStripMenuItem _englishMenuItem = new("English");
+        private readonly ToolStripMenuItem _germanMenuItem = new("Deutsch");
+        private readonly ToolStripMenuItem _databaseMenuItem = new();
+        private readonly ToolStripMenuItem _materialDatabaseMenuItem = new();
+        private readonly ToolStripMenuItem _shackleDatabaseMenuItem = new();
         private readonly TabPage _guideTab = new();
         private readonly Panel _geometryGuide = new();
         private readonly PrintDocument _reportPrintDocument = new();
@@ -45,8 +52,8 @@ namespace LascheApp
             // Use the named project resources instead of the Designer-local
             // Form1.resx copies, so replacing a guide image remains stable.
             pictureBox2.Image = Properties.Resources.Lasche_Schackle;
-            pictureBox1.Image = Properties.Resources.Shackle___Tension_Lug;
-            pictureBox3.Image = Properties.Resources.Cheek_plate;
+            pictureBox1.Image = Properties.Resources.Cheek_plate;
+            pictureBox3.Image = Properties.Resources.Shackle___Tension_Lug;
         }
 
         private void ConfigureProjectAndReportUi()
@@ -75,18 +82,19 @@ namespace LascheApp
             _txtVerificationSubject.Location = new Point(458, 27);
             _txtVerificationSubject.Size = new Size(330, 23);
             _txtVerificationSubject.PlaceholderText = "e.g. Gantry 1 – Gantry 2 connection";
-            _languageLabel.Text = "Language";
-            _languageLabel.AutoSize = true;
-            _languageLabel.Location = new Point(810, 31);
             _cmbLanguage.DropDownStyle = ComboBoxStyle.DropDownList;
             _cmbLanguage.Items.AddRange(new object[] { "English", "Deutsch" });
-            _cmbLanguage.Location = new Point(875, 27);
-            _cmbLanguage.Size = new Size(133, 23);
             _cmbLanguage.SelectedIndexChanged += Language_SelectedIndexChanged;
+            _settingsButton.Text = "⚙ Settings";
+            _settingsButton.Size = new Size(132, 29);
+            _settingsButton.Location = new Point(_projectGroup.ClientSize.Width - 147, 25);
+            _settingsButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            _settingsButton.Click += SettingsButton_Click;
+            ConfigureSettingsMenu();
             _projectGroup.Controls.AddRange(new Control[]
             {
                 _projectLabel, _txtProjectNumber, _subjectLabel, _txtVerificationSubject,
-                _languageLabel, _cmbLanguage
+                _settingsButton
             });
             Controls.Add(_projectGroup);
             _projectGroup.BringToFront();
@@ -139,7 +147,7 @@ namespace LascheApp
                 _printGeometryImage?.Dispose();
                 _printGeometryImage = null;
             };
-            _cmbLanguage.SelectedIndex = 0;
+            _cmbLanguage.SelectedIndex = LoadLanguagePreference();
         }
 
         private void PrintReport_Click(object? sender, EventArgs e)
@@ -230,8 +238,33 @@ namespace LascheApp
 
         private bool IsGerman => _cmbLanguage.SelectedIndex == 1;
 
+        private void ConfigureSettingsMenu()
+        {
+            _englishMenuItem.Click += (_, _) => _cmbLanguage.SelectedIndex = 0;
+            _germanMenuItem.Click += (_, _) => _cmbLanguage.SelectedIndex = 1;
+            _materialDatabaseMenuItem.Click += (_, _) => OpenDatabaseSettings(0);
+            _shackleDatabaseMenuItem.Click += (_, _) => OpenDatabaseSettings(1);
+
+            _languageMenuItem.DropDownItems.AddRange(new ToolStripItem[]
+            {
+                _englishMenuItem,
+                _germanMenuItem
+            });
+            _databaseMenuItem.DropDownItems.AddRange(new ToolStripItem[]
+            {
+                _materialDatabaseMenuItem,
+                _shackleDatabaseMenuItem
+            });
+            _settingsMenu.Items.AddRange(new ToolStripItem[]
+            {
+                _languageMenuItem,
+                _databaseMenuItem
+            });
+        }
+
         private void Language_SelectedIndexChanged(object? sender, EventArgs e)
         {
+            SaveLanguagePreference();
             ApplyLanguage();
 
             // Recreate both Summary and Report in the selected language.
@@ -246,7 +279,13 @@ namespace LascheApp
             _projectGroup.Text = de ? "Projektangaben" : "Project information";
             _projectLabel.Text = de ? "Projektnummer" : "Project number";
             _subjectLabel.Text = de ? "Gegenstand der Prüfung" : "Subject of verification";
-            _languageLabel.Text = de ? "Sprache" : "Language";
+            _settingsButton.Text = de ? "⚙ Einstellungen" : "⚙ Settings";
+            _languageMenuItem.Text = de ? "Sprache" : "Language";
+            _databaseMenuItem.Text = de ? "Datenbank" : "Database";
+            _materialDatabaseMenuItem.Text = de ? "Werkstoffe" : "Material";
+            _shackleDatabaseMenuItem.Text = de ? "Schäkel" : "Shackle";
+            _englishMenuItem.Checked = !de;
+            _germanMenuItem.Checked = de;
             button1.Text = de ? "Bericht drucken" : "Print report";
 
             grpLoads.Text = de ? "Lasten / Werkstoff" : "Loads / material";
@@ -256,6 +295,10 @@ namespace LascheApp
             groupBox5.Text = de ? "Ergebnis" : "Result";
             btnCheckBasicPadeye.Text = de ? "Lasche prüfen" : "Verify lug";
             btnSelectShackleByLoad.Text = de ? "Schäkel nach Last wählen" : "Select shackle by load";
+            btnPredesign.Text = de ? "Vorbemessung" : "Predesign";
+            toolTip1.SetToolTip(
+                btnLoadGuidance,
+                de ? "Empfehlung zur Lasteingabe" : "Load input recommendation");
             chkReplaceablePin.Text = de ? "Nachweise: austauschbarer Bolzen" : "Replaceable pin checks";
             chkIncludeCheekPlatesInBearing.Text = de
                 ? "Verstärkungsbleche im Tragwiderstand.*"
@@ -541,6 +584,52 @@ namespace LascheApp
             e.HasMorePages = _nextPrintLine < _printLines.Length;
         }
 
+        private static string UserSettingsPath => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "LascheApp",
+            "settings.json");
+
+        private static int LoadLanguagePreference()
+        {
+            try
+            {
+                if (!File.Exists(UserSettingsPath))
+                    return 1;
+
+                string json = File.ReadAllText(UserSettingsPath);
+                AppPreferences? preferences = System.Text.Json.JsonSerializer.Deserialize<AppPreferences>(json);
+                return Math.Clamp(preferences?.LanguageIndex ?? 1, 0, 1);
+            }
+            catch
+            {
+                return 1;
+            }
+        }
+
+        private void SaveLanguagePreference()
+        {
+            try
+            {
+                string? directory = Path.GetDirectoryName(UserSettingsPath);
+                if (!string.IsNullOrWhiteSpace(directory))
+                    Directory.CreateDirectory(directory);
+
+                string json = System.Text.Json.JsonSerializer.Serialize(
+                    new AppPreferences { LanguageIndex = Math.Clamp(_cmbLanguage.SelectedIndex, 0, 1) },
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(UserSettingsPath, json);
+            }
+            catch
+            {
+                // A read-only profile must not prevent the application from running.
+            }
+        }
+
+        private sealed class AppPreferences
+        {
+            public int LanguageIndex { get; set; }
+        }
+
         private static bool IsCalculationHeading(string line)
         {
             string heading = line.TrimStart();
@@ -760,8 +849,16 @@ namespace LascheApp
         private void Form1_Load(object sender, EventArgs e)
         {
             string dataDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "LascheApp",
+                "Data");
+
+            string legacyDataDirectory = Path.Combine(
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Data");
+
+            MigrateLegacyDataFile(legacyDataDirectory, dataDirectory, "materials.json");
+            MigrateLegacyDataFile(legacyDataDirectory, dataDirectory, "shackles.json");
 
             string materialPath = Path.Combine(dataDirectory, "materials.json");
             string shacklePath = Path.Combine(dataDirectory, "shackles.json");
@@ -784,6 +881,55 @@ namespace LascheApp
             UpdateLugTypeUi();
             ConfigureSummaryGrid();
             ApplyLanguage();
+        }
+
+        private static void MigrateLegacyDataFile(string legacyDirectory, string targetDirectory, string fileName)
+        {
+            string source = Path.Combine(legacyDirectory, fileName);
+            string target = Path.Combine(targetDirectory, fileName);
+
+            if (File.Exists(target) || !File.Exists(source))
+                return;
+
+            Directory.CreateDirectory(targetDirectory);
+            File.Copy(source, target, overwrite: false);
+        }
+
+        private void SettingsButton_Click(object? sender, EventArgs e)
+        {
+            _settingsMenu.Show(_settingsButton, new Point(0, _settingsButton.Height));
+        }
+
+        private void OpenDatabaseSettings(int selectedTab)
+        {
+            if (_materialDatabase == null || _shackleDatabase == null)
+                return;
+
+            string? selectedMaterialId = (cmbMaterials.SelectedItem as MaterialGrade)?.Id;
+            string? selectedPinMaterialId = (cmbPinMaterials.SelectedItem as MaterialGrade)?.Id;
+            string? selectedShackleId = (cmbShackles.SelectedItem as ShackleData)?.Id;
+
+            using SettingsForm settings = new(
+                _materialDatabase,
+                _shackleDatabase,
+                IsGerman,
+                selectedTab);
+            settings.ShowDialog(this);
+
+            LoadMaterialComboBox();
+            LoadPinMaterialComboBox();
+            LoadShackleComboBox();
+
+            if (selectedMaterialId != null)
+                cmbMaterials.SelectedValue = selectedMaterialId;
+            if (selectedPinMaterialId != null)
+                cmbPinMaterials.SelectedValue = selectedPinMaterialId;
+            if (selectedShackleId != null)
+                cmbShackles.SelectedValue = selectedShackleId;
+
+            UpdateSelectedMaterialInfo();
+            UpdateSelectedPinMaterialInfo();
+            UpdateSelectedShackleInfo();
         }
 
         private void UpdateLugTypeUi()
@@ -1149,6 +1295,29 @@ namespace LascheApp
         }
 
         private void btnCheckBasicPadeye_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                RunBasicPadeyeCheck();
+            }
+            catch (Exception ex)
+            {
+                txtBasicCheckResult.Text = IsGerman
+                    ? $"Die Berechnung konnte nicht ausgeführt werden: {ex.Message}"
+                    : $"The calculation could not be completed: {ex.Message}";
+            }
+
+            // Input validation messages are stored in the report text box. When
+            // the Summary tab is active they used to be invisible, which made the
+            // Verify button appear to do nothing.
+            if (dgvCheckSummary.Rows.Count == 0 &&
+                !string.IsNullOrWhiteSpace(txtBasicCheckResult.Text))
+            {
+                ShowCheckInputError(txtBasicCheckResult.Text);
+            }
+        }
+
+        private void RunBasicPadeyeCheck()
         {
             ApplyRchLimit();
             txtBasicCheckResult.Clear();
@@ -1608,6 +1777,182 @@ namespace LascheApp
             UpdateSelectedShackleInfo();
             btnCheckBasicPadeye_Click(sender, e);
         }
+
+        private void btnPredesign_Click(object sender, EventArgs e)
+        {
+            if (_materialDatabase == null || _shackleDatabase == null)
+                return;
+
+            if (!TryReadDouble(txtLoad_kN.Text, out double fEd_kN) || fEd_kN <= 0.0)
+            {
+                ShowPredesignMessage(IsGerman
+                    ? "Für die Vorbemessung muss F_Ed eingegeben werden."
+                    : "F_Ed must be entered for predesign.");
+                return;
+            }
+
+            MaterialGrade? lugMaterial = GetSelectedMaterial();
+            if (lugMaterial == null)
+            {
+                ShowPredesignMessage(IsGerman
+                    ? "Bitte zuerst einen Laschenwerkstoff wählen."
+                    : "Select a lug material first.");
+                return;
+            }
+
+            double pinDiameter_mm;
+            if (GetSelectedLugType() == LugType.TensionLug)
+            {
+                MaterialGrade? pinMaterial = GetSelectedPinMaterial();
+                if (pinMaterial == null || !TryFindMinimumPinDiameter(
+                        fEd_kN, pinMaterial, out pinDiameter_mm))
+                {
+                    ShowPredesignMessage(IsGerman
+                        ? "Mit dem gewählten Bolzenwerkstoff konnte kein geeigneter Bolzendurchmesser ermittelt werden."
+                        : "No suitable pin diameter could be determined for the selected pin material.");
+                    return;
+                }
+
+                txtTensionPinDiameter_mm.Text = FormatPredesignValue(pinDiameter_mm);
+            }
+            else
+            {
+                double shackleLoad_kN =
+                    TryReadDouble(txtLoadSer_kN.Text, out double fSher_kN) && fSher_kN > 0.0
+                        ? fSher_kN
+                        : fEd_kN / 2.0;
+
+                ShackleData? shackle = _shackleDatabase.GetSmallestSuitableByWll(shackleLoad_kN);
+                if (shackle == null)
+                {
+                    ShowPredesignMessage(IsGerman
+                        ? "In der Datenbank wurde kein geeigneter Schäkel für diese Last gefunden."
+                        : "No suitable shackle was found in the database for this load.");
+                    return;
+                }
+
+                cmbShackles.SelectedValue = shackle.Id;
+                UpdateSelectedShackleInfo();
+                pinDiameter_mm = shackle.Dpin_mm;
+            }
+
+            double holeDiameter_mm = pinDiameter_mm + 3.0;
+            if (!TryFindMinimumBearingThickness(
+                    fEd_kN, pinDiameter_mm, lugMaterial,
+                    out double plateThickness_mm,
+                    out MaterialPropertiesAtThickness? plateProperties))
+            {
+                ShowPredesignMessage(IsGerman
+                    ? "Mit dem gewählten Laschenwerkstoff konnte keine ausreichende Blechdicke ermittelt werden."
+                    : "No sufficient plate thickness could be determined for the selected lug material.");
+                return;
+            }
+
+            double forceTerm_mm =
+                fEd_kN * 1000.0 /
+                (2.0 * plateThickness_mm * plateProperties!.Fy_Nmm2);
+            double aMin_mm = forceTerm_mm + 2.0 * holeDiameter_mm / 3.0;
+            double cMin_mm = forceTerm_mm + holeDiameter_mm / 3.0;
+            double eMin_mm = Math.Ceiling(aMin_mm + holeDiameter_mm / 2.0);
+            double bMin_mm = Math.Ceiling(2.0 * cMin_mm + holeDiameter_mm);
+
+            txtPlateThickness_mm.Text = FormatPredesignValue(plateThickness_mm);
+            txtHoleDiameter_mm.Text = FormatPredesignValue(holeDiameter_mm);
+            txtEdgeDistanceA_mm.Text = FormatPredesignValue(eMin_mm);
+            txtPlateWidth_mm.Text = FormatPredesignValue(bMin_mm);
+            UpdateSelectedMaterialInfo();
+            _geometryGuide.Invalidate();
+        }
+
+        private bool TryFindMinimumPinDiameter(
+            double fEd_kN,
+            MaterialGrade pinMaterial,
+            out double pinDiameter_mm)
+        {
+            pinDiameter_mm = 0.0;
+            double maximumDefinedThickness = pinMaterial.Ranges.Count == 0
+                ? 0.0
+                : pinMaterial.Ranges.Max(range => range.ThicknessMax_mm);
+
+            for (double candidate_mm = 10.0;
+                 candidate_mm < maximumDefinedThickness;
+                 candidate_mm += 10.0)
+            {
+                try
+                {
+                    MaterialPropertiesAtThickness properties =
+                        _materialDatabase!.GetProperties(pinMaterial.Id, candidate_mm);
+                    double area_mm2 = Math.PI * candidate_mm * candidate_mm / 4.0;
+                    double shearResistance_kN =
+                        0.6 * area_mm2 * properties.Fu_Nmm2 / 1.25 / 1000.0;
+
+                    if (shearResistance_kN >= fEd_kN / 2.0)
+                    {
+                        pinDiameter_mm = candidate_mm;
+                        return true;
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // A user-defined database may contain gaps between ranges.
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryFindMinimumBearingThickness(
+            double fEd_kN,
+            double pinDiameter_mm,
+            MaterialGrade lugMaterial,
+            out double plateThickness_mm,
+            out MaterialPropertiesAtThickness? plateProperties)
+        {
+            plateThickness_mm = 0.0;
+            plateProperties = null;
+            double maximumDefinedThickness = lugMaterial.Ranges.Count == 0
+                ? 0.0
+                : lugMaterial.Ranges.Max(range => range.ThicknessMax_mm);
+
+            for (double candidate_mm = 10.0;
+                 candidate_mm < maximumDefinedThickness;
+                 candidate_mm += 10.0)
+            {
+                try
+                {
+                    MaterialPropertiesAtThickness properties =
+                        _materialDatabase!.GetProperties(lugMaterial.Id, candidate_mm);
+                    double bearingResistance_kN =
+                        1.5 * candidate_mm * pinDiameter_mm * properties.Fy_Nmm2 / 1000.0;
+
+                    if (bearingResistance_kN >= fEd_kN)
+                    {
+                        plateThickness_mm = candidate_mm;
+                        plateProperties = properties;
+                        return true;
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // A user-defined database may contain gaps between ranges.
+                }
+            }
+
+            return false;
+        }
+
+        private static string FormatPredesignValue(double value) =>
+            value.ToString("0.###", System.Globalization.CultureInfo.CurrentCulture);
+
+        private void ShowPredesignMessage(string message)
+        {
+            MessageBox.Show(
+                this,
+                message,
+                IsGerman ? "Vorbemessung" : "Predesign",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
         private void LoadMaterialComboBox()
         {
             if (_materialDatabase == null)
@@ -1681,6 +2026,10 @@ namespace LascheApp
         }
         private string GetSelectedCheckDetail(string checkName)
         {
+            const string inputErrorPrefix = "INPUT_ERROR:";
+            if (checkName.StartsWith(inputErrorPrefix, StringComparison.Ordinal))
+                return checkName[inputErrorPrefix.Length..];
+
             // Section markers are stable in the original English report.
             // The extracted detail is translated only when it is displayed.
             string report = string.IsNullOrWhiteSpace(_lastEnglishReport)
@@ -1895,6 +2244,41 @@ namespace LascheApp
             return result;
         }
 
+        private void ShowCheckInputError(string originalMessage)
+        {
+            string message = LocalizeCheckInputError(originalMessage.Trim());
+            dgvCheckSummary.Rows.Clear();
+
+            int rowIndex = dgvCheckSummary.Rows.Add(
+                IsGerman ? "Eingabe" : "Input",
+                IsGerman ? "Eingabedaten prüfen" : "Check input data",
+                IsGerman ? "NICHT ERFÜLLT" : "NOT OK",
+                "");
+
+            DataGridViewRow row = dgvCheckSummary.Rows[rowIndex];
+            row.Tag = "INPUT_ERROR:" + message;
+            row.Selected = true;
+            txtSelectedCheckDetail.Text = message;
+            tabResults.SelectedTab = tabSummary;
+        }
+
+        private string LocalizeCheckInputError(string message)
+        {
+            if (!IsGerman)
+                return message;
+
+            return message switch
+            {
+                "Invalid input: cheek plate thickness tch must be greater than 0 if cheek plates are considered." =>
+                    "Ungültige Eingabe: Wenn die Verstärkungsbleche im Tragwiderstand berücksichtigt werden, muss tch größer als 0 sein.",
+                "Invalid input: Rch must be greater than 0 if cheek plates are present." =>
+                    "Ungültige Eingabe: Wenn Verstärkungsbleche vorhanden sind, muss Rch größer als 0 sein.",
+                "Invalid input: cheek plate weld throat a_weld must be greater than 0 if cheek plates are present." =>
+                    "Ungültige Eingabe: Wenn Verstärkungsbleche vorhanden sind, muss die Schweißnahtdicke a_weld größer als 0 sein.",
+                _ => message
+            };
+        }
+
         private int FindSectionHeadingIndex(
             string report,
             string marker,
@@ -2043,17 +2427,25 @@ namespace LascheApp
 
         private void btnLoadGuidance_Click(object sender, EventArgs e)
         {
-            string message =
-                "Recommended load input" + Environment.NewLine +
-                Environment.NewLine +
-                "F_char = characteristic rope force from the structural model" + Environment.NewLine +
-                Environment.NewLine +
-                "F_sher = 1.50 * F_char" + Environment.NewLine +
-                "F_Ed = 2.00 * F_sher";
+            string message = IsGerman
+                ? "Empfohlene Lasteingabe" + Environment.NewLine +
+                  Environment.NewLine +
+                  "F_sher = 1,50 * F_cable (für Transport: 1,15 * G)" + Environment.NewLine +
+                  "oder" + Environment.NewLine +
+                  "F_sher = HK-Schleppkraft (1,0-fach)" + Environment.NewLine +
+                  Environment.NewLine +
+                  "F_Ed = 2,00 * F_sher"
+                : "Recommended load input" + Environment.NewLine +
+                  Environment.NewLine +
+                  "F_sher = 1.50 * F_cable (for transport: 1.15 * G)" + Environment.NewLine +
+                  "or" + Environment.NewLine +
+                  "F_sher = HK dragging force (1.0-fold)" + Environment.NewLine +
+                  Environment.NewLine +
+                  "F_Ed = 2.00 * F_sher";
 
             MessageBox.Show(
                 message,
-                "Load input recommendation",
+                IsGerman ? "Empfehlung zur Lasteingabe" : "Load input recommendation",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
 

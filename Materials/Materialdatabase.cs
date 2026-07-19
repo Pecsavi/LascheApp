@@ -102,6 +102,26 @@ namespace LascheApp.Materials
             Save();
         }
 
+        public void ReplaceAll(IEnumerable<MaterialGrade> materials)
+        {
+            List<MaterialGrade> replacement = materials.ToList();
+
+            if (replacement.Any(m => string.IsNullOrWhiteSpace(m.Id)))
+                throw new ArgumentException("Every material must have an Id.");
+
+            if (replacement.GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
+                throw new ArgumentException("Material Id values must be unique.");
+
+            Materials = replacement;
+            Save();
+        }
+
+        public void RestoreDefaults()
+        {
+            Materials = CreateDefaultMaterials();
+            Save();
+        }
+
         private static JsonSerializerOptions JsonOptions()
         {
             return new JsonSerializerOptions

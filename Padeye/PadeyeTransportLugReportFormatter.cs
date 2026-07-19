@@ -293,65 +293,6 @@ namespace LascheApp.Padeye
             sb.AppendLine();
         }
 
-        private static void AppendLugInput(StringBuilder sb, PadeyeCheckResult result)
-        {
-            PadeyeBasicCheckInput basic = result.BasicResult.Input;
-            PadeyeBearingInput bearing = result.BearingResult.Input;
-            PadeyeDnvOutOfPlaneInput dnv = result.DnvOutOfPlaneResult.Input;
-
-            sb.AppendLine("\tInput");
-            sb.AppendLine("\t-----");
-            sb.AppendLine($"\tF_Ed = {Fmt2(basic.F_Ed_kN)} kN");
-            sb.AppendLine($"\tF_Ed,ser = {Fmt2(basic.F_Ed_ser_kN)} kN");
-            sb.AppendLine($"\tfy = {Fmt1(basic.MaterialFy_Nmm2)} N/mm²");
-            sb.AppendLine($"\tgammaM0 = {Fmt2(basic.GammaM0)}");
-            if (basic.IncludeCheekPlatesInBearing)
-            {
-                sb.AppendLine($"\ttpl = {Fmt1(basic.PlateThickness_mm)} mm");
-                sb.AppendLine($"\ttch = {Fmt1(basic.CheekPlateThickness_mm)} mm");
-                sb.AppendLine($"\tt = tpl + 2 * tch = {Fmt1(basic.TotalBearingThickness_mm)} mm");
-            }
-            else
-            {
-                sb.AppendLine($"\ttpl = {Fmt1(basic.PlateThickness_mm)} mm");
-
-                if (basic.CheekPlateThickness_mm > 0.0)
-                    sb.AppendLine($"\ttch = {Fmt1(basic.CheekPlateThickness_mm)} mm");
-
-                sb.AppendLine($"\tt = tpl = {Fmt1(basic.TotalBearingThickness_mm)} mm");
-            }
-
-            if (basic.IncludeCheekPlatesInBearingRequested &&
-                !basic.IncludeCheekPlatesInBearing)
-            {
-                sb.AppendLine(
-                    $"\tCheek plates requested for bearing resistance, but not included: " +
-                    $"Rch = {Fmt1(basic.CheekPlateRadiusRch_mm)} mm < required e for inclusion " +
-                    $"= min(e_A,incl = {Fmt1(basic.CheekPlateBearingRequiredE_MethodA_mm)} mm, " +
-                    $"e_B = {Fmt1(basic.CheekPlateBearingRequiredE_MethodB_mm)} mm) " +
-                    $"= {Fmt1(basic.CheekPlateBearingRequiredE_mm)} mm.");
-                sb.AppendLine("\tBearing resistance is calculated with tpl only.");
-            }
-
-            sb.AppendLine($"\td0 = {Fmt1(basic.HoleDiameter_mm)} mm");
-            sb.AppendLine($"\tDpin = {Fmt1(basic.ShackleDpin_mm)} mm");
-            sb.AppendLine($"\tB1 = {Fmt1(basic.ShackleB1_mm)} mm");
-            sb.AppendLine($"\tH_DNV = {Fmt1(basic.ShackleH_DNV_mm)} mm");
-            sb.AppendLine($"\tWLL = {Fmt2(basic.ShackleWLL_kN)} kN");
-            sb.AppendLine($"\tReplaceable pin checks: {(bearing.IsReplaceablePin ? "active" : "not active")}");
-
-            if (result.DnvOutOfPlaneResult.IsActive)
-            {
-                sb.AppendLine($"\talpha = {Fmt1(dnv.Alpha_deg)}°");
-                sb.AppendLine($"\tbeta = {Fmt3(dnv.Beta)}");
-                sb.AppendLine($"\te = {Fmt1(dnv.EndDistanceE_mm)} mm");
-                sb.AppendLine($"\tRch = {Fmt1(dnv.Rch_mm)} mm");
-                sb.AppendLine($"\ta_weld = {Fmt1(dnv.WeldA_mm)} mm");
-            }
-
-            sb.AppendLine();
-        }
-
         private static void AppendBasicPadeyeChecks(
             StringBuilder sb,
             PadeyeBasicCheckResult result,

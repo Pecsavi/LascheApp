@@ -83,6 +83,7 @@
             grpLoads = new GroupBox();
             groupBox1 = new GroupBox();
             btnLoadGuidance = new Button();
+            btnPredesign = new Button();
             grpLugGeometry = new GroupBox();
             grpTransportLug = new GroupBox();
             grpTensionLug = new GroupBox();
@@ -605,6 +606,7 @@
             // 
             // grpLugGeometry
             // 
+            grpLugGeometry.Controls.Add(btnPredesign);
             grpLugGeometry.Controls.Add(label2);
             grpLugGeometry.Controls.Add(txtPlateThickness_mm);
             grpLugGeometry.Controls.Add(label3);
@@ -627,7 +629,17 @@
             grpLugGeometry.TabIndex = 52;
             grpLugGeometry.TabStop = false;
             grpLugGeometry.Text = "Lug geometry";
-            // 
+            //
+            // btnPredesign
+            //
+            btnPredesign.Location = new Point(12, 166);
+            btnPredesign.Name = "btnPredesign";
+            btnPredesign.Size = new Size(155, 29);
+            btnPredesign.TabIndex = 46;
+            btnPredesign.Text = "Predesign";
+            btnPredesign.UseVisualStyleBackColor = true;
+            btnPredesign.Click += btnPredesign_Click;
+            //
             // grpTransportLug
             // 
             grpTransportLug.Controls.Add(label13);
@@ -919,6 +931,7 @@
         private GroupBox grpTensionLug;
         private GroupBox groupBox5;
         private Button btnLoadGuidance;
+        private Button btnPredesign;
         private ToolTip toolTip1;
         private GroupBox groupBox1;
         private TabControl tabResults;
