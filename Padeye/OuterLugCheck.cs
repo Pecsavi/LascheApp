@@ -86,7 +86,7 @@ namespace LascheApp.Padeye
                         Name = IsOk
                             ? $"Lug t2 check - Method {(MethodBSelected ? "B" : "A")}"
                             : !BearingResult.PinHoleGeometryOk
-                                ? "Lug t2 check NOT OK - pin diameter d must be smaller than d0"
+                                ? "Lug t2 check NOT OK - pin diameter d_t2 must be smaller than d0_t2"
                                 : !BearingResult.IsOk
                                     ? $"Lug t2 check NOT OK - increase t2 to at least {RequiredThicknessFromBearingRounded_mm:0.0} mm"
                                     : "Lug t2 geometry NOT OK - provided e and b do not satisfy Method A or B",

@@ -27,6 +27,8 @@ namespace LascheApp.Padeye
 
         // Two outer plates of a tension lug. Each plate carries half the load.
         public double OuterLugThicknessT2_mm { get; set; }
+        public double OuterLugHoleDiameter_mm { get; set; }
+        public double OuterLugPinDiameter_mm { get; set; }
         public double OuterLugFy_Nmm2 { get; set; }
         public double OuterLugFu_Nmm2 { get; set; }
 

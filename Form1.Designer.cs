@@ -80,6 +80,11 @@
             txtGapS_mm = new TextBox();
             lblOuterLugThicknessT2 = new Label();
             txtOuterLugThicknessT2_mm = new TextBox();
+            chkSeparateOuterLugPinGeometry = new CheckBox();
+            lblOuterLugHoleDiameter = new Label();
+            txtOuterLugHoleDiameter_mm = new TextBox();
+            lblOuterLugPinDiameter = new Label();
+            txtOuterLugPinDiameter_mm = new TextBox();
             grpLoads = new GroupBox();
             groupBox1 = new GroupBox();
             btnLoadGuidance = new Button();
@@ -560,6 +565,53 @@
             txtOuterLugThicknessT2_mm.Name = "txtOuterLugThicknessT2_mm";
             txtOuterLugThicknessT2_mm.Size = new Size(65, 23);
             txtOuterLugThicknessT2_mm.TabIndex = 49;
+            //
+            // chkSeparateOuterLugPinGeometry
+            //
+            chkSeparateOuterLugPinGeometry.AutoSize = true;
+            chkSeparateOuterLugPinGeometry.Location = new Point(270, 69);
+            chkSeparateOuterLugPinGeometry.Name = "chkSeparateOuterLugPinGeometry";
+            chkSeparateOuterLugPinGeometry.Size = new Size(207, 19);
+            chkSeparateOuterLugPinGeometry.TabIndex = 51;
+            chkSeparateOuterLugPinGeometry.Text = "Different outer lug pin geometry";
+            chkSeparateOuterLugPinGeometry.UseVisualStyleBackColor = true;
+            chkSeparateOuterLugPinGeometry.CheckedChanged += chkSeparateOuterLugPinGeometry_CheckedChanged;
+            //
+            // lblOuterLugHoleDiameter
+            //
+            lblOuterLugHoleDiameter.AutoSize = true;
+            lblOuterLugHoleDiameter.Location = new Point(18, 166);
+            lblOuterLugHoleDiameter.Name = "lblOuterLugHoleDiameter";
+            lblOuterLugHoleDiameter.Size = new Size(77, 15);
+            lblOuterLugHoleDiameter.TabIndex = 52;
+            lblOuterLugHoleDiameter.Text = "d0_t2 [mm]";
+            lblOuterLugHoleDiameter.Visible = false;
+            //
+            // txtOuterLugHoleDiameter_mm
+            //
+            txtOuterLugHoleDiameter_mm.Location = new Point(141, 163);
+            txtOuterLugHoleDiameter_mm.Name = "txtOuterLugHoleDiameter_mm";
+            txtOuterLugHoleDiameter_mm.Size = new Size(65, 23);
+            txtOuterLugHoleDiameter_mm.TabIndex = 53;
+            txtOuterLugHoleDiameter_mm.Visible = false;
+            //
+            // lblOuterLugPinDiameter
+            //
+            lblOuterLugPinDiameter.AutoSize = true;
+            lblOuterLugPinDiameter.Location = new Point(18, 197);
+            lblOuterLugPinDiameter.Name = "lblOuterLugPinDiameter";
+            lblOuterLugPinDiameter.Size = new Size(70, 15);
+            lblOuterLugPinDiameter.TabIndex = 54;
+            lblOuterLugPinDiameter.Text = "d_t2 [mm]";
+            lblOuterLugPinDiameter.Visible = false;
+            //
+            // txtOuterLugPinDiameter_mm
+            //
+            txtOuterLugPinDiameter_mm.Location = new Point(141, 194);
+            txtOuterLugPinDiameter_mm.Name = "txtOuterLugPinDiameter_mm";
+            txtOuterLugPinDiameter_mm.Size = new Size(65, 23);
+            txtOuterLugPinDiameter_mm.TabIndex = 55;
+            txtOuterLugPinDiameter_mm.Visible = false;
             // 
             // grpLoads
             // 
@@ -661,6 +713,11 @@
             // grpTensionLug
             // 
             grpTensionLug.Controls.Add(cmbPinMaterials);
+            grpTensionLug.Controls.Add(chkSeparateOuterLugPinGeometry);
+            grpTensionLug.Controls.Add(lblOuterLugHoleDiameter);
+            grpTensionLug.Controls.Add(txtOuterLugHoleDiameter_mm);
+            grpTensionLug.Controls.Add(lblOuterLugPinDiameter);
+            grpTensionLug.Controls.Add(txtOuterLugPinDiameter_mm);
             grpTensionLug.Controls.Add(label10);
             grpTensionLug.Controls.Add(lblPinFy);
             grpTensionLug.Controls.Add(lblPinFu);
@@ -925,6 +982,11 @@
         private TextBox txtGapS_mm;
         private Label lblOuterLugThicknessT2;
         private TextBox txtOuterLugThicknessT2_mm;
+        private CheckBox chkSeparateOuterLugPinGeometry;
+        private Label lblOuterLugHoleDiameter;
+        private TextBox txtOuterLugHoleDiameter_mm;
+        private Label lblOuterLugPinDiameter;
+        private TextBox txtOuterLugPinDiameter_mm;
         private GroupBox grpLoads;
         private GroupBox grpLugGeometry;
         private GroupBox grpTransportLug;

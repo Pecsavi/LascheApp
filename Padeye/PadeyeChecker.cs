@@ -119,8 +119,12 @@ namespace LascheApp.Padeye
                 ThicknessT2_mm = input.OuterLugThicknessT2_mm,
                 PlateWidth_mm = input.PlateWidth_mm,
                 EndDistanceE_mm = input.EndDistanceE_mm,
-                HoleDiameter_mm = input.HoleDiameter_mm,
-                PinDiameter_mm = input.ShackleDpin_mm,
+                HoleDiameter_mm = input.OuterLugHoleDiameter_mm > 0.0
+                    ? input.OuterLugHoleDiameter_mm
+                    : input.HoleDiameter_mm,
+                PinDiameter_mm = input.OuterLugPinDiameter_mm > 0.0
+                    ? input.OuterLugPinDiameter_mm
+                    : input.ShackleDpin_mm,
                 Fy_Nmm2 = input.OuterLugFy_Nmm2,
                 Fu_Nmm2 = input.OuterLugFu_Nmm2,
                 E_Nmm2 = input.E_Nmm2,

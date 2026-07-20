@@ -391,6 +391,9 @@ namespace LascheApp
             label9.Text = de ? "Bolzendurchmesser d [mm]" : "Pin diameter d [mm]";
             lblOuterLugThicknessT2.Text = de ? "Außenlasche t2 [mm]" : "Outer lug t2 [mm]";
             lblGapS.Text = de ? "Spalt s [mm]" : "Gap s [mm]";
+            chkSeparateOuterLugPinGeometry.Text = de
+                ? "Andere Außenlaschenbohrung"
+                : "Different outer lug pin geometry";
 
             // German engineering terms are considerably longer. Keep a
             // dedicated German layout so labels never run into input fields.
@@ -481,6 +484,7 @@ namespace LascheApp
                 ("Governing check:", "Maßgebender Nachweis:"),
                 ("Failed check(s):", "Nicht erfüllte Nachweise:"),
                 ("Pin-hole geometry not fulfilled: pin diameter d must be smaller than hole diameter d0", "Bolzen-Loch-Geometrie nicht erfüllt: Bolzendurchmesser d muss kleiner als Lochdurchmesser d0 sein"),
+                ("pin diameter d_t2 must be smaller than d0_t2", "Bolzendurchmesser d_t2 muss kleiner als Lochdurchmesser d0_t2 sein"),
                 ("Contact stress of the replaceable pin not fulfilled", "Kontaktspannungsnachweis des austauschbaren Bolzens nicht erfüllt"),
                 ("DNV bearing pressure for angled pull not fulfilled", "DNV-Flächenpressungsnachweis bei Schrägzug nicht erfüllt"),
                 ("Tear-out by angled pull according to DNV standard not fulfilled", "Ausreißnachweis bei Schrägzug nach DNV nicht erfüllt"),
@@ -501,6 +505,8 @@ namespace LascheApp
                 ("Geometry checks", "Geometrische Nachweise"),
                 ("Utilization checks", "Ausnutzungsnachweise"),
                 ("Calculation", "Berechnung"), ("Lug result:", "Ergebnis Lasche:"),
+                ("2.1. Lug", "2.1. Lasche"),
+                ("2.2. Pin", "2.2. Bolzen"),
                 ("Pin result:", "Ergebnis Bolzen:"),
                 ("Outer lug plates t2", "Außenlaschen t2"),
                 ("Outer lug plate", "Außenlasche"),
@@ -1039,6 +1045,8 @@ namespace LascheApp
             lblOuterLugThicknessT2.Visible = isTensionLug;
             txtGapS_mm.Visible = isTensionLug;
             lblGapS.Visible = isTensionLug;
+            chkSeparateOuterLugPinGeometry.Visible = isTensionLug;
+            UpdateOuterLugPinGeometryUi();
 
             grpTransportLug.Visible = isTransportLug;
             grpTensionLug.Visible = isTensionLug;
@@ -1490,6 +1498,25 @@ namespace LascheApp
                     txtBasicCheckResult.Text = "Invalid input: gap s [mm]";
                     return;
                 }
+
+                double outerLugHoleDiameter_mm = holeDiameter_mm;
+                double outerLugPinDiameter_mm = tensionPinDiameter_mm;
+                if (chkSeparateOuterLugPinGeometry.Checked)
+                {
+                    if (!TryReadDouble(txtOuterLugHoleDiameter_mm.Text, out outerLugHoleDiameter_mm) ||
+                        outerLugHoleDiameter_mm <= 0.0)
+                    {
+                        txtBasicCheckResult.Text = "Invalid input: outer lug hole diameter d0_t2 [mm]";
+                        return;
+                    }
+
+                    if (!TryReadDouble(txtOuterLugPinDiameter_mm.Text, out outerLugPinDiameter_mm) ||
+                        outerLugPinDiameter_mm <= 0.0)
+                    {
+                        txtBasicCheckResult.Text = "Invalid input: outer lug pin diameter d_t2 [mm]";
+                        return;
+                    }
+                }
                 if (!TryReadOptionalDoubleControl("txtCheekPlateThickness_mm", 0.0, out double tensionCheekPlateThickness_mm, out string tensionCheekThicknessError))
                 {
                     txtBasicCheckResult.Text = tensionCheekThicknessError;
@@ -1629,6 +1656,8 @@ namespace LascheApp
                     EndDistanceE_mm = endDistanceE_mm,
 
                     OuterLugThicknessT2_mm = outerLugThicknessT2_mm,
+                    OuterLugHoleDiameter_mm = outerLugHoleDiameter_mm,
+                    OuterLugPinDiameter_mm = outerLugPinDiameter_mm,
                     OuterLugFy_Nmm2 = outerLugMaterialProps.Fy_Nmm2,
                     OuterLugFu_Nmm2 = outerLugMaterialProps.Fu_Nmm2,
 
@@ -2352,6 +2381,10 @@ namespace LascheApp
                     "Ungültige Eingabe: Wenn Verstärkungsbleche vorhanden sind, muss Rch größer als 0 sein.",
                 "Invalid input: cheek plate weld throat a_weld must be greater than 0 if cheek plates are present." =>
                     "Ungültige Eingabe: Wenn Verstärkungsbleche vorhanden sind, muss die Schweißnahtdicke a_weld größer als 0 sein.",
+                "Invalid input: outer lug hole diameter d0_t2 [mm]" =>
+                    "Ungültige Eingabe: Lochdurchmesser der Außenlasche d0_t2 [mm].",
+                "Invalid input: outer lug pin diameter d_t2 [mm]" =>
+                    "Ungültige Eingabe: Bolzendurchmesser der Außenlasche d_t2 [mm].",
                 _ => message
             };
         }
@@ -2495,6 +2528,23 @@ namespace LascheApp
         private void txtTensionPinDiameter_mm_TextChanged(object sender, EventArgs e)
         {
             UpdateSelectedPinMaterialInfo();
+        }
+
+        private void chkSeparateOuterLugPinGeometry_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateOuterLugPinGeometryUi();
+        }
+
+        private void UpdateOuterLugPinGeometryUi()
+        {
+            bool visible =
+                GetSelectedLugType() == LugType.TensionLug &&
+                chkSeparateOuterLugPinGeometry.Checked;
+
+            lblOuterLugHoleDiameter.Visible = visible;
+            txtOuterLugHoleDiameter_mm.Visible = visible;
+            lblOuterLugPinDiameter.Visible = visible;
+            txtOuterLugPinDiameter_mm.Visible = visible;
         }
 
         private void cmbLugType_SelectedIndexChanged(object sender, EventArgs e)
