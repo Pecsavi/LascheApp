@@ -149,6 +149,77 @@ namespace LascheApp
             };
             _cmbLanguage.SelectedIndex = LoadLanguagePreference();
         }
+        private void ConfigurePreviewPrintButton(PrintPreviewDialog preview)
+        {
+            ToolStrip? toolStrip = FindToolStrip(preview);
+
+            if (toolStrip == null)
+                return;
+
+            // A PrintPreviewDialog első ToolStripButton eleme a beépített
+            // közvetlen nyomtatógomb.
+            ToolStripButton? originalPrintButton =
+                toolStrip.Items
+                    .OfType<ToolStripButton>()
+                    .FirstOrDefault();
+
+            if (originalPrintButton != null)
+                originalPrintButton.Visible = false;
+
+            ToolStripButton printButton = new()
+            {
+                Text = IsGerman ? "Drucken..." : "Print...",
+                DisplayStyle = ToolStripItemDisplayStyle.Text
+            };
+
+            printButton.Click += (_, _) =>
+            {
+                using PrintDialog printDialog = new()
+                {
+                    Document = _reportPrintDocument,
+                    UseEXDialog = true,
+                    AllowSomePages = true,
+                    AllowSelection = false
+                };
+
+                if (printDialog.ShowDialog(preview) != DialogResult.OK)
+                    return;
+
+                try
+                {
+                    _reportPrintDocument.Print();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        preview,
+                        IsGerman
+                            ? $"Der Druck konnte nicht gestartet werden:\n{ex.Message}"
+                            : $"Printing could not be started:\n{ex.Message}",
+                        IsGerman ? "Druckfehler" : "Print error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            };
+
+            toolStrip.Items.Insert(0, printButton);
+        }
+
+        private static ToolStrip? FindToolStrip(Control parent)
+        {
+            foreach (Control child in parent.Controls)
+            {
+                if (child is ToolStrip toolStrip)
+                    return toolStrip;
+
+                ToolStrip? nested = FindToolStrip(child);
+
+                if (nested != null)
+                    return nested;
+            }
+
+            return null;
+        }
 
         private void PrintReport_Click(object? sender, EventArgs e)
         {
@@ -166,6 +237,12 @@ namespace LascheApp
                 KeyPreview = true
             };
             ConfigurePreviewNavigation(preview);
+
+            preview.Shown += (_, _) =>
+            {
+                ConfigurePreviewPrintButton(preview);
+            };
+
             preview.ShowDialog(this);
         }
 
