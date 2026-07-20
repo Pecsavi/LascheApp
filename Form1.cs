@@ -929,8 +929,11 @@ namespace LascheApp
             return null;
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private async void Form1_Load(object sender, EventArgs e)
         {
+            LoggerService.Initialize();
+            _ = LoggerService.TrackEventAsync("application_started");
+
             string dataDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "LascheApp",
@@ -958,6 +961,17 @@ namespace LascheApp
             LoadPinMaterialComboBox();
 
             UpdateSelectedShackleInfo();
+
+            Version? newerVersion = await CheckVersion.GetNewerVersionAsync();
+            if (newerVersion != null && !IsDisposed)
+            {
+                MessageBox.Show(
+                    this,
+                    $"A newer LascheApp version is available.\n\nInstalled: {LoggerService.GetApplicationVersion()}\nAvailable: {newerVersion}",
+                    "Update available",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
             UpdateSelectedMaterialInfo();
             UpdateSelectedPinMaterialInfo();
 
@@ -1722,6 +1736,7 @@ namespace LascheApp
 
                 FillCheckSummary(tensionPadeyeResult, pinResult);
                 tabResults.SelectedTab = tabSummary;
+                _ = LoggerService.TrackEventAsync("verification_completed");
 
                 return;
             }
@@ -1833,6 +1848,7 @@ namespace LascheApp
 
             FillCheckSummary(padeyeResult);
             tabResults.SelectedTab = tabSummary;
+            _ = LoggerService.TrackEventAsync("verification_completed");
 
         }
         private LugType GetSelectedLugType()

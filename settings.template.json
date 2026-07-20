@@ -1,0 +1,6 @@
+{
+  "ProgramName": "LascheApp",
+  "VersionPath": "https://example.invalid/programsInfo.json",
+  "RemoteLogUrl": "https://example.invalid/LascheApp/log.php",
+  "TelemetryEnabled": false
+}

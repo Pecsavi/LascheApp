@@ -4,6 +4,13 @@
 *.userosscache
 *.sln.docstates
 settings.json
+Settings.json
+*.pfx
+*.p12
+*.snk
+signing*.ps1
+signing*.cmd
+signing*.bat
 droppedfiles.txt
 
 # Build results
