@@ -184,14 +184,14 @@
             txtLoad_kN.Location = new Point(94, 53);
             txtLoad_kN.Name = "txtLoad_kN";
             txtLoad_kN.Size = new Size(65, 23);
-            txtLoad_kN.TabIndex = 5;
+            txtLoad_kN.TabIndex = 1;
             // 
             // txtPlateThickness_mm
             // 
             txtPlateThickness_mm.Location = new Point(98, 25);
             txtPlateThickness_mm.Name = "txtPlateThickness_mm";
             txtPlateThickness_mm.Size = new Size(69, 23);
-            txtPlateThickness_mm.TabIndex = 6;
+            txtPlateThickness_mm.TabIndex = 0;
             txtPlateThickness_mm.TextChanged += txtPlateThickness_mm_TextChanged;
             // 
             // txtHoleDiameter_mm
@@ -200,7 +200,7 @@
             txtHoleDiameter_mm.Location = new Point(98, 57);
             txtHoleDiameter_mm.Name = "txtHoleDiameter_mm";
             txtHoleDiameter_mm.Size = new Size(69, 23);
-            txtHoleDiameter_mm.TabIndex = 7;
+            txtHoleDiameter_mm.TabIndex = 1;
             // 
             // label1
             // 
@@ -311,7 +311,7 @@
             txtPlateWidth_mm.Location = new Point(98, 88);
             txtPlateWidth_mm.Name = "txtPlateWidth_mm";
             txtPlateWidth_mm.Size = new Size(69, 23);
-            txtPlateWidth_mm.TabIndex = 14;
+            txtPlateWidth_mm.TabIndex = 2;
             // 
             // label4
             // 
@@ -336,14 +336,14 @@
             txtEdgeDistanceA_mm.Location = new Point(98, 119);
             txtEdgeDistanceA_mm.Name = "txtEdgeDistanceA_mm";
             txtEdgeDistanceA_mm.Size = new Size(69, 23);
-            txtEdgeDistanceA_mm.TabIndex = 18;
+            txtEdgeDistanceA_mm.TabIndex = 3;
             // 
             // txtLoadSer_kN
             // 
             txtLoadSer_kN.Location = new Point(94, 21);
             txtLoadSer_kN.Name = "txtLoadSer_kN";
             txtLoadSer_kN.Size = new Size(65, 23);
-            txtLoadSer_kN.TabIndex = 21;
+            txtLoadSer_kN.TabIndex = 0;
             // 
             // label7
             // 
@@ -651,6 +651,7 @@
             btnLoadGuidance.Name = "btnLoadGuidance";
             btnLoadGuidance.Size = new Size(26, 26);
             btnLoadGuidance.TabIndex = 47;
+            btnLoadGuidance.TabStop = false;
             btnLoadGuidance.Text = "*?";
             toolTip1.SetToolTip(btnLoadGuidance, "Load input recommendation");
             btnLoadGuidance.UseVisualStyleBackColor = true;

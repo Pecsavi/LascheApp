@@ -24,6 +24,8 @@ namespace LascheApp
         private readonly Label _projectLabel = new();
         private readonly Label _subjectLabel = new();
         private readonly Button _settingsButton = new();
+        private readonly Button _saveProjectButton = new();
+        private readonly Button _openProjectButton = new();
         private readonly ContextMenuStrip _settingsMenu = new();
         private readonly ToolStripMenuItem _languageMenuItem = new();
         private readonly ToolStripMenuItem _englishMenuItem = new("English");
@@ -90,11 +92,23 @@ namespace LascheApp
             _settingsButton.Location = new Point(_projectGroup.ClientSize.Width - 147, 25);
             _settingsButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             _settingsButton.Click += SettingsButton_Click;
+            _openProjectButton.Text = "Open project";
+            _openProjectButton.Size = new Size(125, 29);
+            _openProjectButton.Location = new Point(_projectGroup.ClientSize.Width - 407, 25);
+            _openProjectButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            _openProjectButton.Click += OpenProjectButton_Click;
+            _saveProjectButton.Text = "Save project";
+            _saveProjectButton.Size = new Size(125, 29);
+            _saveProjectButton.Location = new Point(_projectGroup.ClientSize.Width - 277, 25);
+            _saveProjectButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            _saveProjectButton.Click += SaveProjectButton_Click;
+            _txtProjectNumber.TextChanged += ProjectMetadata_TextChanged;
+            _txtVerificationSubject.TextChanged += ProjectMetadata_TextChanged;
             ConfigureSettingsMenu();
             _projectGroup.Controls.AddRange(new Control[]
             {
                 _projectLabel, _txtProjectNumber, _subjectLabel, _txtVerificationSubject,
-                _settingsButton
+                _openProjectButton, _saveProjectButton, _settingsButton
             });
             Controls.Add(_projectGroup);
             _projectGroup.BringToFront();
@@ -357,6 +371,8 @@ namespace LascheApp
             _projectLabel.Text = de ? "Projektnummer" : "Project number";
             _subjectLabel.Text = de ? "Gegenstand der Prüfung" : "Subject of verification";
             _settingsButton.Text = de ? "⚙ Einstellungen" : "⚙ Settings";
+            _openProjectButton.Text = de ? "Projekt öffnen" : "Open project";
+            _saveProjectButton.Text = de ? "Projekt speichern" : "Save project";
             _languageMenuItem.Text = de ? "Sprache" : "Language";
             _databaseMenuItem.Text = de ? "Datenbank" : "Database";
             _materialDatabaseMenuItem.Text = de ? "Werkstoffe" : "Material";
@@ -995,6 +1011,280 @@ namespace LascheApp
         private void SettingsButton_Click(object? sender, EventArgs e)
         {
             _settingsMenu.Show(_settingsButton, new Point(0, _settingsButton.Height));
+        }
+
+        private void SaveProjectButton_Click(object? sender, EventArgs e)
+        {
+            using SaveFileDialog dialog = new()
+            {
+                Title = IsGerman ? "Projekt speichern" : "Save project",
+                Filter = IsGerman
+                    ? "LascheApp-Projekt (*.lugproj)|*.lugproj|JSON-Datei (*.json)|*.json|Alle Dateien (*.*)|*.*"
+                    : "LascheApp project (*.lugproj)|*.lugproj|JSON file (*.json)|*.json|All files (*.*)|*.*",
+                DefaultExt = "lugproj",
+                AddExtension = true,
+                OverwritePrompt = true,
+                FileName = CreateSuggestedProjectFileName()
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                ProjectFile project = CaptureProjectFile();
+                string json = System.Text.Json.JsonSerializer.Serialize(
+                    project,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(dialog.FileName, json, new System.Text.UTF8Encoding(false));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    this,
+                    IsGerman
+                        ? $"Das Projekt konnte nicht gespeichert werden: {ex.Message}"
+                        : $"The project could not be saved: {ex.Message}",
+                    IsGerman ? "Projekt speichern" : "Save project",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private void OpenProjectButton_Click(object? sender, EventArgs e)
+        {
+            using OpenFileDialog dialog = new()
+            {
+                Title = IsGerman ? "Projekt öffnen" : "Open project",
+                Filter = IsGerman
+                    ? "LascheApp-Projekt (*.lugproj)|*.lugproj|JSON-Datei (*.json)|*.json|Alle Dateien (*.*)|*.*"
+                    : "LascheApp project (*.lugproj)|*.lugproj|JSON file (*.json)|*.json|All files (*.*)|*.*",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                string json = File.ReadAllText(dialog.FileName);
+                ProjectFile? project = System.Text.Json.JsonSerializer.Deserialize<ProjectFile>(json);
+                if (project == null || project.Format != ProjectFile.ExpectedFormat)
+                    throw new InvalidDataException(IsGerman
+                        ? "Die Datei ist kein gültiges LascheApp-Projekt."
+                        : "The file is not a valid LascheApp project.");
+                if (project.Version < 1 || project.Version > ProjectFile.CurrentVersion)
+                    throw new InvalidDataException(IsGerman
+                        ? $"Die Projektdateiversion {project.Version} wird nicht unterstützt."
+                        : $"Project file version {project.Version} is not supported.");
+
+                ApplyProjectFile(project);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    this,
+                    IsGerman
+                        ? $"Das Projekt konnte nicht geöffnet werden: {ex.Message}"
+                        : $"The project could not be opened: {ex.Message}",
+                    IsGerman ? "Projekt öffnen" : "Open project",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private ProjectFile CaptureProjectFile() => new()
+        {
+            SavedUtc = DateTime.UtcNow,
+            ProjectNumber = _txtProjectNumber.Text,
+            VerificationSubject = _txtVerificationSubject.Text,
+            LugType = GetSelectedLugType().ToString(),
+            LugMaterialId = GetSelectedMaterial()?.Id ?? "",
+            PinMaterialId = GetSelectedPinMaterial()?.Id ?? "",
+            ShackleId = GetSelectedShackle()?.Id ?? "",
+            LoadSer_kN = txtLoadSer_kN.Text,
+            LoadEd_kN = txtLoad_kN.Text,
+            PlateThickness_mm = txtPlateThickness_mm.Text,
+            HoleDiameter_mm = txtHoleDiameter_mm.Text,
+            PlateWidth_mm = txtPlateWidth_mm.Text,
+            EndDistanceE_mm = txtEdgeDistanceA_mm.Text,
+            CheekPlateThickness_mm = txtCheekPlateThickness_mm.Text,
+            CheekPlateRadius_mm = txtRch_mm.Text,
+            CheekPlateWeldA_mm = txtCheekPlateWeldA_mm.Text,
+            IncludeCheekPlatesInBearing = chkIncludeCheekPlatesInBearing.Checked,
+            ReplaceablePinChecks = chkReplaceablePin.Checked,
+            DnvOutOfPlaneAngle_deg = txtDnvOutOfPlaneAngle_deg.Text,
+            TensionPinDiameter_mm = txtTensionPinDiameter_mm.Text,
+            OuterLugThicknessT2_mm = txtOuterLugThicknessT2_mm.Text,
+            GapS_mm = txtGapS_mm.Text,
+            SeparateOuterLugPinGeometry = chkSeparateOuterLugPinGeometry.Checked,
+            OuterLugHoleDiameter_mm = txtOuterLugHoleDiameter_mm.Text,
+            OuterLugPinDiameter_mm = txtOuterLugPinDiameter_mm.Text
+        };
+
+        private void ApplyProjectFile(ProjectFile project)
+        {
+            _lastPadeyeResult = null;
+            _lastPinResult = null;
+            _lastEnglishReport = "";
+
+            if (Enum.TryParse(project.LugType, ignoreCase: true, out LugType lugType))
+                cmbLugType.SelectedValue = lugType;
+
+            List<string> missingDatabaseItems = new();
+            if (!SelectDatabaseItem(cmbMaterials, project.LugMaterialId))
+                missingDatabaseItems.Add(IsGerman ? "Laschenwerkstoff" : "lug material");
+            if (!SelectDatabaseItem(cmbPinMaterials, project.PinMaterialId))
+                missingDatabaseItems.Add(IsGerman ? "Bolzenwerkstoff" : "pin material");
+            if (!SelectDatabaseItem(cmbShackles, project.ShackleId))
+                missingDatabaseItems.Add(IsGerman ? "Schäkel" : "shackle");
+
+            _txtProjectNumber.Text = project.ProjectNumber ?? "";
+            _txtVerificationSubject.Text = project.VerificationSubject ?? "";
+            txtLoadSer_kN.Text = project.LoadSer_kN ?? "";
+            txtLoad_kN.Text = project.LoadEd_kN ?? "";
+            txtPlateThickness_mm.Text = project.PlateThickness_mm ?? "";
+            txtHoleDiameter_mm.Text = project.HoleDiameter_mm ?? "";
+            txtPlateWidth_mm.Text = project.PlateWidth_mm ?? "";
+            txtEdgeDistanceA_mm.Text = project.EndDistanceE_mm ?? "";
+            txtCheekPlateThickness_mm.Text = project.CheekPlateThickness_mm ?? "";
+            txtRch_mm.Text = project.CheekPlateRadius_mm ?? "";
+            txtCheekPlateWeldA_mm.Text = project.CheekPlateWeldA_mm ?? "";
+            chkIncludeCheekPlatesInBearing.Checked = project.IncludeCheekPlatesInBearing;
+            chkReplaceablePin.Checked = project.ReplaceablePinChecks;
+            txtDnvOutOfPlaneAngle_deg.Text = project.DnvOutOfPlaneAngle_deg ?? "";
+            txtTensionPinDiameter_mm.Text = project.TensionPinDiameter_mm ?? "";
+            txtOuterLugThicknessT2_mm.Text = project.OuterLugThicknessT2_mm ?? "";
+            txtGapS_mm.Text = project.GapS_mm ?? "";
+            chkSeparateOuterLugPinGeometry.Checked = project.SeparateOuterLugPinGeometry;
+            txtOuterLugHoleDiameter_mm.Text = project.OuterLugHoleDiameter_mm ?? "";
+            txtOuterLugPinDiameter_mm.Text = project.OuterLugPinDiameter_mm ?? "";
+
+            UpdateLugTypeUi();
+            UpdateSelectedMaterialInfo();
+            UpdateSelectedPinMaterialInfo();
+            UpdateSelectedShackleInfo();
+            _geometryGuide.Invalidate();
+
+            dgvCheckSummary.Rows.Clear();
+            txtSelectedCheckDetail.Clear();
+            txtBasicCheckResult.Clear();
+            tabResults.SelectedTab = tabSummary;
+
+            if (missingDatabaseItems.Count > 0)
+            {
+                MessageBox.Show(
+                    this,
+                    IsGerman
+                        ? "Einige gespeicherte Datenbankeinträge sind in der aktuellen Datenbank nicht vorhanden: " +
+                          string.Join(", ", missingDatabaseItems) + ". Bitte wählen Sie Ersatzwerte."
+                        : "Some saved database entries are not present in the current database: " +
+                          string.Join(", ", missingDatabaseItems) + ". Select replacement values before verification.",
+                    IsGerman ? "Projekt geöffnet" : "Project opened",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+        }
+
+        private static bool SelectDatabaseItem(ComboBox comboBox, string? id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return true;
+
+            comboBox.SelectedValue = id;
+            return string.Equals(
+                comboBox.SelectedValue?.ToString(),
+                id,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private string CreateSuggestedProjectFileName()
+        {
+            string source = string.IsNullOrWhiteSpace(_txtProjectNumber.Text)
+                ? "LugProject"
+                : _txtProjectNumber.Text.Trim();
+            foreach (char invalidCharacter in Path.GetInvalidFileNameChars())
+                source = source.Replace(invalidCharacter, '_');
+            return source + ".lugproj";
+        }
+
+        private void ProjectMetadata_TextChanged(object? sender, EventArgs e)
+        {
+            RefreshReportMetadata();
+        }
+
+        private void RefreshReportMetadata()
+        {
+            if (_lastPadeyeResult == null)
+                return;
+
+            if (_lastPinResult != null)
+            {
+                txtBasicCheckResult.Text = LocalizeReport(
+                    PadeyeTensionLugReportFormatter.Format(
+                        _lastPadeyeResult,
+                        _lastPinResult,
+                        new PadeyeTensionLugReportInfo
+                        {
+                            Project = _txtProjectNumber.Text.Trim(),
+                            Subject = _txtVerificationSubject.Text.Trim(),
+                            PreparedBy = Environment.UserName,
+                            Date = DateTime.Today,
+                            PlateMaterial = GetSelectedMaterial()?.Name ?? "",
+                            PinMaterial = GetSelectedPinMaterial()?.Name ?? ""
+                        }));
+            }
+            else
+            {
+                txtBasicCheckResult.Text = LocalizeReport(
+                    PadeyeTransportLugReportFormatter.Format(
+                        _lastPadeyeResult,
+                        new PadeyeTransportLugReportInfo
+                        {
+                            Project = _txtProjectNumber.Text.Trim(),
+                            Subject = _txtVerificationSubject.Text.Trim(),
+                            PreparedBy = Environment.UserName,
+                            Date = DateTime.Today,
+                            PlateMaterial = GetSelectedMaterial()?.Name ?? "",
+                            ShackleName = GetSelectedShackle()?.Name ?? ""
+                        }));
+            }
+
+            ShowSelectedCheckDetail();
+        }
+
+        private sealed class ProjectFile
+        {
+            public const string ExpectedFormat = "LascheApp.Project";
+            public const int CurrentVersion = 1;
+            public string Format { get; set; } = ExpectedFormat;
+            public int Version { get; set; } = CurrentVersion;
+            public DateTime SavedUtc { get; set; }
+            public string? ProjectNumber { get; set; }
+            public string? VerificationSubject { get; set; }
+            public string? LugType { get; set; }
+            public string? LugMaterialId { get; set; }
+            public string? PinMaterialId { get; set; }
+            public string? ShackleId { get; set; }
+            public string? LoadSer_kN { get; set; }
+            public string? LoadEd_kN { get; set; }
+            public string? PlateThickness_mm { get; set; }
+            public string? HoleDiameter_mm { get; set; }
+            public string? PlateWidth_mm { get; set; }
+            public string? EndDistanceE_mm { get; set; }
+            public string? CheekPlateThickness_mm { get; set; }
+            public string? CheekPlateRadius_mm { get; set; }
+            public string? CheekPlateWeldA_mm { get; set; }
+            public bool IncludeCheekPlatesInBearing { get; set; }
+            public bool ReplaceablePinChecks { get; set; }
+            public string? DnvOutOfPlaneAngle_deg { get; set; }
+            public string? TensionPinDiameter_mm { get; set; }
+            public string? OuterLugThicknessT2_mm { get; set; }
+            public string? GapS_mm { get; set; }
+            public bool SeparateOuterLugPinGeometry { get; set; }
+            public string? OuterLugHoleDiameter_mm { get; set; }
+            public string? OuterLugPinDiameter_mm { get; set; }
         }
 
         private void OpenDatabaseSettings(int selectedTab)
