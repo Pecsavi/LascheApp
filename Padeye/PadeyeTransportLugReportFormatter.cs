@@ -631,22 +631,22 @@ namespace LascheApp.Padeye
 
         private static string Fmt1(double value)
         {
-            return value.ToString("0.0");
+            return ReportNumberFormatter.Format(value, 1);
         }
 
         private static string Fmt2(double value)
         {
-            return value.ToString("0.00");
+            return ReportNumberFormatter.Format(value, 2);
         }
 
         private static string Fmt3(double value)
         {
-            return value.ToString("0.000");
+            return ReportNumberFormatter.Format(value, 3);
         }
 
         private static string FmtEta(double value)
         {
-            return value.ToString("0.000");
+            return ReportNumberFormatter.Format(value, 3);
         }
     }
 }

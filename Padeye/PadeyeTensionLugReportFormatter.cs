@@ -146,21 +146,16 @@ namespace LascheApp.Padeye
                 sb.AppendLine($"t = tpl = {Fmt1(basic.PlateThickness_mm)} mm");
             }
 
-            sb.AppendLine($"d0 = {Fmt1(basic.HoleDiameter_mm)} mm");
-            sb.AppendLine($"b = {Fmt1(basic.PlateWidth_mm)} mm");
-            sb.AppendLine($"e = {Fmt1(e_mm)} mm");
-            if (basic.CheekPlateThickness_mm > 0.0)
-            {
-                sb.AppendLine($"Rch = {Fmt1(dnv.Rch_mm)} mm");
-                sb.AppendLine($"a_weld = {Fmt1(dnv.WeldA_mm)} mm");
-            }
-            sb.AppendLine();
-            sb.AppendLine($"Pin diameter d = {Fmt1(pin.PinDiameter_mm)} mm");
-
             if (pin.MomentCalculatedFromTensionLugGeometry)
             {
                 sb.AppendLine($"t2 = {Fmt1(pin.OuterLugThicknessT2_mm)} mm");
                 sb.AppendLine($"s = {Fmt1(pin.GapS_mm)} mm");
+            }
+
+            sb.AppendLine($"d0 = {Fmt1(basic.HoleDiameter_mm)} mm");
+            sb.AppendLine($"d = {Fmt1(pin.PinDiameter_mm)} mm");
+            if (pin.MomentCalculatedFromTensionLugGeometry)
+            {
                 OuterLugCheckInput outer = lugResult.OuterLugResult.Input;
                 if (outer.HoleDiameter_mm != basic.HoleDiameter_mm ||
                     outer.PinDiameter_mm != pin.PinDiameter_mm)
@@ -169,7 +164,13 @@ namespace LascheApp.Padeye
                     sb.AppendLine($"d_t2 = {Fmt1(outer.PinDiameter_mm)} mm");
                 }
             }
-
+            sb.AppendLine($"b = {Fmt1(basic.PlateWidth_mm)} mm");
+            sb.AppendLine($"e = {Fmt1(e_mm)} mm");
+            if (basic.CheekPlateThickness_mm > 0.0)
+            {
+                sb.AppendLine($"Rch = {Fmt1(dnv.Rch_mm)} mm");
+                sb.AppendLine($"a_weld = {Fmt1(dnv.WeldA_mm)} mm");
+            }
             sb.AppendLine();
             sb.AppendLine($"Replaceable pin checks: {(bearing.IsReplaceablePin ? "active" : "not active")}");
             sb.AppendLine();
@@ -545,8 +546,17 @@ namespace LascheApp.Padeye
 
             sb.AppendLine("\tPin bending");
             sb.AppendLine("\t-----------");
-            sb.AppendLine($"\t\tM_Ed = {Fmt2(result.MEd_kNmm)} · 10⁻³ kNm");
-            sb.AppendLine($"\t\tM_Rd = 1.5 * Wel * fy,p / gammaM0 = {Fmt2(result.MRd_kNmm)} · 10⁻³ kNm");
+            if (result.Input.MomentCalculatedFromTensionLugGeometry)
+            {
+                sb.AppendLine(
+                    $"\t\tM_Ed = F_Ed / 8 * (t + 4 * s + 2 * t2) = " +
+                    $"{Fmt2(result.MEd_kNmm / 1000.0)} kNm");
+            }
+            else
+            {
+                sb.AppendLine($"\t\tM_Ed = {Fmt2(result.MEd_kNmm / 1000.0)} kNm");
+            }
+            sb.AppendLine($"\t\tM_Rd = 1.5 * Wel * fy,p / gammaM0 = {Fmt2(result.MRd_kNmm / 1000.0)} kNm");
             sb.AppendLine($"\t\tCheck M_Ed <= M_Rd: {Ok(result.BendingOk)}  η = {FmtEta(result.BendingUtilization)}");
             sb.AppendLine();
 
@@ -560,8 +570,17 @@ namespace LascheApp.Padeye
             {
                 sb.AppendLine("\tReplaceable pin service bending");
                 sb.AppendLine("\t-------------------------------");
-                sb.AppendLine($"\t\tM_Ed,ser = {Fmt2(result.MEdSer_kNmm)} · 10⁻³ kNm");
-                sb.AppendLine($"\t\tM_Rd,ser = 0.8 * Wel * fy,p / gammaM6,ser = {Fmt2(result.MRdSer_kNmm)} · 10⁻³ kNm");
+                if (result.Input.MomentCalculatedFromTensionLugGeometry)
+                {
+                    sb.AppendLine(
+                        $"\t\tM_Ed,ser = M_Ed * F_Ed,ser / F_Ed = " +
+                        $"{Fmt2(result.MEdSer_kNmm / 1000.0)} kNm");
+                }
+                else
+                {
+                    sb.AppendLine($"\t\tM_Ed,ser = {Fmt2(result.MEdSer_kNmm / 1000.0)} kNm");
+                }
+                sb.AppendLine($"\t\tM_Rd,ser = 0.8 * Wel * fy,p / gammaM6,ser = {Fmt2(result.MRdSer_kNmm / 1000.0)} kNm");
                 sb.AppendLine($"\t\tCheck M_Ed,ser <= M_Rd,ser: {Ok(result.ServiceBendingOk)}  η = {FmtEta(result.ServiceBendingUtilization)}");
                 sb.AppendLine();
             }
@@ -706,21 +725,21 @@ namespace LascheApp.Padeye
 
         private static string Fmt1(double value)
         {
-            return value.ToString("0.0");
+            return ReportNumberFormatter.Format(value, 1);
         }
 
         private static string Fmt2(double value)
         {
-            return value.ToString("0.00");
+            return ReportNumberFormatter.Format(value, 2);
         }
 
         private static string Fmt3(double value)
         {
-            return value.ToString("0.000");
+            return ReportNumberFormatter.Format(value, 3);
         }
         private static string FmtEta(double value)
         {
-            return value.ToString("0.000");
+            return ReportNumberFormatter.Format(value, 3);
         }
     }
 }

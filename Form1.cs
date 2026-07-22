@@ -26,6 +26,7 @@ namespace LascheApp
         private readonly Button _settingsButton = new();
         private readonly Button _saveProjectButton = new();
         private readonly Button _openProjectButton = new();
+        private readonly Button _newCheckButton = new();
         private readonly ContextMenuStrip _settingsMenu = new();
         private readonly ToolStripMenuItem _languageMenuItem = new();
         private readonly ToolStripMenuItem _englishMenuItem = new("English");
@@ -92,12 +93,17 @@ namespace LascheApp
             _settingsButton.Location = new Point(_projectGroup.ClientSize.Width - 147, 25);
             _settingsButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             _settingsButton.Click += SettingsButton_Click;
-            _openProjectButton.Text = "Open project";
+            _newCheckButton.Text = "New check";
+            _newCheckButton.Size = new Size(110, 29);
+            _newCheckButton.Location = new Point(_projectGroup.ClientSize.Width - 522, 25);
+            _newCheckButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            _newCheckButton.Click += NewCheckButton_Click;
+            _openProjectButton.Text = "Open check";
             _openProjectButton.Size = new Size(125, 29);
             _openProjectButton.Location = new Point(_projectGroup.ClientSize.Width - 407, 25);
             _openProjectButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             _openProjectButton.Click += OpenProjectButton_Click;
-            _saveProjectButton.Text = "Save project";
+            _saveProjectButton.Text = "Save check";
             _saveProjectButton.Size = new Size(125, 29);
             _saveProjectButton.Location = new Point(_projectGroup.ClientSize.Width - 277, 25);
             _saveProjectButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -108,7 +114,7 @@ namespace LascheApp
             _projectGroup.Controls.AddRange(new Control[]
             {
                 _projectLabel, _txtProjectNumber, _subjectLabel, _txtVerificationSubject,
-                _openProjectButton, _saveProjectButton, _settingsButton
+                _newCheckButton, _openProjectButton, _saveProjectButton, _settingsButton
             });
             Controls.Add(_projectGroup);
             _projectGroup.BringToFront();
@@ -260,6 +266,74 @@ namespace LascheApp
             preview.ShowDialog(this);
         }
 
+        private void ExportEditableReport_Click(object? sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtBasicCheckResult.Text))
+            {
+                MessageBox.Show(
+                    this,
+                    IsGerman
+                        ? "Führen Sie zuerst den Nachweis aus."
+                        : "Run the verification before exporting the report.",
+                    IsGerman ? "Kein Bericht" : "No report",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            using SaveFileDialog dialog = new()
+            {
+                Title = IsGerman
+                    ? "Bearbeitbaren Bericht speichern"
+                    : "Save editable report",
+                Filter = IsGerman
+                    ? "Rich-Text-Dokument (*.rtf)|*.rtf|Textdatei (*.txt)|*.txt|Alle Dateien (*.*)|*.*"
+                    : "Rich Text document (*.rtf)|*.rtf|Text file (*.txt)|*.txt|All files (*.*)|*.*",
+                FilterIndex = 1,
+                DefaultExt = "rtf",
+                AddExtension = true,
+                OverwritePrompt = true,
+                FileName = CreateSuggestedReportFileName("rtf")
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                if (string.Equals(Path.GetExtension(dialog.FileName), ".txt", StringComparison.OrdinalIgnoreCase))
+                {
+                    File.WriteAllText(
+                        dialog.FileName,
+                        txtBasicCheckResult.Text,
+                        new System.Text.UTF8Encoding(false));
+                }
+                else
+                {
+                    using RichTextBox editableReport = new()
+                    {
+                        DetectUrls = false,
+                        Font = new Font("Consolas", 10.0F),
+                        Text = txtBasicCheckResult.Text
+                    };
+                    editableReport.SelectAll();
+                    editableReport.SelectionFont = editableReport.Font;
+                    editableReport.SaveFile(dialog.FileName, RichTextBoxStreamType.RichText);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    this,
+                    IsGerman
+                        ? $"Der bearbeitbare Bericht konnte nicht gespeichert werden: {ex.Message}"
+                        : $"The editable report could not be saved: {ex.Message}",
+                    IsGerman ? "Bericht speichern" : "Save report",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
         private static string PrepareLineForPrint(string line)
         {
             // The report uses one leading tab for its screen hierarchy. On
@@ -371,8 +445,9 @@ namespace LascheApp
             _projectLabel.Text = de ? "Projektnummer" : "Project number";
             _subjectLabel.Text = de ? "Gegenstand der Prüfung" : "Subject of verification";
             _settingsButton.Text = de ? "⚙ Einstellungen" : "⚙ Settings";
-            _openProjectButton.Text = de ? "Projekt öffnen" : "Open project";
-            _saveProjectButton.Text = de ? "Projekt speichern" : "Save project";
+            _newCheckButton.Text = de ? "Neuer Nachweis" : "New check";
+            _openProjectButton.Text = de ? "Nachweis öffnen" : "Open check";
+            _saveProjectButton.Text = de ? "Nachweis speichern" : "Save check";
             _languageMenuItem.Text = de ? "Sprache" : "Language";
             _databaseMenuItem.Text = de ? "Datenbank" : "Database";
             _materialDatabaseMenuItem.Text = de ? "Werkstoffe" : "Material";
@@ -380,6 +455,7 @@ namespace LascheApp
             _englishMenuItem.Checked = !de;
             _germanMenuItem.Checked = de;
             button1.Text = de ? "Bericht drucken" : "Print report";
+            button2.Text = de ? "Bearbeitbaren Bericht speichern" : "Save editable report";
 
             grpLoads.Text = de ? "Lasten / Werkstoff" : "Loads / material";
             grpLugGeometry.Text = de ? "Laschengeometrie" : "Lug geometry";
@@ -434,7 +510,7 @@ namespace LascheApp
 
             _subjectLabel.Left = 322;
             _txtVerificationSubject.Left = de ? 475 : 458;
-            _txtVerificationSubject.Width = de ? 313 : 330;
+            _txtVerificationSubject.Width = 250;
 
             tabSummary.Text = de ? "Übersicht" : "Summary";
             _guideTab.Text = de ? "Sichtprüfung" : "Visual check";
@@ -1013,14 +1089,52 @@ namespace LascheApp
             _settingsMenu.Show(_settingsButton, new Point(0, _settingsButton.Height));
         }
 
+        private void NewCheckButton_Click(object? sender, EventArgs e)
+        {
+            DialogResult confirmation = MessageBox.Show(
+                this,
+                IsGerman
+                    ? "Alle Eingabedaten und Ergebnisse des aktuellen Nachweises werden gelöscht. Die Projektnummer und die Datenbanken bleiben erhalten."
+                    : "All input data and results of the current check will be cleared. The project number and databases will be retained.",
+                IsGerman ? "Neuer Nachweis" : "New check",
+                MessageBoxButtons.OKCancel,
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button2);
+
+            if (confirmation != DialogResult.OK)
+                return;
+
+            _txtVerificationSubject.Clear();
+            foreach (TextBox input in new[]
+            {
+                txtLoadSer_kN, txtLoad_kN,
+                txtPlateThickness_mm, txtHoleDiameter_mm, txtPlateWidth_mm,
+                txtEdgeDistanceA_mm, txtCheekPlateThickness_mm, txtRch_mm,
+                txtCheekPlateWeldA_mm, txtDnvOutOfPlaneAngle_deg,
+                txtTensionPinDiameter_mm, txtOuterLugThicknessT2_mm, txtGapS_mm,
+                txtOuterLugHoleDiameter_mm, txtOuterLugPinDiameter_mm
+            })
+            {
+                input.Clear();
+            }
+
+            chkIncludeCheekPlatesInBearing.Checked = false;
+            chkSeparateOuterLugPinGeometry.Checked = false;
+            chkReplaceablePin.Checked = true;
+            ClearCurrentCheckResults();
+            UpdateSelectedMaterialInfo();
+            UpdateSelectedPinMaterialInfo();
+            _geometryGuide.Invalidate();
+        }
+
         private void SaveProjectButton_Click(object? sender, EventArgs e)
         {
             using SaveFileDialog dialog = new()
             {
-                Title = IsGerman ? "Projekt speichern" : "Save project",
+                Title = IsGerman ? "Nachweis speichern" : "Save check",
                 Filter = IsGerman
-                    ? "LascheApp-Projekt (*.lugproj)|*.lugproj|JSON-Datei (*.json)|*.json|Alle Dateien (*.*)|*.*"
-                    : "LascheApp project (*.lugproj)|*.lugproj|JSON file (*.json)|*.json|All files (*.*)|*.*",
+                    ? "LascheApp-Nachweis (*.lugproj)|*.lugproj|JSON-Datei (*.json)|*.json|Alle Dateien (*.*)|*.*"
+                    : "LascheApp check (*.lugproj)|*.lugproj|JSON file (*.json)|*.json|All files (*.*)|*.*",
                 DefaultExt = "lugproj",
                 AddExtension = true,
                 OverwritePrompt = true,
@@ -1043,9 +1157,9 @@ namespace LascheApp
                 MessageBox.Show(
                     this,
                     IsGerman
-                        ? $"Das Projekt konnte nicht gespeichert werden: {ex.Message}"
-                        : $"The project could not be saved: {ex.Message}",
-                    IsGerman ? "Projekt speichern" : "Save project",
+                        ? $"Der Nachweis konnte nicht gespeichert werden: {ex.Message}"
+                        : $"The check could not be saved: {ex.Message}",
+                    IsGerman ? "Nachweis speichern" : "Save check",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -1055,10 +1169,10 @@ namespace LascheApp
         {
             using OpenFileDialog dialog = new()
             {
-                Title = IsGerman ? "Projekt öffnen" : "Open project",
+                Title = IsGerman ? "Nachweis öffnen" : "Open check",
                 Filter = IsGerman
-                    ? "LascheApp-Projekt (*.lugproj)|*.lugproj|JSON-Datei (*.json)|*.json|Alle Dateien (*.*)|*.*"
-                    : "LascheApp project (*.lugproj)|*.lugproj|JSON file (*.json)|*.json|All files (*.*)|*.*",
+                    ? "LascheApp-Nachweis (*.lugproj)|*.lugproj|JSON-Datei (*.json)|*.json|Alle Dateien (*.*)|*.*"
+                    : "LascheApp check (*.lugproj)|*.lugproj|JSON file (*.json)|*.json|All files (*.*)|*.*",
                 CheckFileExists = true,
                 Multiselect = false
             };
@@ -1072,12 +1186,12 @@ namespace LascheApp
                 ProjectFile? project = System.Text.Json.JsonSerializer.Deserialize<ProjectFile>(json);
                 if (project == null || project.Format != ProjectFile.ExpectedFormat)
                     throw new InvalidDataException(IsGerman
-                        ? "Die Datei ist kein gültiges LascheApp-Projekt."
-                        : "The file is not a valid LascheApp project.");
+                        ? "Die Datei ist kein gültiger LascheApp-Nachweis."
+                        : "The file is not a valid LascheApp check.");
                 if (project.Version < 1 || project.Version > ProjectFile.CurrentVersion)
                     throw new InvalidDataException(IsGerman
-                        ? $"Die Projektdateiversion {project.Version} wird nicht unterstützt."
-                        : $"Project file version {project.Version} is not supported.");
+                        ? $"Die Dateiversion {project.Version} wird nicht unterstützt."
+                        : $"File version {project.Version} is not supported.");
 
                 ApplyProjectFile(project);
             }
@@ -1086,9 +1200,9 @@ namespace LascheApp
                 MessageBox.Show(
                     this,
                     IsGerman
-                        ? $"Das Projekt konnte nicht geöffnet werden: {ex.Message}"
-                        : $"The project could not be opened: {ex.Message}",
-                    IsGerman ? "Projekt öffnen" : "Open project",
+                        ? $"Der Nachweis konnte nicht geöffnet werden: {ex.Message}"
+                        : $"The check could not be opened: {ex.Message}",
+                    IsGerman ? "Nachweis öffnen" : "Open check",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
@@ -1167,10 +1281,7 @@ namespace LascheApp
             UpdateSelectedShackleInfo();
             _geometryGuide.Invalidate();
 
-            dgvCheckSummary.Rows.Clear();
-            txtSelectedCheckDetail.Clear();
-            txtBasicCheckResult.Clear();
-            tabResults.SelectedTab = tabSummary;
+            ClearCurrentCheckResults();
 
             if (missingDatabaseItems.Count > 0)
             {
@@ -1181,7 +1292,7 @@ namespace LascheApp
                           string.Join(", ", missingDatabaseItems) + ". Bitte wählen Sie Ersatzwerte."
                         : "Some saved database entries are not present in the current database: " +
                           string.Join(", ", missingDatabaseItems) + ". Select replacement values before verification.",
-                    IsGerman ? "Projekt geöffnet" : "Project opened",
+                    IsGerman ? "Nachweis geöffnet" : "Check opened",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
             }
@@ -1202,11 +1313,37 @@ namespace LascheApp
         private string CreateSuggestedProjectFileName()
         {
             string source = string.IsNullOrWhiteSpace(_txtProjectNumber.Text)
-                ? "LugProject"
+                ? "LugCheck"
                 : _txtProjectNumber.Text.Trim();
             foreach (char invalidCharacter in Path.GetInvalidFileNameChars())
                 source = source.Replace(invalidCharacter, '_');
             return source + ".lugproj";
+        }
+
+        private string CreateSuggestedReportFileName(string extension)
+        {
+            string project = string.IsNullOrWhiteSpace(_txtProjectNumber.Text)
+                ? "LugCheck"
+                : _txtProjectNumber.Text.Trim();
+            string subject = _txtVerificationSubject.Text.Trim();
+            string source = string.IsNullOrWhiteSpace(subject)
+                ? project + "_report"
+                : project + "_" + subject + "_report";
+
+            foreach (char invalidCharacter in Path.GetInvalidFileNameChars())
+                source = source.Replace(invalidCharacter, '_');
+            return source + "." + extension.TrimStart('.');
+        }
+
+        private void ClearCurrentCheckResults()
+        {
+            _lastPadeyeResult = null;
+            _lastPinResult = null;
+            _lastEnglishReport = "";
+            dgvCheckSummary.Rows.Clear();
+            txtSelectedCheckDetail.Clear();
+            txtBasicCheckResult.Clear();
+            tabResults.SelectedTab = tabSummary;
         }
 
         private void ProjectMetadata_TextChanged(object? sender, EventArgs e)
@@ -1894,7 +2031,7 @@ namespace LascheApp
 
                 double pinMoment_kNmm =
                     fEd_kN / 8.0 *
-                    (outerLugThicknessT2_mm + 4.0 * gapS_mm + 2.0 * innerLugThicknessForPinMoment_mm);
+                    (innerLugThicknessForPinMoment_mm + 4.0 * gapS_mm + 2.0 * outerLugThicknessT2_mm);
 
                 double pinMomentSer_kNmm =
                     pinMoment_kNmm * fEdSer_kN / fEd_kN;

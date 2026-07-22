@@ -106,6 +106,7 @@
             pictureBox1 = new PictureBox();
             label11 = new Label();
             label12 = new Label();
+            button2 = new Button();
             grpLoads.SuspendLayout();
             groupBox1.SuspendLayout();
             grpLugGeometry.SuspendLayout();
@@ -231,9 +232,11 @@
             // 
             // btnCheckBasicPadeye
             // 
-            btnCheckBasicPadeye.Location = new Point(15, 22);
+            btnCheckBasicPadeye.Dock = DockStyle.Bottom;
+            btnCheckBasicPadeye.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            btnCheckBasicPadeye.Location = new Point(3, 698);
             btnCheckBasicPadeye.Name = "btnCheckBasicPadeye";
-            btnCheckBasicPadeye.Size = new Size(177, 23);
+            btnCheckBasicPadeye.Size = new Size(508, 41);
             btnCheckBasicPadeye.TabIndex = 4;
             btnCheckBasicPadeye.Text = "Verify lug";
             btnCheckBasicPadeye.UseVisualStyleBackColor = true;
@@ -242,12 +245,12 @@
             // txtBasicCheckResult
             // 
             txtBasicCheckResult.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            txtBasicCheckResult.Location = new Point(3, 35);
+            txtBasicCheckResult.Location = new Point(3, 39);
             txtBasicCheckResult.Multiline = true;
             txtBasicCheckResult.Name = "txtBasicCheckResult";
             txtBasicCheckResult.ReadOnly = true;
             txtBasicCheckResult.ScrollBars = ScrollBars.Both;
-            txtBasicCheckResult.Size = new Size(479, 589);
+            txtBasicCheckResult.Size = new Size(500, 587);
             txtBasicCheckResult.TabIndex = 8;
             txtBasicCheckResult.WordWrap = false;
             // 
@@ -565,48 +568,48 @@
             txtOuterLugThicknessT2_mm.Name = "txtOuterLugThicknessT2_mm";
             txtOuterLugThicknessT2_mm.Size = new Size(65, 23);
             txtOuterLugThicknessT2_mm.TabIndex = 49;
-            //
+            // 
             // chkSeparateOuterLugPinGeometry
-            //
+            // 
             chkSeparateOuterLugPinGeometry.AutoSize = true;
             chkSeparateOuterLugPinGeometry.Location = new Point(270, 69);
             chkSeparateOuterLugPinGeometry.Name = "chkSeparateOuterLugPinGeometry";
-            chkSeparateOuterLugPinGeometry.Size = new Size(207, 19);
+            chkSeparateOuterLugPinGeometry.Size = new Size(197, 19);
             chkSeparateOuterLugPinGeometry.TabIndex = 51;
             chkSeparateOuterLugPinGeometry.Text = "Different outer lug pin geometry";
             chkSeparateOuterLugPinGeometry.UseVisualStyleBackColor = true;
             chkSeparateOuterLugPinGeometry.CheckedChanged += chkSeparateOuterLugPinGeometry_CheckedChanged;
-            //
+            // 
             // lblOuterLugHoleDiameter
-            //
+            // 
             lblOuterLugHoleDiameter.AutoSize = true;
             lblOuterLugHoleDiameter.Location = new Point(18, 166);
             lblOuterLugHoleDiameter.Name = "lblOuterLugHoleDiameter";
-            lblOuterLugHoleDiameter.Size = new Size(77, 15);
+            lblOuterLugHoleDiameter.Size = new Size(68, 15);
             lblOuterLugHoleDiameter.TabIndex = 52;
             lblOuterLugHoleDiameter.Text = "d0_t2 [mm]";
             lblOuterLugHoleDiameter.Visible = false;
-            //
+            // 
             // txtOuterLugHoleDiameter_mm
-            //
+            // 
             txtOuterLugHoleDiameter_mm.Location = new Point(141, 163);
             txtOuterLugHoleDiameter_mm.Name = "txtOuterLugHoleDiameter_mm";
             txtOuterLugHoleDiameter_mm.Size = new Size(65, 23);
             txtOuterLugHoleDiameter_mm.TabIndex = 53;
             txtOuterLugHoleDiameter_mm.Visible = false;
-            //
+            // 
             // lblOuterLugPinDiameter
-            //
+            // 
             lblOuterLugPinDiameter.AutoSize = true;
             lblOuterLugPinDiameter.Location = new Point(18, 197);
             lblOuterLugPinDiameter.Name = "lblOuterLugPinDiameter";
-            lblOuterLugPinDiameter.Size = new Size(70, 15);
+            lblOuterLugPinDiameter.Size = new Size(62, 15);
             lblOuterLugPinDiameter.TabIndex = 54;
             lblOuterLugPinDiameter.Text = "d_t2 [mm]";
             lblOuterLugPinDiameter.Visible = false;
-            //
+            // 
             // txtOuterLugPinDiameter_mm
-            //
+            // 
             txtOuterLugPinDiameter_mm.Location = new Point(141, 194);
             txtOuterLugPinDiameter_mm.Name = "txtOuterLugPinDiameter_mm";
             txtOuterLugPinDiameter_mm.Size = new Size(65, 23);
@@ -657,6 +660,16 @@
             btnLoadGuidance.UseVisualStyleBackColor = true;
             btnLoadGuidance.Click += btnLoadGuidance_Click;
             // 
+            // btnPredesign
+            // 
+            btnPredesign.Location = new Point(12, 166);
+            btnPredesign.Name = "btnPredesign";
+            btnPredesign.Size = new Size(155, 29);
+            btnPredesign.TabIndex = 46;
+            btnPredesign.Text = "Predesign";
+            btnPredesign.UseVisualStyleBackColor = true;
+            btnPredesign.Click += btnPredesign_Click;
+            // 
             // grpLugGeometry
             // 
             grpLugGeometry.Controls.Add(btnPredesign);
@@ -682,17 +695,7 @@
             grpLugGeometry.TabIndex = 52;
             grpLugGeometry.TabStop = false;
             grpLugGeometry.Text = "Lug geometry";
-            //
-            // btnPredesign
-            //
-            btnPredesign.Location = new Point(12, 166);
-            btnPredesign.Name = "btnPredesign";
-            btnPredesign.Size = new Size(155, 29);
-            btnPredesign.TabIndex = 46;
-            btnPredesign.Text = "Predesign";
-            btnPredesign.UseVisualStyleBackColor = true;
-            btnPredesign.Click += btnPredesign_Click;
-            //
+            // 
             // grpTransportLug
             // 
             grpTransportLug.Controls.Add(label13);
@@ -739,6 +742,7 @@
             // 
             groupBox5.Controls.Add(tabResults);
             groupBox5.Controls.Add(btnCheckBasicPadeye);
+            groupBox5.FlatStyle = FlatStyle.Flat;
             groupBox5.Location = new Point(1048, 23);
             groupBox5.Name = "groupBox5";
             groupBox5.Size = new Size(514, 742);
@@ -751,10 +755,10 @@
             tabResults.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             tabResults.Controls.Add(tabSummary);
             tabResults.Controls.Add(tabReport);
-            tabResults.Location = new Point(15, 71);
+            tabResults.Location = new Point(0, 42);
             tabResults.Name = "tabResults";
             tabResults.SelectedIndex = 0;
-            tabResults.Size = new Size(493, 665);
+            tabResults.Size = new Size(514, 657);
             tabResults.TabIndex = 9;
             // 
             // tabSummary
@@ -763,7 +767,7 @@
             tabSummary.Location = new Point(4, 24);
             tabSummary.Name = "tabSummary";
             tabSummary.Padding = new Padding(3);
-            tabSummary.Size = new Size(485, 637);
+            tabSummary.Size = new Size(506, 629);
             tabSummary.TabIndex = 0;
             tabSummary.Text = "Summary";
             tabSummary.UseVisualStyleBackColor = true;
@@ -778,13 +782,15 @@
             // splitContainer1.Panel1
             // 
             splitContainer1.Panel1.Controls.Add(dgvCheckSummary);
+            splitContainer1.Panel1.RightToLeft = RightToLeft.No;
             // 
             // splitContainer1.Panel2
             // 
             splitContainer1.Panel2.AccessibleDescription = "txtSelectedCheckDetail";
             splitContainer1.Panel2.Controls.Add(txtSelectedCheckDetail);
-            splitContainer1.Size = new Size(479, 631);
-            splitContainer1.SplitterDistance = 327;
+            splitContainer1.Panel2.RightToLeft = RightToLeft.No;
+            splitContainer1.Size = new Size(500, 623);
+            splitContainer1.SplitterDistance = 321;
             splitContainer1.TabIndex = 0;
             // 
             // dgvCheckSummary
@@ -799,7 +805,7 @@
             dgvCheckSummary.ReadOnly = true;
             dgvCheckSummary.RowHeadersVisible = false;
             dgvCheckSummary.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvCheckSummary.Size = new Size(479, 327);
+            dgvCheckSummary.Size = new Size(500, 321);
             dgvCheckSummary.TabIndex = 0;
             // 
             // txtSelectedCheckDetail
@@ -810,28 +816,28 @@
             txtSelectedCheckDetail.Name = "txtSelectedCheckDetail";
             txtSelectedCheckDetail.ReadOnly = true;
             txtSelectedCheckDetail.ScrollBars = ScrollBars.Both;
-            txtSelectedCheckDetail.Size = new Size(479, 300);
+            txtSelectedCheckDetail.Size = new Size(500, 298);
             txtSelectedCheckDetail.TabIndex = 0;
             txtSelectedCheckDetail.WordWrap = false;
             // 
             // tabReport
             // 
+            tabReport.Controls.Add(button2);
             tabReport.Controls.Add(button1);
             tabReport.Controls.Add(txtBasicCheckResult);
             tabReport.Location = new Point(4, 24);
             tabReport.Name = "tabReport";
             tabReport.Padding = new Padding(3);
-            tabReport.Size = new Size(485, 637);
+            tabReport.Size = new Size(506, 629);
             tabReport.TabIndex = 3;
             tabReport.Text = "Report";
             tabReport.UseVisualStyleBackColor = true;
             // 
             // button1
             // 
-            button1.Dock = DockStyle.Top;
-            button1.Location = new Point(3, 3);
+            button1.Location = new Point(2, 3);
             button1.Name = "button1";
-            button1.Size = new Size(479, 30);
+            button1.Size = new Size(249, 30);
             button1.TabIndex = 9;
             button1.Text = "Print Report";
             button1.UseVisualStyleBackColor = true;
@@ -884,6 +890,16 @@
             label12.Size = new Size(95, 15);
             label12.TabIndex = 57;
             label12.Text = "Geometry guide:";
+            // 
+            // button2
+            // 
+            button2.Location = new Point(257, 3);
+            button2.Name = "button2";
+            button2.Size = new Size(246, 30);
+            button2.TabIndex = 10;
+            button2.Text = "Export Report in RTF";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += ExportEditableReport_Click;
             // 
             // Form1
             // 
@@ -1009,5 +1025,6 @@
         private PictureBox pictureBox3;
         private Label label11;
         private Label label12;
+        private Button button2;
     }
 }
