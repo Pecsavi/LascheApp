@@ -72,8 +72,15 @@ internal static class LoggerService
     {
         try
         {
-            return FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location)
-                .ProductVersion?.Split('+')[0] ?? "unknown";
+            string? executablePath = Environment.ProcessPath;
+            if (!string.IsNullOrWhiteSpace(executablePath))
+            {
+                string? productVersion = FileVersionInfo.GetVersionInfo(executablePath).ProductVersion;
+                if (!string.IsNullOrWhiteSpace(productVersion))
+                    return productVersion.Split('+')[0];
+            }
+
+            return Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown";
         }
         catch
         {

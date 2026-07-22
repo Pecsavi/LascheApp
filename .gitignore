@@ -26,6 +26,7 @@ obj/
 # Debug and release folders
 Debug/
 Release/
+artifacts/
 
 # NuGet packages
 *.nupkg
