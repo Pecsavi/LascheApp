@@ -39,7 +39,9 @@ internal static class CheckVersion
                 !Version.TryParse(LoggerService.GetApplicationVersion(), out Version? localVersion))
                 return null;
 
-            return serverVersion > localVersion ? serverVersion : null;
+            Version normalizedServerVersion = NormalizeVersion(serverVersion);
+            Version normalizedLocalVersion = NormalizeVersion(localVersion);
+            return normalizedServerVersion > normalizedLocalVersion ? normalizedServerVersion : null;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or JsonException)
         {
@@ -60,4 +62,10 @@ internal static class CheckVersion
         client.DefaultRequestHeaders.UserAgent.ParseAdd($"LascheApp/{LoggerService.GetApplicationVersion()}");
         return client;
     }
+
+    private static Version NormalizeVersion(Version version) => new(
+        version.Major,
+        version.Minor,
+        Math.Max(version.Build, 0),
+        Math.Max(version.Revision, 0));
 }
